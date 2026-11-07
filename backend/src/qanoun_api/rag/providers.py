@@ -21,6 +21,7 @@ import threading
 import time
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
+from pathlib import Path
 
 from qanoun_api.rag.llm import LLMClient, LLMError
 
@@ -89,56 +90,69 @@ def load_providers(env: Mapping[str, str] = os.environ) -> list[Provider]:
     return providers
 
 
-# Never chat models: embeddings, speech, images, moderation…
+# Never chat models: embeddings, speech, images, code-only, safety classifiers…
 _NOT_CHAT = re.compile(
-    r"embed|tts|audio|speech|whisper|image|imagen|veo|vision-only|guard|reward|rerank|aqa"
-    r"|moderation|transcribe|live|clip|parse|retriever|safety|research|computer-use|robotics",
+    r"embed|tts|audio|speech|whisper|image|imagen|veo|vision|vlm|guard|reward|rerank|aqa"
+    r"|moderation|transcribe|live|clip|parse|retriever|safety|research|computer-use|robotics"
+    r"|code|coder|starcoder|translate|detector|calibration|omni|diffusion|antigravity|deplot",
     re.IGNORECASE,
 )
-_FAMILIES = ("llama-3.3-70b", "deepseek", "qwen", "gemma", "mistral", "llama")
+
+# Curated preferences, best first: fast, multilingual (Arabic + French) chat models that
+# answer from given sources well. Matched against the provider's LIVE list, so a retired
+# model is skipped and a newer version of a family is picked up without a code change
+# (within a pattern, the highest version wins). Families that aren't listed only serve as
+# a last resort.
+_PREFERENCES: dict[str, list[str]] = {
+    # Free-tier quotas are per model, so siblings double as quota fallbacks:
+    # newest flash, newest flash-lite (fastest, largest free quota), then older ones.
+    "gemini": [r"^gemini-[\d.]+-flash$", r"^gemini-[\d.]+-flash-lite$"],
+    "openrouter": [
+        r"deepseek.*:free$", r"gemma.*:free$", r"llama-3\.3-70b.*:free$", r"qwen.*:free$",
+        r"mistral.*:free$", r":free$",
+    ],
+    "nvidia": [
+        r"^google/gemma-\d+-\d+b-it$", r"^deepseek-ai/deepseek-v[\d.]+-flash$",
+        r"^meta/llama-3\.3-70b-instruct$", r"^mistralai/mistral-large-2-instruct$",
+        r"^openai/gpt-oss-\d+b$", r"^nvidia/llama-3\.1-nemotron-70b-instruct$",
+    ],
+}
 
 
 def _version_key(model_id: str) -> tuple:
-    """Natural sort key: gemini-2.5-flash > gemini-2.0-flash > gemini-1.5-flash."""
+    """Natural sort key: gemini-3.8-flash > gemini-3.6-flash > gemini-2.5-flash."""
     return tuple(int(n) for n in re.findall(r"\d+", model_id))
 
 
-def recommend_model(provider_id: str, ids: list[str]) -> str | None:
-    """A sensible current default chat model from a provider's live model list."""
+def ranked_models(provider_id: str, ids: list[str], n: int = 4) -> list[str]:
+    """The n best chat models in preference order (the rest are fallbacks when the best
+    is busy, out of quota, or not enabled for this account)."""
     chat = [i for i in ids if not _NOT_CHAT.search(i)]
-    if not chat:
-        return None
+    tiers: list[list[str]] = []
+    for pattern in _PREFERENCES.get(provider_id, []):
+        regex = re.compile(pattern, re.IGNORECASE)
+        tiers.append(sorted((i for i in chat if regex.search(i)), key=_version_key, reverse=True))
     if provider_id == "gemini":
-        # newest stable "flash": fast, free-tier, strong Arabic; previews only as fallback
-        flash = [i for i in chat if "flash" in i and "lite" not in i and "thinking" not in i]
-        stable = [i for i in flash if "preview" not in i and "exp" not in i]
-        pool = stable or flash or chat
-        return max(pool, key=_version_key)
-    if provider_id == "openrouter":
-        pool = [i for i in chat if i.endswith(":free")] or chat
+        # interleave flash / flash-lite by generation: 3.8-flash, 3.8-lite, 3.7-flash, …
+        flat = [m for pair in zip(*tiers, strict=False) for m in pair]
+        longest = max(tiers, key=len, default=[])
+        flat += [m for m in longest if m not in flat]
     else:
-        pool = [i for i in chat if "instruct" in i] or chat
-    for family in _FAMILIES:
-        matches = [i for i in pool if family in i.lower()]
-        if matches:
-            return max(matches, key=_version_key)
-    return pool[0]
+        flat = [m for tier in tiers for m in tier]
+    ranked = list(dict.fromkeys(flat))  # dedupe, keep order
+    ranked += [i for i in chat if i not in ranked]  # unknown families: last resort
+    return ranked[:n]
 
 
-def ranked_models(provider_id: str, ids: list[str], n: int = 3) -> list[str]:
-    """The n best chat models in recommendation order (fallbacks when the best is busy)."""
-    pool, ranked = list(ids), []
-    while len(ranked) < n:
-        best = recommend_model(provider_id, pool)
-        if best is None:
-            break
-        ranked.append(best)
-        pool.remove(best)
-    return ranked
+def recommend_model(provider_id: str, ids: list[str]) -> str | None:
+    """The default chat model for a provider's live model list."""
+    ranked = ranked_models(provider_id, ids, 1)
+    return ranked[0] if ranked else None
 
 
 # Models tried per provider before moving to the next provider (busy model → sibling).
-MODELS_PER_PROVIDER = 3
+MODELS_PER_PROVIDER = 4
+BROKEN_TTL = 3600.0  # a model the account can't use (404) is skipped for an hour
 
 
 class ProviderUnavailable(LLMError):
@@ -236,9 +250,11 @@ class LLMRouter:
         return sorted(attempts, key=lambda a: (a[0].id, a[1]) in busy)
 
     def _mark(self, provider: Provider, model: str, exc: LLMError) -> None:
-        if exc.kind in ("unavailable", "rate_limit") and model:
+        """Remember a failing model so the next calls don't pay for it again."""
+        ttl = {"unavailable": BUSY_TTL, "rate_limit": BUSY_TTL, "model": BROKEN_TTL}.get(exc.kind)
+        if ttl and model and not provider.local:
             with self._lock:
-                self._busy[(provider.id, model)] = time.monotonic() + BUSY_TTL
+                self._busy[(provider.id, model)] = time.monotonic() + ttl
 
     # ── calls ─────────────────────────────────────────────────────────────────
     def chat_stream(
@@ -286,19 +302,35 @@ class LLMRouter:
         return BoundLLM(self, provider_id, model)
 
     def test(self, provider_id: str, model: str = "") -> dict:
-        """One tiny completion against exactly this provider (no fallback)."""
+        """Check exactly this provider: the requested model, or its candidates in order
+        until one answers. Reports which model worked and which failed (and remembers
+        the failures, so chat skips them too)."""
         provider = self.get(provider_id)
-        resolved = self.resolve_model(provider, model)
-        client = self._client(provider, resolved)
+        attempts = [m for p, m in self._chain(provider_id, model) if p.id == provider.id]
+        failed: list[dict] = []
         start = time.perf_counter()
-        reply = client.chat([{"role": "user", "content": "Reply with: OK"}], max_tokens=200)
-        return {
-            "ok": True,
-            "provider": provider.id,
-            "model": client.model or resolved,
-            "latency_ms": round((time.perf_counter() - start) * 1000),
-            "reply": reply.strip()[:80],
-        }
+        for candidate in attempts:
+            resolved = self.resolve_model(provider, candidate)
+            client = self._client(provider, resolved)
+            try:
+                reply = client.chat([{"role": "user", "content": "Reply with: OK"}], max_tokens=300)
+            except LLMError as exc:
+                self._mark(provider, candidate, exc)
+                failed.append({"model": resolved or "auto", "code": exc.kind, "message": str(exc)[:200]})
+                continue
+            return {
+                "ok": True,
+                "provider": provider.id,
+                "model": client.model or resolved,
+                "latency_ms": round((time.perf_counter() - start) * 1000),
+                "reply": reply.strip()[:80],
+                "failed": failed,
+            }
+        last = failed[-1] if failed else {"code": "error", "message": "no model to try"}
+        raise LLMError(
+            "; ".join(f"{f['model']}: {f['message']}" for f in failed) or last["message"],
+            kind=last["code"],
+        )
 
 
 def _combined(errors: list[LLMError]) -> LLMError:
@@ -330,17 +362,53 @@ class BoundLLM:
         )
 
 
+ENV_FILE = Path(os.environ.get("QANOUN_ENV_FILE", ".env"))  # `make api` runs at the repo root
+
+
+def read_env_file(path: Path) -> dict[str, str]:
+    """KEY=VALUE lines (comments, blanks and `export` prefixes ignored, quotes stripped)."""
+    values: dict[str, str] = {}
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return values
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.removeprefix("export ").partition("=")
+        values[key.strip()] = value.strip().strip("'\"")
+    return values
+
+
+def current_env() -> dict[str, str]:
+    """Process env overlaid with the .env file as it is NOW: `make api` exported the values
+    it saw at start-up, so the file must win for keys added or changed since."""
+    return {**os.environ, **read_env_file(ENV_FILE)}
+
+
 _router: LLMRouter | None = None
+_router_stamp: float | None = None
+_router_lock = threading.Lock()
 
 
 def get_router() -> LLMRouter:
-    global _router
-    if _router is None:
-        _router = LLMRouter(load_providers())
-    return _router
+    """The router, rebuilt when .env changes: a new or edited key works on the next
+    request, without restarting the API."""
+    global _router, _router_stamp
+    try:
+        stamp = ENV_FILE.stat().st_mtime
+    except OSError:
+        stamp = None
+    with _router_lock:
+        if _router is None or (_router_stamp != stamp and _router_stamp != -1):
+            _router = LLMRouter(load_providers(current_env()))
+            _router_stamp = stamp
+        return _router
 
 
 def set_router(router: LLMRouter | None) -> None:
-    """Test seam."""
-    global _router
+    """Test seam (pins the router: .env changes are ignored until reset to None)."""
+    global _router, _router_stamp
     _router = router
+    _router_stamp = -1 if router is not None else None

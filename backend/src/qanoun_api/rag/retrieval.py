@@ -6,6 +6,8 @@ pipeline normalizer (same letter folding, same digit mapping) for FTS, and embed
 the same model and prefixes for the vector search.
 """
 
+import os
+import threading
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -60,22 +62,23 @@ class RetrievalResult:
 
 
 _embedder: Embedder | None = None
+_embedder_lock = threading.Lock()
 
 
 def get_embedder() -> Embedder:
-    """Lazily load the embedding model on first use (a ~2 GB download on cold start)."""
+    """Load the embedding model once (a ~2 GB download on cold start). Locked: the start-up
+    warm-up thread and an early request must not load it twice."""
     global _embedder
-    if _embedder is None:
-        import os
-
-        if os.environ.get("QANOUN_FAKE_EMBED") == "1":
-            _embedder = fake_embedder(dim=1024, cache_dir=None)
-        else:
-            spec = next(
-                (s for s in MODELS.values() if s.name == SETTINGS.embed_model), MODELS["m3"]
-            )
-            _embedder = Embedder(spec, cache_dir=None)
-    return _embedder
+    with _embedder_lock:
+        if _embedder is None:
+            if os.environ.get("QANOUN_FAKE_EMBED") == "1":
+                _embedder = fake_embedder(dim=1024, cache_dir=None)
+            else:
+                spec = next(
+                    (s for s in MODELS.values() if s.name == SETTINGS.embed_model), MODELS["m3"]
+                )
+                _embedder = Embedder(spec, cache_dir=None)
+        return _embedder
 
 
 def set_embedder(embedder: Embedder | None) -> None:

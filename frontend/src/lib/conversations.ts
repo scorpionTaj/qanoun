@@ -16,6 +16,8 @@ export interface Message {
   errorDetail?: string;
   answeredBy?: string; // "Google Gemini · gemini-2.5-flash"
   streaming?: boolean;
+  stage?: "rewriting" | "searching" | "answering"; // live progress while streaming
+  seconds?: number; // server-side time to answer
   stopped?: boolean; // the user pressed Stop: the text may be incomplete
 }
 

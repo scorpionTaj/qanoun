@@ -23,11 +23,13 @@ def test_chat_streams_full_event_flow(monkeypatch, fake_llm):
     events = parse_sse(post_chat({"question": "ما هي شروط الزواج؟"}))
 
     names = [name for name, _ in events]
-    assert names == ["meta", "sources", "token", "token", "token", "done"]
-    meta = events[0][1]
+    assert names == ["status", "meta", "sources", "status", "token", "token", "token", "done"]
+    assert [d["stage"] for n, d in events if n == "status"] == ["searching", "answering"]
+    meta = events[1][1]
     assert meta["variety"] == "msa"
     assert meta["disclaimer"]
-    sources = events[1][1]["sources"]
+    assert set(events[-1][1]["timings"]) == {"rewrite", "search", "answer"}
+    sources = events[2][1]["sources"]
     assert sources[0]["law_slug"] == "family-code-ar"
     done = events[-1][1]
     assert done["abstained"] is False

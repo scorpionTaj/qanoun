@@ -34,6 +34,7 @@ export interface TestResult {
   latency_ms?: number;
   code?: string;
   message?: string;
+  failed?: { model: string; code: string; message: string }[]; // models tried before the one that worked
 }
 
 export const DEFAULT_CHOICE: LlmChoice = { provider: "", model: "" };

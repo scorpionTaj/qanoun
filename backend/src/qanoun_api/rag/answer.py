@@ -52,12 +52,18 @@ _SYSTEM = (
 )
 
 
-def source_label(hit: Hit) -> str:
+def source_label(hit: Hit, variety: str = "msa") -> str:
+    """In the question's language, so the model cites "Code de la famille, art. 84" in a
+    French answer instead of pasting the Arabic title into French prose."""
+    if variety == "other" and hit.law_title_fr:
+        return f"{hit.law_title_fr} — article {hit.article_number} (p. {hit.page})"
     return f"{hit.law_title} — المادة {hit.article_number} (ص{hit.page})"
 
 
 def build_messages(question: str, sources: list[Hit], variety: str) -> list[dict]:
-    blocks = [f"[{i}] ({source_label(hit)})\n{hit.text}" for i, hit in enumerate(sources, start=1)]
+    blocks = [
+        f"[{i}] ({source_label(hit, variety)})\n{hit.text}" for i, hit in enumerate(sources, start=1)
+    ]
     # The language rule is repeated after the question: models follow the last instruction best,
     # and otherwise drift into the (MSA) language of the sources.
     user = (

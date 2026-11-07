@@ -1,63 +1,132 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "@heroui/styles"; /* after tailwindcss — HeroUI v3 builds on its theme */
 
-:root {
+/* Dark mode follows the `dark` class (set by the server from the theme cookie, and by the
+   theme toggle); HeroUI's own tokens follow `data-theme`, which is set alongside it. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-arabic: var(--font-naskh), "Noto Naskh Arabic", serif;
+  --font-latin: var(--font-inter), system-ui, sans-serif;
+
+  /* Saffron: highlights, cited passages, "needs a key" hints. */
+  --color-saffron-50: oklch(0.98 0.025 85);
+  --color-saffron-100: oklch(0.95 0.05 85);
+  --color-saffron-300: oklch(0.86 0.11 80);
+  --color-saffron-500: oklch(0.76 0.15 72);
+  --color-saffron-700: oklch(0.55 0.12 62);
+  --color-saffron-900: oklch(0.36 0.07 60);
+}
+
+/* ── Qanoun theme: Majorelle blue on warm ivory / deep ink ─────────────────────────────
+   Majorelle is the blue of Marrakech's Jardin Majorelle; saffron is the warm second voice.
+   Everything below is HeroUI's own token set, so every component follows it. */
+:root,
+[data-theme="light"] {
   color-scheme: light;
+  --radius: 0.75rem;
+  --field-radius: 0.875rem;
+
+  --background: oklch(0.982 0.008 85);
+  --foreground: oklch(0.23 0.035 268);
+  --surface: oklch(1 0 0);
+  --surface-foreground: var(--foreground);
+  --overlay: oklch(1 0 0);
+  --overlay-foreground: var(--foreground);
+  --muted: oklch(0.52 0.03 268);
+  --default: oklch(0.945 0.012 85);
+  --default-foreground: var(--foreground);
+
+  --accent: oklch(0.47 0.2 268);
+  --accent-foreground: oklch(0.99 0.005 85);
+  --warning: oklch(0.76 0.15 72);
+  --warning-foreground: oklch(0.25 0.04 60);
+
+  --field-background: oklch(1 0 0);
+  --field-foreground: var(--foreground);
+  --field-placeholder: var(--muted);
+  --border: oklch(0.89 0.015 85);
+  --separator: oklch(0.91 0.012 85);
+  --focus: var(--accent);
+  --link: var(--accent);
 }
 
-.dark {
+.dark,
+[data-theme="dark"] {
   color-scheme: dark;
+  --background: oklch(0.165 0.025 268);
+  --foreground: oklch(0.95 0.01 85);
+  --surface: oklch(0.205 0.03 268);
+  --surface-foreground: var(--foreground);
+  --overlay: oklch(0.235 0.032 268);
+  --overlay-foreground: var(--foreground);
+  --muted: oklch(0.72 0.03 268);
+  --default: oklch(0.27 0.03 268);
+  --default-foreground: var(--foreground);
+
+  --accent: oklch(0.73 0.14 268);
+  --accent-foreground: oklch(0.17 0.03 268);
+  --warning: oklch(0.8 0.14 75);
+  --warning-foreground: oklch(0.22 0.04 60);
+
+  --field-background: oklch(0.235 0.03 268);
+  --field-foreground: var(--foreground);
+  --border: oklch(0.31 0.03 268);
+  --separator: oklch(0.28 0.03 268);
 }
 
-body {
-  @apply bg-sand-50 text-zellige-950 antialiased transition-colors;
+@layer base {
+  body {
+    @apply bg-background text-foreground font-latin antialiased;
+  }
+  [dir="rtl"] body {
+    @apply font-arabic;
+  }
+  /* Arriving from a citation deep-link: land below the sticky bars. */
+  :target {
+    scroll-margin-top: 7rem;
+  }
 }
 
-.dark body {
-  @apply bg-[#0b1310] text-zellige-100;
-}
+@layer components {
+  /* Hero backdrop: a quiet eight-point zellige star lattice over a Majorelle wash. */
+  .hero-pattern {
+    background-color: oklch(0.3 0.12 268);
+    background-image:
+      radial-gradient(circle at 50% 0%, oklch(0.47 0.2 268 / 0.85), transparent 70%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cpath d='M24 4l5.66 14.34L44 24l-14.34 5.66L24 44l-5.66-14.34L4 24l14.34-5.66z' fill='none' stroke='white' stroke-opacity='.08'/%3E%3C/svg%3E");
+    background-size: 100% 100%, 48px 48px;
+  }
 
-[dir="rtl"] body {
-  font-family: var(--font-naskh), serif;
-}
+  .thin-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--foreground) 18%, transparent) transparent;
+  }
 
-/* Zellige dots layered OVER the hero gradient. This rule owns `background-image` for the
-   hero: Tailwind's bg-gradient-* utilities would be overridden here (same specificity,
-   later in the sheet), so the gradient lives in this stack as the bottom layer. */
-.zellige-pattern {
-  background-image:
-    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.07) 2px, transparent 2.5px),
-    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.07) 2px, transparent 2.5px),
-    linear-gradient(to bottom, #1d392a, #234531 55%, #29553b);
-  background-size: 28px 28px, 28px 28px, 100% 100%;
-}
+  /* Reader font-size steps (A−/A+). */
+  .reader-body {
+    font-size: 1.05rem;
+  }
+  .reader-body[data-size="sm"] {
+    font-size: 0.925rem;
+  }
+  .reader-body[data-size="lg"] {
+    font-size: 1.2rem;
+  }
+  .reader-body[data-size="xl"] {
+    font-size: 1.375rem;
+  }
 
-.prose-legal p {
-  @apply leading-8;
-}
-
-/* Thin, unobtrusive scrollbars in reader panes */
-.thin-scroll::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-.thin-scroll::-webkit-scrollbar-thumb {
-  @apply rounded-full bg-zellige-200 dark:bg-zellige-800;
-}
-
-/* Reader font-size steps (set by the A-/A+ controls) */
-.reader-body {
-  font-size: 1rem;
-}
-.reader-body[data-size="sm"] {
-  font-size: 0.875rem;
-}
-.reader-body[data-size="lg"] {
-  font-size: 1.125rem;
-}
-.reader-body[data-size="xl"] {
-  font-size: 1.3rem;
+  /* Long laws (the D.O.C. has 1,200+ articles): the browser skips layout and paint for
+     off-screen articles. Native, so #article-N anchors and Ctrl+F keep working. */
+  .article-card {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 180px;
+  }
+  .article-card:target {
+    outline: 2px solid var(--color-saffron-500);
+    outline-offset: 2px;
+  }
 }
 
 @keyframes fade-up {
@@ -70,32 +139,21 @@ body {
     transform: translateY(0);
   }
 }
-.animate-fade-up {
+@utility animate-fade-up {
   animation: fade-up 0.25s ease-out both;
 }
 
 @keyframes blink {
-  0%, 100% { opacity: 0.25; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
 }
-.animate-blink {
+@utility animate-blink {
   animation: blink 1.1s ease-in-out infinite;
-}
-
-/* Target highlight when arriving from a citation deep-link */
-:target {
-  scroll-margin-top: 6rem;
-}
-.article-target:target {
-  @apply ring-2 ring-sand-400 dark:ring-sand-500;
-}
-
-/* Long laws (the D.O.C. has 1,200+ articles): let the browser skip layout and paint for
-   off-screen articles. Native, keeps #article-N anchors and Ctrl+F working, unlike a
-   JS virtual list. */
-.article-card {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 180px;
 }
 
 @media (prefers-reduced-motion: reduce) {

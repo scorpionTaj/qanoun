@@ -2,23 +2,22 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Check, Copy, Link2, Minus, Plus, Search } from "lucide-react";
+import { Button, Chip, SearchField, ToggleButton, ToggleButtonGroup, Tooltip } from "@heroui/react";
+import { Check, Copy, Link2 } from "lucide-react";
 import type { Article } from "@/lib/types";
-import { Input } from "@/components/ui/input";
-import { cn, normalizeArabic } from "@/lib/utils";
+import { normalizeArabic } from "@/lib/utils";
 
 type FontSize = "sm" | "base" | "lg" | "xl";
+const SIZES: FontSize[] = ["sm", "base", "lg", "xl"];
 const FONT_KEY = "qanoun-reader-font";
 
 export function ReaderClient({
   articles,
   lawTitle,
-  locale,
   isArabic,
 }: {
   articles: Article[];
   lawTitle: string;
-  locale: string;
   isArabic: boolean;
 }) {
   const t = useTranslations("reader");
@@ -26,93 +25,88 @@ export function ReaderClient({
   const [query, setQuery] = useState("");
   const [copied, setCopied] = useState<number | null>(null);
 
-  // Restore the saved font size (written by setFont; read after mount to avoid a
-  // server/client hydration mismatch).
+  // Restore the saved font size after mount (avoids a hydration mismatch).
   useEffect(() => {
     try {
       const saved = localStorage.getItem(FONT_KEY) as FontSize | null;
-      if (saved && ["sm", "base", "lg", "xl"].includes(saved)) setFontSize(saved);
+      if (saved && SIZES.includes(saved)) setFontSize(saved);
     } catch {}
   }, []);
 
-  // Normalized once per law, not per keystroke.
-  const normalizedTexts = useMemo(() => articles.map((a) => normalizeArabic(a.text)), [articles]);
-
-  const filtered = useMemo(() => {
-    const q = normalizeArabic(query.trim());
-    if (!q) return articles;
-    // match by article number prefix or by content (أحكام finds احكام, ١٢ finds 12)
-    return articles.filter((a, i) => a.number.startsWith(q) || normalizedTexts[i].includes(q));
-  }, [articles, normalizedTexts, query]);
-
-  const setFont = (dir: 1 | -1) => {
-    const order: FontSize[] = ["sm", "base", "lg", "xl"];
-    const next = order[Math.min(order.length - 1, Math.max(0, order.indexOf(fontSize) + dir))];
-    setFontSize(next);
+  const chooseSize = (size: FontSize) => {
+    setFontSize(size);
     try {
-      localStorage.setItem(FONT_KEY, next);
+      localStorage.setItem(FONT_KEY, size);
     } catch {}
   };
 
-  const copyCitation = async (article: Article) => {
-    const label = isArabic
-      ? `«${lawTitle}» — المادة ${article.number}`
-      : `«${lawTitle}» — Article ${article.number}`;
-    const url = `${window.location.origin}/${locale}/laws/${window.location.pathname.split("/").pop()}#article-${encodeURIComponent(article.number)}`;
-    await navigator.clipboard.writeText(`${label}\n${url}`);
-    setCopied(article.id);
+  // Normalized once per law, not per keystroke.
+  const normalizedTexts = useMemo(() => articles.map((a) => normalizeArabic(a.text)), [articles]);
+  const filtered = useMemo(() => {
+    const q = normalizeArabic(query.trim());
+    if (!q) return articles;
+    // by article number prefix or content (أحكام finds احكام, ١٢ finds 12)
+    return articles.filter((a, i) => a.number.startsWith(q) || normalizedTexts[i].includes(q));
+  }, [articles, normalizedTexts, query]);
+
+  const flash = (id: number) => {
+    setCopied(id);
     setTimeout(() => setCopied(null), 1600);
+  };
+
+  const copyCitation = async (article: Article) => {
+    const label = isArabic ? `«${lawTitle}» — المادة ${article.number}` : `«${lawTitle}» — Article ${article.number}`;
+    const url = `${window.location.origin}${window.location.pathname}#article-${encodeURIComponent(article.number)}`;
+    await navigator.clipboard.writeText(`${label}\n${url}`);
+    flash(article.id);
   };
 
   const shareLaw = async () => {
-    await navigator.clipboard.writeText(window.location.href);
-    setCopied(-1);
-    setTimeout(() => setCopied(null), 1600);
+    await navigator.clipboard.writeText(window.location.href.split("#")[0]);
+    flash(-1);
   };
 
-  const articleLabel = (number: string) =>
-    isArabic ? `المادة ${number}` : `Article ${number}`;
+  const articleLabel = (number: string) => (isArabic ? `المادة ${number}` : `Article ${number}`);
 
   return (
     <div>
       {/* Toolbar */}
-      <div className="sticky top-16 z-20 -mx-4 mb-6 flex flex-wrap items-center gap-2 border-b border-zellige-100 bg-sand-50/95 px-4 py-3 backdrop-blur dark:border-zellige-800 dark:bg-[#0b1310]/95">
-        <div className="relative flex-1 min-w-52">
-          <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zellige-400" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t("jumpPlaceholder")}
-            className="h-9 ps-9 text-sm"
-          />
-        </div>
-        <div className="flex items-center gap-1 rounded-lg border border-zellige-200 p-0.5 dark:border-zellige-700">
-          <button
-            onClick={() => setFont(-1)}
-            aria-label="smaller font"
-            className="flex h-7 w-7 items-center justify-center rounded-md text-zellige-600 hover:bg-zellige-100 dark:text-zellige-300 dark:hover:bg-zellige-800"
-          >
-            <Minus className="h-3.5 w-3.5" />
-          </button>
-          <span className="w-8 text-center text-xs font-bold text-zellige-500 dark:text-zellige-400">
-            A
-          </span>
-          <button
-            onClick={() => setFont(1)}
-            aria-label="larger font"
-            className="flex h-7 w-7 items-center justify-center rounded-md text-zellige-600 hover:bg-zellige-100 dark:text-zellige-300 dark:hover:bg-zellige-800"
-          >
-            <Plus className="h-3.5 w-3.5" />
-          </button>
-        </div>
-        <button
-          onClick={shareLaw}
-          className="flex h-9 items-center gap-1.5 rounded-lg border border-zellige-200 px-3 text-xs font-medium text-zellige-700 hover:bg-zellige-50 dark:border-zellige-700 dark:text-zellige-200 dark:hover:bg-zellige-800"
+      <div className="sticky top-16 z-20 -mx-4 mb-6 flex flex-wrap items-center gap-2 border-b border-separator bg-background/90 px-4 py-3 backdrop-blur-md">
+        <SearchField aria-label={t("jumpPlaceholder")} value={query} onChange={setQuery} className="min-w-52 flex-1">
+          <SearchField.Group className="h-10">
+            <SearchField.SearchIcon />
+            <SearchField.Input placeholder={t("jumpPlaceholder")} />
+            <SearchField.ClearButton />
+          </SearchField.Group>
+        </SearchField>
+
+        <ToggleButtonGroup
+          aria-label={t("fontSize")}
+          size="sm"
+          selectionMode="single"
+          disallowEmptySelection
+          selectedKeys={[fontSize]}
+          onSelectionChange={(keys) => {
+            const next = [...keys][0] as FontSize | undefined;
+            if (next) chooseSize(next);
+          }}
         >
-          {copied === -1 ? <Check className="h-3.5 w-3.5 text-zellige-500" /> : <Link2 className="h-3.5 w-3.5" />}
+          {SIZES.map((size, i) => (
+            <ToggleButton key={size} id={size} aria-label={`${t("fontSize")} ${i + 1}`}>
+              {i > 0 && <ToggleButtonGroup.Separator />}
+              <span style={{ fontSize: `${0.7 + i * 0.12}rem` }} className="font-semibold">
+                A
+              </span>
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
+
+        <Button size="sm" variant="secondary" onPress={() => void shareLaw()}>
+          {copied === -1 ? <Check className="size-3.5" aria-hidden /> : <Link2 className="size-3.5" aria-hidden />}
           {copied === -1 ? t("copied") : t("share")}
-        </button>
-        <span className="text-xs text-zellige-400">
+        </Button>
+
+        <span className="text-xs tabular-nums text-muted" aria-live="polite">
           {filtered.length}/{articles.length}
         </span>
       </div>
@@ -120,40 +114,39 @@ export function ReaderClient({
       {/* Articles */}
       <div className="reader-body flex flex-col gap-3" data-size={fontSize}>
         {filtered.length === 0 && (
-          <p className="rounded-xl border border-dashed border-zellige-200 bg-white p-8 text-center text-zellige-500 dark:border-zellige-700 dark:bg-[#12201a]">
-            {t("noMatch")}
-          </p>
+          <p className="rounded-2xl border border-dashed border-border p-10 text-center text-muted">{t("noMatch")}</p>
         )}
         {filtered.map((article) => (
           <article
             key={article.id}
             id={`article-${encodeURIComponent(article.number)}`}
-            className="article-target article-card scroll-mt-32 rounded-xl border border-zellige-100 bg-white p-5 shadow-sm transition-shadow hover:shadow dark:border-zellige-800 dark:bg-[#12201a]"
+            className="article-card scroll-mt-36 rounded-[var(--radius)] border border-separator bg-surface p-5"
           >
             <div className="flex items-center justify-between gap-3">
-              <span className="inline-flex items-center rounded-lg bg-zellige-700 px-2.5 py-1 text-sm font-bold text-white dark:bg-zellige-600">
+              <Chip color="accent" variant="primary" className="font-bold">
                 {articleLabel(article.number)}
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-zellige-400 dark:text-zellige-500">
+              </Chip>
+              <div className="flex items-center gap-1">
+                <span className="text-xs tabular-nums text-muted">
                   {isArabic ? "ص" : "p."}
                   {article.page_start}
                   {article.page_end !== article.page_start ? `–${article.page_end}` : ""}
                 </span>
-                <button
-                  onClick={() => void copyCitation(article)}
-                  title={t("copyCitation")}
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-zellige-400 transition-colors hover:bg-zellige-100 hover:text-zellige-700 dark:hover:bg-zellige-800 dark:hover:text-zellige-200"
-                >
-                  {copied === article.id ? (
-                    <Check className="h-3.5 w-3.5 text-zellige-500" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5" />
-                  )}
-                </button>
+                <Tooltip delay={400}>
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="ghost"
+                    aria-label={t("copyCitation")}
+                    onPress={() => void copyCitation(article)}
+                  >
+                    {copied === article.id ? <Check className="size-3.5" aria-hidden /> : <Copy className="size-3.5" aria-hidden />}
+                  </Button>
+                  <Tooltip.Content>{copied === article.id ? t("copied") : t("copyCitation")}</Tooltip.Content>
+                </Tooltip>
               </div>
             </div>
-            <p className="mt-3 leading-8 text-zellige-900 dark:text-zellige-100" dir={isArabic ? "rtl" : "ltr"}>
+            <p className="mt-3 whitespace-pre-line leading-[2]" dir={isArabic ? "rtl" : "ltr"} lang={isArabic ? "ar" : "fr"}>
               {article.text}
             </p>
           </article>

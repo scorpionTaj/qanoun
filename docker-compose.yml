@@ -39,6 +39,7 @@ services:
       QANOUN_NVIDIA_MODEL: ${QANOUN_NVIDIA_MODEL:-}
       QANOUN_EMBED_MODEL: ${QANOUN_EMBED_MODEL:-BAAI/bge-m3}
       QANOUN_DEVICE: ${QANOUN_DEVICE:-cpu}
+      HF_TOKEN: ${HF_TOKEN:-}
     ports:
       - "8000:8000"
     depends_on:

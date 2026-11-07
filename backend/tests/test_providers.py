@@ -145,3 +145,65 @@ def test_gemini_requests_low_reasoning_effort():
     gemini = router.get("gemini")
     assert router._client(gemini, "m").extra == {"reasoning_effort": "low"}
     assert router._client(router.get("local"), "").extra == {}
+
+
+NVIDIA_LIVE = [  # excerpt of the list an actual account returned (2026-11)
+    "deepseek-ai/deepseek-coder-6.7b-instruct", "ibm/granite-34b-code-instruct",
+    "deepseek-ai/deepseek-v4.1-flash", "google/codegemma-7b", "google/gemma-3-12b-it",
+    "google/gemma-4-31b-it", "meta/llama-3.2-90b-vision-instruct", "meta/llama-guard-4-12b",
+    "mistralai/mistral-large-2-instruct", "nvidia/llama-3.1-nemotron-70b-instruct",
+    "nvidia/nv-embedqa-mistral-7b-v2", "openai/gpt-oss-20b",
+]
+
+
+def test_nvidia_prefers_fast_multilingual_chat_models_not_code_models():
+    from qanoun_api.rag.providers import ranked_models
+
+    assert ranked_models("nvidia", NVIDIA_LIVE) == [
+        "google/gemma-4-31b-it", "google/gemma-3-12b-it",
+        "deepseek-ai/deepseek-v4.1-flash", "mistralai/mistral-large-2-instruct",
+    ]
+
+
+def test_gemini_interleaves_flash_and_lite_across_generations():
+    from qanoun_api.rag.providers import ranked_models
+
+    ids = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.5-flash-lite",
+           "gemini-3.1-flash-lite-preview", "gemini-3.8-flash-tts", "gemini-2.5-flash"]
+    assert ranked_models("gemini", ids) == [
+        "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.7-flash", "gemini-2.5-flash",
+    ]
+
+
+def test_connection_test_walks_candidates_and_remembers_failures():
+    router = LLMRouter(load_providers({"QANOUN_NVIDIA_KEY": "k"}))
+    router.models = lambda pid: ["deepseek-ai/deepseek-v4.1-flash", "google/gemma-4-31b-it"]
+    clients = {
+        "deepseek-ai/deepseek-v4.1-flash": FakeClient(error=LLMError("404 Function not found", kind="model")),
+        "google/gemma-4-31b-it": FakeClient(tokens=["OK"]),
+    }
+    router._client = lambda provider, model: clients[model]
+    result = router.test("nvidia")
+    assert result["ok"] and result["model"] == "google/gemma-4-31b-it"
+    assert result["failed"][0]["code"] == "model"
+    # the 404 model now goes last for chat too
+    assert next(m for _, m in router._chain("nvidia", "")) == "google/gemma-4-31b-it"
+
+
+def test_router_rebuilds_when_env_file_changes(tmp_path, monkeypatch):
+    import os
+
+    from qanoun_api.rag import providers
+
+    env = tmp_path / ".env"
+    env.write_text("QANOUN_LLM_URL=http://localhost:1234/v1\n")
+    monkeypatch.setattr(providers, "ENV_FILE", env)
+    providers.set_router(None)
+    assert not providers.get_router().get("local").api_key
+    assert [p.id for p in providers.get_router().configured()] == ["local"]
+
+    env.write_text('QANOUN_GEMINI_KEY="new-key"  \n# comment\nexport QANOUN_LLM_PROVIDER=gemini\n')
+    os.utime(env, (env.stat().st_atime, env.stat().st_mtime + 5))
+    router = providers.get_router()
+    assert router.default.id == "gemini" and router.get("gemini").api_key == "new-key"
+    providers.set_router(None)

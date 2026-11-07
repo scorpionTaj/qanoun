@@ -12,7 +12,9 @@
     },
     "footer": "مشروع مفتوح المصدر يجمع هندسة البيانات والذكاء الاصطناعي في خدمة القانون المغربي.",
     "language": "اللغة",
-    "skipToContent": "الانتقال إلى المحتوى"
+    "skipToContent": "الانتقال إلى المحتوى",
+    "lightMode": "الوضع الفاتح",
+    "darkMode": "الوضع الداكن"
   },
   "home": {
     "heroTitle": "القوانين المغربية، بين يديك",
@@ -53,7 +55,8 @@
     "askAbout": "اسأل عن هذا القانون",
     "resultsFor": "نتائج البحث عن",
     "searchInLaws": "نتائج من نص القوانين",
-    "relevance": "الملاءمة"
+    "relevance": "الملاءمة",
+    "domainFilter": "تصفية حسب المجال"
   },
   "chat": {
     "title": "اسأل القانون",
@@ -110,7 +113,11 @@
     "openInReader": "فتح في القانون",
     "copyArticle": "نسخ",
     "copied": "تم النسخ",
-    "loadingArticle": "جاري تحميل المادة…"
+    "loadingArticle": "جاري تحميل المادة…",
+    "stageRewriting": "جاري فهم سؤالك…",
+    "stageSearching": "جاري البحث في القوانين…",
+    "stageAnswering": "جاري كتابة الجواب…",
+    "answeredIn": "{seconds} ث"
   },
   "insights": {
     "title": "لوحة التحليل",
@@ -125,7 +132,10 @@
     "laws": "نصوص",
     "articles": "مواد",
     "tokens": "مقطع",
-    "keywordDomainHint": "اختر مجالاً لتصفية الكلمات"
+    "keywordDomainHint": "اختر مجالاً لتصفية الكلمات",
+    "chars": "حرف",
+    "allDomains": "كل المجالات",
+    "occurrences": "عدد المرات"
   },
   "common": {
     "loading": "جاري التحميل…",
@@ -138,7 +148,8 @@
     "copyCitation": "نسخ الإحالة",
     "share": "نسخ الرابط",
     "copied": "تم النسخ",
-    "noMatch": "لا توجد مواد مطابقة."
+    "noMatch": "لا توجد مواد مطابقة.",
+    "fontSize": "حجم النص"
   },
   "settings": {
     "title": "إعدادات الذكاء الاصطناعي",
@@ -162,6 +173,7 @@
     "cancel": "إلغاء",
     "close": "إغلاق",
     "loadError": "تعذر الوصول إلى الـ API. شغّله بالأمر make api.",
-    "modelsError": "تعذر تحميل قائمة النماذج."
+    "modelsError": "تعذر تحميل قائمة النماذج.",
+    "testSkipped": "تم تجاوز (مشغول أو انتهت الحصة أو غير متاح): {models}"
   }
 }

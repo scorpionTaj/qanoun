@@ -12,7 +12,9 @@
     },
     "footer": "An open-source project combining data engineering, AI and Moroccan law.",
     "language": "Language",
-    "skipToContent": "Skip to content"
+    "skipToContent": "Skip to content",
+    "lightMode": "Light mode",
+    "darkMode": "Dark mode"
   },
   "home": {
     "heroTitle": "Moroccan law, at your fingertips",
@@ -53,7 +55,8 @@
     "askAbout": "Ask about this law",
     "resultsFor": "Results for",
     "searchInLaws": "Results from legal texts",
-    "relevance": "Relevance"
+    "relevance": "Relevance",
+    "domainFilter": "Filter by domain"
   },
   "chat": {
     "title": "Ask the law",
@@ -110,7 +113,11 @@
     "openInReader": "Open in the law",
     "copyArticle": "Copy",
     "copied": "Copied",
-    "loadingArticle": "Loading the article…"
+    "loadingArticle": "Loading the article…",
+    "stageRewriting": "Understanding your question…",
+    "stageSearching": "Searching the laws…",
+    "stageAnswering": "Writing the answer…",
+    "answeredIn": "{seconds} s"
   },
   "insights": {
     "title": "Insights",
@@ -125,7 +132,10 @@
     "laws": "laws",
     "articles": "articles",
     "tokens": "passages",
-    "keywordDomainHint": "Filter keywords by domain"
+    "keywordDomainHint": "Filter keywords by domain",
+    "chars": "chars",
+    "allDomains": "All domains",
+    "occurrences": "Occurrences"
   },
   "common": {
     "loading": "Loading…",
@@ -138,7 +148,8 @@
     "copyCitation": "Copy citation",
     "share": "Copy link",
     "copied": "Copied",
-    "noMatch": "No matching articles."
+    "noMatch": "No matching articles.",
+    "fontSize": "Text size"
   },
   "settings": {
     "title": "AI settings",
@@ -162,6 +173,7 @@
     "cancel": "Cancel",
     "close": "Close",
     "loadError": "Couldn't reach the API. Start it with `make api`.",
-    "modelsError": "Couldn't load the model list."
+    "modelsError": "Couldn't load the model list.",
+    "testSkipped": "Skipped (busy, out of quota or unavailable): {models}"
   }
 }

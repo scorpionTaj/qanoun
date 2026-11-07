@@ -8,7 +8,7 @@ import { routing } from "@/i18n/routing";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { FooterGate } from "@/components/layout/footer-gate";
-import { themeInitScript } from "@/components/layout/theme-toggle";
+import { themeInitScript } from "@/lib/theme";
 import { ThemeSync } from "@/components/layout/theme-sync";
 import "../globals.css";
 
@@ -58,19 +58,20 @@ export default async function LocaleLayout({
       lang={locale}
       dir={locale === "ar" ? "rtl" : "ltr"}
       className={theme}
+      data-theme={theme || "light"}
       suppressHydrationWarning
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body
-        className={`${naskh.variable} ${inter.variable} min-h-screen font-latin [dir=rtl]:font-arabic`}
+        className={`${naskh.variable} ${inter.variable} min-h-screen`}
       >
         <NextIntlClientProvider>
           <ThemeSync />
           <a
             href="#main"
-            className="sr-only focus:not-sr-only focus:fixed focus:start-3 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-zellige-700 focus:px-3 focus:py-2 focus:text-white"
+            className="sr-only focus:not-sr-only focus:fixed focus:start-3 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-accent focus:px-3 focus:py-2 focus:text-accent-foreground"
           >
             {t("skipToContent")}
           </a>

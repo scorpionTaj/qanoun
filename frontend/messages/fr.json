@@ -12,7 +12,9 @@
     },
     "footer": "Projet open source mêlant data engineering, IA et droit marocain.",
     "language": "Langue",
-    "skipToContent": "Aller au contenu"
+    "skipToContent": "Aller au contenu",
+    "lightMode": "Mode clair",
+    "darkMode": "Mode sombre"
   },
   "home": {
     "heroTitle": "Les lois marocaines, à portée de main",
@@ -53,7 +55,8 @@
     "askAbout": "Demander sur cette loi",
     "resultsFor": "Résultats pour",
     "searchInLaws": "Résultats dans les textes",
-    "relevance": "Pertinence"
+    "relevance": "Pertinence",
+    "domainFilter": "Filtrer par domaine"
   },
   "chat": {
     "title": "Demander à la loi",
@@ -110,7 +113,11 @@
     "openInReader": "Ouvrir dans la loi",
     "copyArticle": "Copier",
     "copied": "Copié",
-    "loadingArticle": "Chargement de l'article…"
+    "loadingArticle": "Chargement de l'article…",
+    "stageRewriting": "Compréhension de la question…",
+    "stageSearching": "Recherche dans les lois…",
+    "stageAnswering": "Rédaction de la réponse…",
+    "answeredIn": "{seconds} s"
   },
   "insights": {
     "title": "Tableau d'analyse",
@@ -125,7 +132,10 @@
     "laws": "textes",
     "articles": "articles",
     "tokens": "passages",
-    "keywordDomainHint": "Filtrez par domaine"
+    "keywordDomainHint": "Filtrez par domaine",
+    "chars": "car.",
+    "allDomains": "Tous les domaines",
+    "occurrences": "Occurrences"
   },
   "common": {
     "loading": "Chargement…",
@@ -138,7 +148,8 @@
     "copyCitation": "Copier la référence",
     "share": "Copier le lien",
     "copied": "Copié",
-    "noMatch": "Aucun article correspondant."
+    "noMatch": "Aucun article correspondant.",
+    "fontSize": "Taille du texte"
   },
   "settings": {
     "title": "Paramètres IA",
@@ -162,6 +173,7 @@
     "cancel": "Annuler",
     "close": "Fermer",
     "loadError": "API injoignable. Lancez-la avec `make api`.",
-    "modelsError": "Impossible de charger la liste des modèles."
+    "modelsError": "Impossible de charger la liste des modèles.",
+    "testSkipped": "Ignorés (surchargés, quota épuisé ou indisponibles) : {models}"
   }
 }

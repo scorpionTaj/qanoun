@@ -1,11 +1,12 @@
 """Streaming grounded chat over the legal corpus (Server-Sent Events).
 
 Event flow per POST /api/chat:
-    meta     {variety, rewritten, disclaimer}   — always first
+    status   {stage: rewriting|searching|answering} — progress, several times
+    meta     {variety, rewritten, disclaimer}   — once the rewrite is known
     sources  {sources: [...]}                   — the k retrieved passages (citation targets)
     model    {provider, provider_label, model}  — which provider answered (before 1st token)
     token    {t: "…"}                           — streamed answer tokens
-    done     {abstained, cited: [n...], text}   — final cleaned text + parse_citations
+    done     {abstained, cited: [n...], text, timings} — final text, citations, ms per step
     error    {code, message}                    — code: unreachable | auth | rate_limit |
                                                   model | empty | interrupted | retrieval
 
@@ -14,7 +15,10 @@ not contain the answer the model replies NO_ANSWER and the UI shows the abstenti
 """
 
 import json
+import logging
+import time
 from collections.abc import Iterator
+from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
@@ -29,6 +33,7 @@ from qanoun_api.rag.providers import ProviderUnavailable, get_router
 from qanoun_api.rag.rewrite import QueryRewriter, detect_variety
 
 router = APIRouter(prefix="/api", tags=["chat"])
+log = logging.getLogger("qanoun.chat")
 
 # Room for reasoning models (Gemini 2.5+, DeepSeek) whose hidden thinking counts against
 # max_tokens; the prompt still caps the visible answer at 4 sentences.
@@ -80,27 +85,48 @@ def _chat_stream(req: ChatRequest) -> Iterator[str]:
         except ProviderUnavailable as exc:
             yield _sse("error", {"code": exc.kind, "message": str(exc)})
             return
-    try:
-        rewritten = (_rewriter or get_rewriter()).rewrite(question, llm=llm)
-    except Exception:  # noqa: BLE001 — rewriting is an optimization; never block answering
-        rewritten = question
-    yield _sse("meta", {"variety": variety, "rewritten": rewritten, "disclaimer": DISCLAIMER[variety]})
+    timings: dict[str, int] = {}
+    clock = time.perf_counter()
 
-    try:
-        result = retrieval.search(question, k=req.k, search_query=rewritten)
-        if rewritten != question:
-            # Keep the original question's results too: a bad rewrite must not lose hits.
-            original = retrieval.search(question, k=req.k)
-            result = answer_mod.merge(original, result, req.k)
-    except Exception as exc:  # noqa: BLE001 — surfaced to the client as an SSE error event
-        yield _sse("error", {"code": "retrieval", "message": f"retrieval failed: {exc}"})
-        return
+    def lap(name: str) -> None:
+        nonlocal clock
+        now = time.perf_counter()
+        timings[name] = round((now - clock) * 1000)
+        clock = now
+
+    # The rewrite (an LLM call, Darija/Arabizi only) and the search for the original question
+    # don't depend on each other: run them at the same time.
+    needs_rewrite = variety in ("darija", "arabizi")
+    yield _sse("status", {"stage": "rewriting" if needs_rewrite else "searching"})
+    rewriter = _rewriter or get_rewriter()
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        original_future = pool.submit(retrieval.search, question, k=req.k)
+        rewrite_future = pool.submit(rewriter.rewrite, question, llm=llm)
+        try:
+            rewritten = rewrite_future.result()
+        except Exception:  # noqa: BLE001 — rewriting is an optimization; never block answering
+            rewritten = question
+        lap("rewrite")
+        yield _sse("meta", {"variety": variety, "rewritten": rewritten, "disclaimer": DISCLAIMER[variety]})
+        if needs_rewrite:
+            yield _sse("status", {"stage": "searching"})
+        try:
+            result = original_future.result()
+            if rewritten != question:
+                # Merge both runs: a bad rewrite can only add hits, never lose them.
+                rewritten_result = retrieval.search(question, k=req.k, search_query=rewritten)
+                result = answer_mod.merge(result, rewritten_result, req.k)
+        except Exception as exc:  # noqa: BLE001 — surfaced to the client as an SSE error event
+            yield _sse("error", {"code": "retrieval", "message": f"retrieval failed: {exc}"})
+            return
+    lap("search")
 
     yield _sse("sources", {"sources": [hit.as_dict() for hit in result.hits]})
     if not result.hits:
         yield _sse("done", {"abstained": True, "cited": [], "text": ABSTENTION[variety]})
         return
 
+    yield _sse("status", {"stage": "answering"})
     messages = build_messages(question, result.hits, variety)
     answered_by: dict = {}
 
@@ -126,17 +152,20 @@ def _chat_stream(req: ChatRequest) -> Iterator[str]:
             code = "interrupted"
         yield _sse("error", {"code": code, "message": str(exc)[:600]})
         return
+    lap("answer")
+    log.info("chat timings ms %s via %s", timings, answered_by.get("model", "?"))
     text = strip_reasoning("".join(chunks)).strip()
     if not text:
         yield _sse("error", {"code": "empty", "message": "the model returned an empty answer"})
         return
     if NO_ANSWER in text:
-        yield _sse("done", {"abstained": True, "cited": [], "text": ABSTENTION[variety], **answered_by})
+        yield _sse("done", {"abstained": True, "cited": [], "text": ABSTENTION[variety],
+                            "timings": timings, **answered_by})
         return
     yield _sse(
         "done",
         {"abstained": False, "cited": parse_citations(text, len(result.hits)), "text": text,
-         **answered_by},
+         "timings": timings, **answered_by},
     )
 
 

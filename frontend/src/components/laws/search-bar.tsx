@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Button, SearchField } from "@heroui/react";
 
 export function SearchBar({
   locale,
@@ -22,33 +20,37 @@ export function SearchBar({
   const router = useRouter();
   const [query, setQuery] = useState(initialValue);
 
-  const go = () => {
-    const q = query.trim();
+  const go = (value: string) => {
     const qs = new URLSearchParams();
-    if (q) qs.set("q", q);
+    if (value.trim()) qs.set("q", value.trim());
     if (domain) qs.set("domain", domain);
-    const suffix = qs.size ? `?${qs}` : "";
-    router.push(`/${locale}/laws${suffix}`);
+    router.push(`/${locale}/laws${qs.size ? `?${qs}` : ""}`);
   };
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        go();
+        go(query);
       }}
       className="flex gap-2"
+      role="search"
     >
-      <div className="relative flex-1">
-        <Search className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zellige-400" />
-        <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={placeholder}
-          className="ps-10"
-        />
-      </div>
-      <Button type="submit" className="px-6">
+      <SearchField
+        aria-label={placeholder}
+        className="flex-1"
+        value={query}
+        onChange={setQuery}
+        onClear={() => go("")}
+        name="q"
+      >
+        <SearchField.Group className="h-11">
+          <SearchField.SearchIcon />
+          <SearchField.Input placeholder={placeholder} />
+          <SearchField.ClearButton />
+        </SearchField.Group>
+      </SearchField>
+      <Button type="submit" className="h-11 px-6">
         {buttonLabel}
       </Button>
     </form>
