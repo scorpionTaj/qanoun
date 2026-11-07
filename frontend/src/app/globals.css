@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-sand-50 text-zellige-950 antialiased;
+}
+
+[dir="rtl"] body {
+  font-family: var(--font-naskh), serif;
+}
+
+/* Subtle zellige-inspired backdrop for hero sections */
+.zellige-pattern {
+  background-image:
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.06) 2px, transparent 2.5px),
+    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.06) 2px, transparent 2.5px);
+  background-size: 28px 28px;
+}
+
+.prose-legal p {
+  @apply leading-8;
+}
+
+/* Thin, unobtrusive scrollbars in reader panes */
+.thin-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-zellige-200;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  animation: fade-up 0.25s ease-out both;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+.animate-blink {
+  animation: blink 1.1s ease-in-out infinite;
+}
