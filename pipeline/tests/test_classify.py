@@ -24,3 +24,19 @@ def test_votes_breakdown_used_in_notebooks():
 def test_keywords_go_through_normalizer():
     # "المدرسة" normalizes to "مدرسه": the keyword list must match that form.
     assert domain_votes("المدرسة الثانوية والتلميذ")["education"] >= 1
+
+
+def test_french_text_suggests_family():
+    text = (
+        "Le mariage est conclu devant les parties. En cas de divorce, la garde de l enfant "
+        "et la pension alimentaire sont fixées par le tribunal."
+    )
+    assert suggest_domain(text) == "family"
+
+
+def test_french_text_suggests_labour():
+    text = (
+        "Le contrat de travail lie le salarié et l employeur. Le licenciement et le salaire "
+        "sont régis par le code."
+    )
+    assert suggest_domain(text) == "labour"

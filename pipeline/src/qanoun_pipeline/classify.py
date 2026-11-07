@@ -19,35 +19,53 @@ KEYWORDS: dict[str, tuple[str, ...]] = {
     "family": (
         "زواج", "طلاق", "اسره", "صداق", "حضانه", "نفقه", "خطبه", "ارث", "وصيه", "زوج", "زوجه",
         "عهد اطفال", "كرشه",
+        # French (accented + unaccented forms: OCR drops accents)
+        "mariage", "divorce", "fiancailles", "fiançailles", "filiation", "garde de l enfant",
+        "pension alimentaire", "succession", "heritier", "héritier", "legataire",
     ),
     "labour": (
         "اجير", "مشغل", "عقد شغل", "اجر", "عطله", "اشغاق", "مقاوله", "نقابه", "شغل", "خصم",
         "شبه مستقل",
+        "salarie", "salarié", "employeur", "licenciement", "conge", "congé",
+        "contrat de travail", "salaire", "greve", "grève", "delegue des salaries",
+        "inspection du travail", "medecin du travail",
     ),
     "civil": (
         "التزام", "عقد", "بيع", "ايجار", "ضرر", "تعويض", "مسؤوليه", "دعني", "رهن", "فسخ",
+        "obligation", "contrat", "vente", "dommage", "reparation", "réparation",
+        "responsabilite", "responsabilité", "creance", "créance", "debiteur", "débiteur",
+        "solidarite", "solidarité",
     ),
     "housing": (
         "كراء", "مكتري", "مكري", "عينه", "كراء عقار", "خصم الايدي",
+        "bail", "baux", "bailleur", "locataire", "loyer", "louage",
     ),
     "education": (
         "تعليم", "مدرسه", "ثانويه", "جامعه", "تلميذ", "استاذ", "مجلس تدريس", "امتحان", "منهاج",
         "مؤسسه تعليميه", "انتداب",
+        "ecole", "école", "enseignement", "etablissement scolaire", "eleve", "élève",
+        "enseignant", "lycee", "lycée", "universite", "université", "academie", "académie",
     ),
     "penal": (
         "جريمه", "عقابه", "سجن", "حبس", "نيابه عامه", "قاضي تحقيق", "شكوى", "متحدث",
+        "infraction", "emprisonnement", "amende", "prevenu", "prévenu", "ministere public",
+        "ministère public",
     ),
     "nationality": (
         "جنسيه", "تطبيع", "مواطنه", "تجنيس",
+        "nationalite", "nationalité", "naturalisation",
     ),
     "social": (
         "ضمان اجتماعي", "تقاعد", "معاش", "حماه اجتماعيه", "تعويضات عائله", "بطاله",
+        "securite sociale", "sécurité sociale", "prestation sociale", "retraite", "allocation",
     ),
     "commercial": (
         "شركه", "تاجر", "افلاس", "محل تجاري", "سماره", "سجل تجاري", "شرطه",
+        "fonds de commerce", "commerce", "bail commercial", "registre du commerce",
     ),
     "justice": (
         "محكمه", "محكمه النقض", "دعوي", "مرافعات", "قاضي", "رئيس المحكمه", "مجلس القضاء",
+        "tribunal", "cour", "juge", "procedure", "procédure", "audience", "greffe",
     ),
 }
 # fmt: on
