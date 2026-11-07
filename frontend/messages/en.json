@@ -122,7 +122,17 @@
     "scopeAll": "All laws",
     "scopeDomains": "Domains",
     "scopeLaws": "Laws",
-    "scopeIn": "In: {name}"
+    "scopeIn": "In: {name}",
+    "aiLabel": "AI",
+    "aiAuto": "Automatic",
+    "aiAutoHint": "Best available, with fallback",
+    "aiLocal": "On this computer",
+    "aiCloud": "Cloud · key in .env",
+    "scopeSearch": "Search a law or domain…",
+    "scopeNone": "No law or domain matches.",
+    "scopeClear": "Search all laws",
+    "articlesShort": "art.",
+    "scopeShowAll": "Show laws and domains"
   },
   "insights": {
     "title": "Insights",

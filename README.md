@@ -47,8 +47,9 @@ Open http://localhost:3000 → you land on `/ar` (RTL). Switch to FR/EN in the h
 
 - **Ask**: «ما هي شروط الزواج؟», «شنو هي حالات الفصل المشروع؟», «Quels sont les cas de
   divorce ?» — answers cite `مدونة الأسرة — المادة 12` and deep-link into the reader.
-- **Scope**: «Search in» under the question box limits answers to one domain or one law
-  (both editions); «Ask about this law» on any law page preselects it.
+- **Scope & AI**: under the question box, «Search in» limits answers to one domain or one law
+  (type to filter), «AI» picks the provider; «Ask about this law» preselects the law.
+- **Follow up**: «and for women?», «until what age?» — the conversation is taken into account.
 - **Browse**: filter by domain (family, labour, housing…), read any law article-by-article.
 - **Insights**: corpus statistics and keyword frequencies per domain.
 
@@ -136,18 +137,26 @@ docker compose up --build              # full stack in containers (api :8000, we
       picked from each provider's live list, automatic fallback across models and providers,
       busy / out-of-quota / unavailable models remembered and skipped
 - [x] ~1.5 s per answer end to end with Gemini flash-lite (progress stages + timings shown)
+- [x] Follow-up questions: recent turns are sent with each question; a follow-up («and for
+      women?») is rewritten into a standalone question for search, and the answer prompt sees
+      the conversation
 
 **Web app** (Next.js 16 · React 19 · HeroUI v3 · Tailwind 4 · TypeScript 7)
 - [x] Arabic (RTL) / French / English, light and dark Majorelle theme
 - [x] Ask workspace: saved conversations (in the browser), clickable citations opening the
-      full article beside the answer, Stop, «Search in» scope, mobile drawers
+      full article beside the answer, Stop, mobile drawers
+- [x] Composer controls: «Search in» (searchable list of 13 domains and 24 laws with article
+      counts, Arabic-normalized filtering, one-click reset) and «AI» (Automatic or any
+      provider configured in `.env`; unconfigured ones show the key they need)
 - [x] Laws: one card per law with its editions, sticky filters; reader with Arabic-normalized
       in-law search, text size, deep links to `#article-N`, copy citation
 - [x] Insights: corpus statistics and keyword frequencies per domain
 - [x] Phone layout with bottom tab bar; skip link, labelled controls, reduced-motion support
 
 **Quality**
-- [x] 62 backend + 47 pipeline tests (offline, models faked), ruff clean, strict typecheck
+- [x] 65 backend + 47 pipeline tests (offline, models faked), ruff clean, strict typecheck
+- [x] CI on every push / pull request: ruff, both test suites, typecheck, production build
+      (`.github/workflows/ci.yml`)
 - [x] Eval harness: 29 questions (MSA, Darija, Arabizi, French, abstention probes) —
       retrieval hit@k / MRR and LLM-as-judge
 
@@ -159,7 +168,10 @@ docker compose up --build              # full stack in containers (api :8000, we
   unless the question is scoped to a domain or law.
 - **Single-user by design**: no accounts, no rate limiting, conversations live in one
   browser. Do not expose the API publicly as is.
-- **Each question stands alone**: follow-ups don't see the previous turns yet.
+- **Retrieval misses some short exact articles**: «and for a pregnant woman?» is understood
+  correctly, but المادة 133 («تنتهي عدة الحامل بوضع حملها») ranks 20th. Tried and measured on
+  `data/eval`: OR-ing keywords (alone, length-normalized, or as a third fused channel) lowers
+  hit@10 from 0.923 to 0.846, so it was not shipped — this needs a reranker (below).
 - **Free cloud tiers** have daily per-model quotas; fallback absorbs them, heavy use needs a
   paid key or a local model.
 - A few old or OCR'd PDFs carry digit / text-direction artifacts in their preambles.
@@ -170,12 +182,13 @@ Next
 - [ ] Corpus: كفالة الأطفال المهملين (15.01), الحالة المدنية (37.10), التعليم الإجباري والخصوصي
       (04.00 / 06.00), مدونة التغطية الصحية (65.00), ميثاق الاستثمارات (03.22), مدونة الانتخابات,
       full 1913 التحفيظ العقاري dahir
-- [ ] Cross-encoder reranker between fusion and the LLM (the `Hit.rrf` hook)
-- [ ] Follow-up questions: pass recent turns to the rewriter and the answer prompt
+- [ ] Cross-encoder reranker (e.g. BGE-reranker-v2-m3) over the top ~30 fused candidates,
+      opt-in via `.env`; accept only if `make eval-retrieval` beats hit@10 0.923 / MRR 0.759
+- [ ] Article-level eval set (expected article numbers, not just laws) so ranking changes
+      like the one above are measured precisely
 - [ ] Scheduled `make eval` with a history of hit@k / MRR / judge scores
 
 Later
-- [ ] CI (tests, ruff, typecheck, build) on every push
 - [ ] Public deployment: authentication, rate limiting, production CORS, Docker image publish
 - [ ] Amendment history: which version of an article applies on a given date
 - [ ] Export an answer with its cited articles (PDF / print)

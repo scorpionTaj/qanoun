@@ -10,6 +10,7 @@ import { streamSse } from "@/lib/sse";
 import type { SearchHit } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ScopeSelect, type Scope } from "./scope-select";
+import { AiSourceSelect } from "./ai-source-select";
 
 const ERROR_CODES = [
   "unreachable", "auth", "rate_limit", "unavailable", "model", "empty", "interrupted", "retrieval", "network",
@@ -50,6 +51,10 @@ export function ChatPanel({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const startedRef = useRef(false);
 
+  // Latest messages for building the follow-up context inside ask().
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+
   // Report every change up; the workspace persists finished turns.
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
@@ -65,6 +70,7 @@ export function ChatPanel({
     async (question: string) => {
       const trimmed = question.trim();
       if (!trimmed || busy) return;
+      const history = recentTurns(messagesRef.current);
       setBusy(true);
       setInput("");
       setMessages((prev) => [
@@ -90,6 +96,7 @@ export function ChatPanel({
             model,
             domain: scope.domain,
             group: scope.group,
+            history,
           }),
           signal: controller.signal,
         });
@@ -223,9 +230,16 @@ export function ChatPanel({
         }}
         className="border-t border-separator bg-background/80 px-4 py-3 backdrop-blur-md"
       >
-        <div className="mx-auto mb-2 flex max-w-3xl items-center gap-2">
-          <span className="shrink-0 text-xs text-muted">{t("scopeLabel")}</span>
-          <ScopeSelect locale={locale} scope={scope} onChange={onScopeChange} />
+        {/* Where the answer comes from (laws) and who writes it (AI). */}
+        <div className="mx-auto mb-2 flex max-w-3xl flex-wrap items-center gap-x-3 gap-y-1.5">
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="shrink-0 text-xs text-muted">{t("scopeLabel")}</span>
+            <ScopeSelect locale={locale} scope={scope} onChange={onScopeChange} />
+          </span>
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="shrink-0 text-xs text-muted">{t("aiLabel")}</span>
+            <AiSourceSelect />
+          </span>
         </div>
         <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-[1.25rem] border border-border bg-surface p-1.5 shadow-sm focus-within:border-accent">
           <TextArea
@@ -261,6 +275,20 @@ export function ChatPanel({
       </form>
     </section>
   );
+}
+
+/** The last few finished exchanges, oldest first, for follow-up questions ("and for
+ * women?"). Errors and stopped answers are left out; long answers are trimmed. */
+function recentTurns(messages: Message[], maxTurns = 6): { role: "user" | "assistant"; text: string }[] {
+  const turns: { role: "user" | "assistant"; text: string }[] = [];
+  for (let i = 0; i + 1 < messages.length; i += 2) {
+    const [question, answer] = [messages[i], messages[i + 1]];
+    if (question.role !== "user" || answer.role !== "assistant") continue;
+    if (answer.error || answer.streaming || answer.stopped || !answer.text) continue;
+    turns.push({ role: "user", text: question.text.slice(0, 2000) });
+    turns.push({ role: "assistant", text: answer.text.slice(0, 2000) });
+  }
+  return turns.slice(-maxTurns);
 }
 
 function patchLast(messages: Message[], patch: Partial<Message> | ((m: Message) => Partial<Message>)): Message[] {

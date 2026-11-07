@@ -132,6 +132,31 @@ def build_rewrite_messages(question: str) -> list[dict]:
 REWRITE_TOKENS = 1500
 
 
+_CONDENSE = (
+    "Rewrite the user's last message as ONE standalone question about Moroccan law that can "
+    "be understood without the conversation: resolve pronouns and ellipsis (\"and for "
+    "women?\", \"what about after 5 years?\") from the earlier turns. Keep the user's "
+    "language and wording otherwise. If it is already standalone, return it unchanged. "
+    "Reply with the question only."
+)
+
+
+def build_condense_messages(history: list[dict], question: str) -> list[dict]:
+    from qanoun_api.rag.answer import format_history
+
+    user = f"Conversation:\n{format_history(history)}\n\nLast message: {question}"
+    return [{"role": "system", "content": _CONDENSE}, {"role": "user", "content": user}]
+
+
+def condense(question: str, history: list[dict] | None, llm) -> str:
+    """A follow-up made standalone for retrieval (no history = the question itself)."""
+    if not history:
+        return question
+    reply = llm.chat(build_condense_messages(history, question), max_tokens=REWRITE_TOKENS)
+    lines = [line.strip() for line in reply.strip().splitlines() if line.strip()]
+    return lines[0] if lines else question
+
+
 class QueryRewriter:
     def __init__(self, llm: ChatModel, cache_path: Path | None = None):
         self.llm = llm

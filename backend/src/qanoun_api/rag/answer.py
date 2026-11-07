@@ -60,14 +60,32 @@ def source_label(hit: Hit, variety: str = "msa") -> str:
     return f"{hit.law_title} — المادة {hit.article_number} (ص{hit.page})"
 
 
-def build_messages(question: str, sources: list[Hit], variety: str) -> list[dict]:
+def format_history(history: list[dict] | None) -> str:
+    """Previous turns as plain text for prompts ("User: … / Assistant: …")."""
+    lines = []
+    for turn in history or []:
+        who = "User" if turn["role"] == "user" else "Assistant"
+        lines.append(f"{who}: {turn['text'].strip()}")
+    return "\n".join(lines)
+
+
+def build_messages(
+    question: str, sources: list[Hit], variety: str, history: list[dict] | None = None
+) -> list[dict]:
     blocks = [
         f"[{i}] ({source_label(hit, variety)})\n{hit.text}" for i, hit in enumerate(sources, start=1)
     ]
+    # Earlier turns only give context ("and for women?"); facts still come from the sources.
+    context = (
+        "Earlier in this conversation (context only, not a source):\n"
+        + format_history(history) + "\n\n"
+        if history
+        else ""
+    )
     # The language rule is repeated after the question: models follow the last instruction best,
     # and otherwise drift into the (MSA) language of the sources.
     user = (
-        "Sources:\n\n" + "\n\n".join(blocks) + f"\n\nQuestion: {question}\n\n"
+        context + "Sources:\n\n" + "\n\n".join(blocks) + f"\n\nQuestion: {question}\n\n"
         f"{_LANGUAGE_RULE[variety]} Cite sources as [n]."
     )
     system = f"{_SYSTEM} {_LANGUAGE_RULE[variety]}"

@@ -122,7 +122,17 @@
     "scopeAll": "Toutes les lois",
     "scopeDomains": "Domaines",
     "scopeLaws": "Lois",
-    "scopeIn": "Dans : {name}"
+    "scopeIn": "Dans : {name}",
+    "aiLabel": "IA",
+    "aiAuto": "Automatique",
+    "aiAutoHint": "Le meilleur disponible, avec repli",
+    "aiLocal": "Sur cet ordinateur",
+    "aiCloud": "Cloud · clé dans .env",
+    "scopeSearch": "Chercher une loi ou un domaine…",
+    "scopeNone": "Aucune loi ni aucun domaine ne correspond.",
+    "scopeClear": "Chercher dans toutes les lois",
+    "articlesShort": "art.",
+    "scopeShowAll": "Afficher les lois et domaines"
   },
   "insights": {
     "title": "Tableau d'analyse",

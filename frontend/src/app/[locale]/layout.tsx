@@ -25,6 +25,15 @@ const inter = Inter({
   display: "swap",
 });
 
+// Only the configured locales exist: anything else in the first segment (e.g. a stray
+// /favicon.ico request, which the proxy skips because it has a dot) is a 404 instead of
+// rendering pages with locale "favicon.ico" (Intl.NumberFormat threw RangeError on that).
+export const dynamicParams = false;
+
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
 export async function generateMetadata({
   params,
 }: {

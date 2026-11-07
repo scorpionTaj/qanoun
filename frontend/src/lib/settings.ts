@@ -54,10 +54,20 @@ export function loadChoice(): LlmChoice {
   }
 }
 
+const CHANGE_EVENT = "qanoun-llm-choice";
+
 export function saveChoice(choice: LlmChoice) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(choice));
   } catch {}
+  // The composer's picker and the settings dialog show the same choice: keep them in sync.
+  window.dispatchEvent(new CustomEvent(CHANGE_EVENT));
+}
+
+/** Subscribe to choice changes made anywhere in the page; returns the unsubscribe. */
+export function onChoiceChange(listener: () => void): () => void {
+  window.addEventListener(CHANGE_EVENT, listener);
+  return () => window.removeEventListener(CHANGE_EVENT, listener);
 }
 
 async function json<T>(response: Response): Promise<T> {

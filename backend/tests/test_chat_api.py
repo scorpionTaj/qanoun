@@ -120,3 +120,52 @@ def test_chat_rejects_malformed_scope():
     client = TestClient(app)
     bad = client.post("/api/chat", json={"question": "q", "group": "x; DROP TABLE laws"})
     assert bad.status_code == 422
+
+
+def test_follow_up_is_condensed_and_history_reaches_the_prompt(monkeypatch):
+    searched = []
+
+    def search(question, **kw):
+        searched.append(question)
+        return RetrievalResult(question, question, [make_hit()])
+
+    class HistoryLLM:
+        def __init__(self):
+            self.prompts = []
+
+        def chat(self, messages, **kw):  # the condense call
+            self.prompts.append(messages)
+            return "Quel est l'âge du mariage pour les femmes ?"
+
+        def chat_stream(self, messages, **kw):
+            self.prompts.append(messages)
+            yield "18 ans [1]"
+
+    llm = HistoryLLM()
+    monkeypatch.setattr(retrieval, "search", search)
+    chat_router.set_llm(llm, None)
+    history = [
+        {"role": "user", "text": "Quel est l'âge du mariage ?"},
+        {"role": "assistant", "text": "18 ans révolus [1]."},
+    ]
+    events = parse_sse(post_chat({"question": "et pour les femmes ?", "history": history}))
+
+    assert searched[0] == "Quel est l'âge du mariage pour les femmes ?"  # standalone search
+    meta = next(d for n, d in events if n == "meta")
+    assert meta["rewritten"] == "Quel est l'âge du mariage pour les femmes ?"
+    answer_prompt = llm.prompts[-1][1]["content"]
+    assert "Earlier in this conversation" in answer_prompt and "18 ans révolus" in answer_prompt
+    assert "Question: et pour les femmes ?" in answer_prompt  # answered in the user's words
+
+
+def test_no_history_means_no_condense_call(monkeypatch, fake_llm):
+    monkeypatch.setattr(retrieval, "search", lambda *a, **kw: RetrievalResult("q", "q", [make_hit()]))
+    chat_router.set_llm(fake_llm, None)
+    parse_sse(post_chat({"question": "ما هي شروط الزواج؟"}))
+    assert len(fake_llm.calls) == 1  # only the answer, no extra LLM round-trip
+
+
+def test_history_is_capped():
+    client = TestClient(app)
+    turns = [{"role": "user", "text": "q"}] * 7
+    assert client.post("/api/chat", json={"question": "q", "history": turns}).status_code == 422

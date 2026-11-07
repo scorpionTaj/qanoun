@@ -19,6 +19,7 @@ import logging
 import time
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
+from typing import Literal
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
@@ -30,7 +31,7 @@ from qanoun_api.rag import retrieval
 from qanoun_api.rag.answer import ABSTENTION, DISCLAIMER, NO_ANSWER, build_messages, parse_citations
 from qanoun_api.rag.llm import LLMError, strip_reasoning
 from qanoun_api.rag.providers import ProviderUnavailable, get_router
-from qanoun_api.rag.rewrite import QueryRewriter, detect_variety
+from qanoun_api.rag.rewrite import QueryRewriter, condense, detect_variety
 
 router = APIRouter(prefix="/api", tags=["chat"])
 log = logging.getLogger("qanoun.chat")
@@ -59,6 +60,11 @@ def set_llm(llm, rewriter: QueryRewriter | None = None) -> None:
     _rewriter = rewriter
 
 
+class Turn(BaseModel):
+    role: Literal["user", "assistant"]
+    text: str = Field(min_length=1, max_length=2000)
+
+
 class ChatRequest(BaseModel):
     question: str = Field(min_length=1, max_length=1000)
     k: int = Field(default=5, ge=1, le=20)
@@ -70,6 +76,9 @@ class ChatRequest(BaseModel):
     # Both empty = the whole corpus.
     domain: str | None = Field(default=None, pattern=r"^[a-z]{2,30}$")
     group: str | None = Field(default=None, pattern=r"^[a-z0-9][a-z0-9-]{0,79}$")
+    # Recent turns of this conversation (oldest first) so follow-ups like «and for women?»
+    # work. Capped: context, not a transcript.
+    history: list[Turn] = Field(default_factory=list, max_length=6)
 
 
 def _sse(event: str, data: dict) -> str:
@@ -103,23 +112,34 @@ def _chat_stream(req: ChatRequest) -> Iterator[str]:
     needs_rewrite = variety in ("darija", "arabizi")
     yield _sse("status", {"stage": "rewriting" if needs_rewrite else "searching"})
     rewriter = _rewriter or get_rewriter()
+    history = [turn.model_dump() for turn in req.history]
+    if history:
+        # A follow-up is searched as a standalone question; the user's own wording still
+        # drives the answer's language.
+        yield _sse("status", {"stage": "rewriting"})
+        try:
+            standalone = condense(question, history, llm)
+        except Exception:  # noqa: BLE001 — fall back to the literal follow-up
+            standalone = question
+    else:
+        standalone = question
     with ThreadPoolExecutor(max_workers=2) as pool:
         scope = {"domain": req.domain, "group": req.group}
-        original_future = pool.submit(retrieval.search, question, k=req.k, **scope)
-        rewrite_future = pool.submit(rewriter.rewrite, question, llm=llm)
+        original_future = pool.submit(retrieval.search, standalone, k=req.k, **scope)
+        rewrite_future = pool.submit(rewriter.rewrite, standalone, llm=llm)
         try:
             rewritten = rewrite_future.result()
         except Exception:  # noqa: BLE001 — rewriting is an optimization; never block answering
-            rewritten = question
+            rewritten = standalone
         lap("rewrite")
         yield _sse("meta", {"variety": variety, "rewritten": rewritten, "disclaimer": DISCLAIMER[variety]})
         if needs_rewrite:
             yield _sse("status", {"stage": "searching"})
         try:
             result = original_future.result()
-            if rewritten != question:
+            if rewritten != standalone:
                 # Merge both runs: a bad rewrite can only add hits, never lose them.
-                rewritten_result = retrieval.search(question, k=req.k, search_query=rewritten, **scope)
+                rewritten_result = retrieval.search(standalone, k=req.k, search_query=rewritten, **scope)
                 result = answer_mod.merge(result, rewritten_result, req.k)
         except Exception as exc:  # noqa: BLE001 — surfaced to the client as an SSE error event
             yield _sse("error", {"code": "retrieval", "message": f"retrieval failed: {exc}"})
@@ -132,7 +152,7 @@ def _chat_stream(req: ChatRequest) -> Iterator[str]:
         return
 
     yield _sse("status", {"stage": "answering"})
-    messages = build_messages(question, result.hits, variety)
+    messages = build_messages(question, result.hits, variety, history)
     answered_by: dict = {}
 
     def on_start(provider, model: str) -> None:

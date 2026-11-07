@@ -122,7 +122,17 @@
     "scopeAll": "كل القوانين",
     "scopeDomains": "المجالات",
     "scopeLaws": "القوانين",
-    "scopeIn": "في: {name}"
+    "scopeIn": "في: {name}",
+    "aiLabel": "الذكاء الاصطناعي",
+    "aiAuto": "تلقائي",
+    "aiAutoHint": "أفضل نموذج متاح، مع بديل تلقائي",
+    "aiLocal": "على هذا الحاسوب",
+    "aiCloud": "سحابي · المفتاح في ‎.env",
+    "scopeSearch": "ابحث عن قانون أو مجال…",
+    "scopeNone": "لا يوجد قانون أو مجال مطابق.",
+    "scopeClear": "البحث في كل القوانين",
+    "articlesShort": "مادة",
+    "scopeShowAll": "عرض القوانين والمجالات"
   },
   "insights": {
     "title": "لوحة التحليل",
