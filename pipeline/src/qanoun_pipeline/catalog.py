@@ -17,12 +17,15 @@ DOMAINS = {
     "labour",       # مدونة الشغل: work, contracts, wages, leave
     "civil",        # قانون الالتزامات والعقود: contracts, obligations
     "housing",      # كراء العقارات: leases, rentals
-    "commercial",   # commercial leases, business law
+    "commercial",   # commercial leases, business law, competition
     "education",    # schools, high schools, universities
     "penal",        # criminal law
     "nationality",  # citizenship
-    "social",       # social security, family allowances
-    "justice",      # courts, procedure
+    "social",       # social security, insurance, pensions
+    "justice",      # courts, procedure, judicial organization
+    "transport",    # traffic code, road accident compensation
+    "property",     # land registration, real rights, urbanism
+    "governance",   # associations, press, unions, data protection, public finance
 }
 LANGUAGES = {"ar", "fr"}
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")

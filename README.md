@@ -50,17 +50,36 @@ Open http://localhost:3000 → you land on `/ar` (RTL). Switch to FR/EN in the h
 
 ## The corpus
 
-Seeded from the Ministry of Justice portal ([adala.justice.gov.ma](https://adala.justice.gov.ma)),
-8 documents / 6 laws, each verified by sha256 (see `data/catalog/laws.yaml` — add entries to
-grow the corpus; candidate education/penal/nationality laws are listed there):
+Ingested from the Ministry of Justice's official legal portal ([adala.justice.gov.ma](https://adala.justice.gov.ma)),
+**42 documents / 11,600+ articles across 13 domains**, each verified by sha256
+(see `data/catalog/laws.yaml`):
 
-| Law | Number | Year | Domain | Editions |
-|---|---|---|---|---|
-| مدونة الأسرة (Moudawana) | 70-03 | 2004 | family | ar + fr |
-| مدونة الشغل | 65-99 | 2004 | labour | ar + fr |
-| قانون الالتزامات والعقود (D.O.C.) | DOC | 1913 | civil | ar + fr |
-| القانون 67.12 المتعلق بالكراء | 67-12 | 2023 | housing | ar |
-| كراء المحلات التجارية | — | 1962 | commercial | ar |
+| Domain | Laws (examples) |
+|---|---|
+| civil | قانون الالتزامات والعقود (D.O.C., ar+fr) |
+| family | مدونة الأسرة (ar+fr), كفالة الأطفال المهملين, صندوق التكافل العائلي |
+| penal | مجموعة القانون الجنائي (ar+fr), مكافحة غسل الأموال |
+| justice | المسطرة المدنية (ar+fr), المسطرة الجنائية, التنظيم القضائي, قضاء القرب, المحاكم المالية |
+| labour | مدونة الشغل (ar+fr), العمال المنزليين, حوادث الشغل |
+| commercial | مدونة التجارة (ar+fr), شركات المساهمة, المنافسة, المقاول الذاتي |
+| education | التعليم العالي, دور الحضانة الخاصة |
+| nationality | قانون الجنسية (ar+fr) |
+| social | مدونة التأمينات |
+| housing | القانون 67.12 المتعلق بالكراء, كراء المحلات التجارية |
+| transport | مدونة السير على الطرق (52.05) |
+| property | الحقوق العينية, التعمير, الملكية المشتركة, التحفيظ العقاري* |
+| governance | الجمعيات, الصحافة والنشر, النقابات, حماية المعطيات الشخصية, الأوقاف, الأجانب, تحصيل الديون العمومية |
+
+Bilingual laws carry both AR and FR editions as separate documents (`group` links them in
+the UI). Scanned PDFs (الجنسية، الجمعيات، النقابات، التنظيم القضائي) are OCR'd
+automatically at ingest. To add more laws: search the portal
+(`adala.justice.gov.ma/search?term=…`), download the PDF into `data/raw/`, and add one YAML
+entry — the pipeline handles fetch/verify/OCR/segmentation. Still-wanted texts: الحالة
+المدنية 37.10, التعليم الإجباري/الخصوصي (04.00/06.00), مدونة التغطية الصحية 65.00, ميثاق
+الاستثمارات 03.22, مدونة الانتخابات.
+
+\* التحفيظ العقاري entry currently holds the application decree; the 1913 dahir text is a
+follow-up.
 
 ## Architecture
 
@@ -104,11 +123,11 @@ docker compose up --build              # full stack in containers (api :8000, we
 
 ## Status & roadmap
 
-- [x] Pipeline: 8/8 seed documents segment cleanly (4.5k+ articles)
+- [x] Pipeline: 42/42 documents ingest (11.6k+ articles, 13 domains, 7 bilingual laws)
 - [x] Hybrid retrieval + Darija rewriting + grounded streaming chat
 - [x] Trilingual UI with RTL and citation deep-links
 - [x] Eval harness + notebooks
-- [ ] Grow corpus: education (51.17), penal code, nationality (scraper for the Bulletin Officiel)
+- [ ] Grow corpus: الحالة المدنية, التعليم الإجباري/الخصوصي, التغطية الصحية, ميثاق الاستثمارات
 - [ ] Retrieval reranker (cross-encoder) and answer quality eval dashboard
 - [ ] Auth + saved conversations
 

@@ -19,6 +19,9 @@ _DOMAIN_LABELS: dict[str, dict[str, str]] = {
     "nationality": {"ar": "الجنسية", "fr": "Nationalité", "en": "Nationality"},
     "social": {"ar": "الاجتماعي", "fr": "Social", "en": "Social"},
     "justice": {"ar": "القضاء", "fr": "Justice", "en": "Justice"},
+    "transport": {"ar": "النقل والسير", "fr": "Transport & circulation", "en": "Transport"},
+    "property": {"ar": "العقاري", "fr": "Foncier", "en": "Property"},
+    "governance": {"ar": "الحكامة والحقوق والحريات", "fr": "Gouvernance & libertés", "en": "Governance & freedoms"},
 }
 
 

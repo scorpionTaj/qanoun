@@ -1,0 +1,390 @@
+- slug: penal-code-ar
+  group: penal-code
+  title_ar: مجموعة القانون الجنائي
+  title_fr: Code pénal
+  law_number: 1-59-413
+  year: 1962
+  domain: penal
+  language: ar
+  file: penal-code-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2025/03/14/%D8%B8%D9%80%D9%87%D9%8A%D8%B1%20%D8%B4%D9%80%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.59.413%20%D8%A8%D8%A7%D9%84%D9%85%D8%B5%D8%A7%D8%AF%D9%82%D8%A9%20%D8%B9%D9%84%D9%89%20%D9%85%D8%AC%D9%85%D9%88%D8%B9%D8%A9%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%A7%D9%84%D8%AC%D9%86%D8%A7%D8%A6%D9%8A-1741952873602.pdf
+  sha256: 5e099dad87748c98b5e8321f7b33afa17d33b6588d22520f2b2928ba900fb424
+  _pages: 207
+  _articles: 2
+- slug: penal-code-fr
+  group: penal-code
+  title_ar: مجموعة القانون الجنائي
+  title_fr: Code pénal
+  law_number: 1-59-413
+  year: 1962
+  domain: penal
+  language: fr
+  file: penal-code-fr.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2025/04/03/Dahir%20n%C2%B0%201-59-413%20portant%20approbation%20du%20texte%20du%20code%20penal-1743685280109.pdf
+  sha256: 23aaaa31bffd348ba953027e185d28d31d3ed5b47ebcd116785a2aa87949b07b
+  _pages: 248
+  _articles: 703
+- slug: money-laundering-ar
+  group: penal
+  title_ar: قانون مكافحة غسل الأموال
+  title_fr: null
+  law_number: 43-05
+  year: 2007
+  domain: penal
+  language: ar
+  file: money-laundering-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2026/03/27/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.07.79%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2043.05%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D9%85%D9%83%D8%A7%D9%81%D8%AD%D8%A9%20%D8%BA%D8%B3%D9%84%20%D8%A7%D9%84%D8%A3%D9%85%D9%88%D8%A7%D9%84-1774622209154.pdf
+  sha256: a6f9433ca0be8fc0309ef45630dcb2a6fff952cd7a9d95aa45c5e516f617c7bf
+  _pages: 27
+  _articles: 38
+- slug: civil-procedure-ar
+  group: civil-procedure
+  title_ar: قانون المسطرة المدنية
+  title_fr: Code de procédure civile
+  law_number: 1-74-447
+  year: 1974
+  domain: justice
+  language: ar
+  file: civil-procedure-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2026/08/27/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%A8%D9%85%D8%AB%D8%A7%D8%A8%D8%A9%20%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%201.74.447%20%D8%A8%D8%A7%D9%84%D9%85%D8%B5%D8%A7%D8%AF%D9%82%D8%A9%20%D8%B9%D9%84%D9%89-1787838360852.pdf
+  sha256: 55ce02d53f9919a393b731a4de4dbcbd68514dc17a1f6ee1268e8960ae52c816
+  _pages: 124
+  _articles: 4
+- slug: civil-procedure-fr
+  group: civil-procedure
+  title_ar: قانون المسطرة المدنية
+  title_fr: Code de procédure civile
+  law_number: 1-74-447
+  year: 1974
+  domain: justice
+  language: fr
+  file: civil-procedure-fr.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2024/02/28/Code%20de%20proc%C3%A9dure%20civile-1709129409071.pdf
+  sha256: 5cc42699ef48aabd95411363d6805059996c70f51364c8912e8788abac33d66b
+  _pages: 180
+  _articles: 562
+- slug: criminal-procedure-ar
+  group: criminal-procedure
+  title_ar: قانون المسطرة الجنائية
+  title_fr: Code de procédure pénale
+  law_number: 22-01
+  year: 2002
+  domain: justice
+  language: ar
+  file: criminal-procedure-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2026/09/09/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.02.255%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2022.01%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D8%A7%D9%84%D9%85%29-1788960852357.pdf
+  sha256: 1cb583821ddfd894f77a6da79370a19156c95763a7b5a92c1939cf1b406cb79b
+  _pages: 296
+  _articles: 703
+- slug: judges-statute-ar
+  group: judicial-organization
+  title_ar: النظام الأساسي للقضاة
+  title_fr: null
+  law_number: 1-16-41
+  year: 2016
+  domain: justice
+  language: ar
+  file: judges-statute-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2025/11/11/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.16.41%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%D9%87%20%D9%84%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%A7%D9%84%D8%AA%D9%86%D8%B8%D9%8A%D9%85%D9%8A%20%D8%B1%D9%82%D9%85%2009.25-1762851653532.pdf
+  sha256: b5b81760150e0720ad9490ff63523d9dd0794a95f6d8f1aa84a2cc2eff7a853d
+  _pages: 59
+  _articles: 28
+- slug: neighborhood-justice-ar
+  group: neighborhood-justice
+  title_ar: قانون قضاء القرب
+  title_fr: null
+  law_number: 42-10
+  year: 2011
+  domain: justice
+  language: ar
+  file: neighborhood-justice-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2026/08/27/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.11.151%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2042.10%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82-1787838999894.pdf
+  sha256: 16959e657cc16c9b8f947fd6af16335e86fb795efa288f2bf16649a8ef6a2e00
+  _pages: 12
+  _articles: 25
+- slug: financial-courts-ar
+  group: financial-courts
+  title_ar: قانون المحاكم المالية
+  title_fr: null
+  law_number: 62-99
+  year: 2002
+  domain: justice
+  language: ar
+  file: financial-courts-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2025/12/17/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.02.124%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2062.99-1765983670947.pdf
+  sha256: eb7a46a8b2c570b1b77301afef26ae87fd8c34c9774166154f7284d8fecedb4d
+  _pages: 93
+  _articles: 215
+- slug: commercial-code-ar
+  group: commercial-code
+  title_ar: مدونة التجارة
+  title_fr: Code de commerce
+  law_number: 15-95
+  year: 1996
+  domain: commercial
+  language: ar
+  file: commercial-code-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2026/05/25/%D8%B8%D9%80%D9%80%D9%87%D9%80%D9%80%D9%8A%D9%80%D9%80%D8%B1%20%D8%B4%D9%80%D9%80%D8%B1%D9%8A%D9%80%D9%80%D9%81%20%D8%B1%D9%82%D9%80%D9%80%D9%85%201.96.83%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2015.95-1779718527894.pdf
+  sha256: 0dab0eee87f2075d66715b7535e8819c6aa97a32ca52882bfdf0cd1f80023f18
+  _pages: 221
+  _articles: 385
+- slug: commercial-code-fr
+  group: commercial-code
+  title_ar: مدونة التجارة
+  title_fr: Code de commerce
+  law_number: 15-95
+  year: 1996
+  domain: commercial
+  language: fr
+  file: commercial-code-fr.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2024/03/01/Code%20de%20commerce_compressed-1709282723074.pdf
+  sha256: e02151d1b3d585a8ed888dca187172d1c8fc682f02c4537131f2b95c3cde1696
+  _pages: 262
+  _articles: 825
+- slug: joint-stock-companies-ar
+  group: companies
+  title_ar: قانون شركات المساهمة
+  title_fr: null
+  law_number: 17-95
+  year: 1996
+  domain: commercial
+  language: ar
+  file: joint-stock-companies-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2024/02/05/%D8%B4%D8%B1%D9%83%D8%A7%D8%AA%20%D8%A7%D9%84%D9%85%D8%B3%D8%A7%D9%87%D9%85%D8%A9-1707139691684.pdf
+  sha256: ffde22bb50db2299aae7a3f05dca94d93e7f57d2f99a824b686f17e7c659b1e3
+  _pages: 145
+  _articles: 424
+- slug: competition-ar
+  group: competition
+  title_ar: قانون حرية الأسعار والمنافسة
+  title_fr: null
+  law_number: 104-12
+  year: 2014
+  domain: commercial
+  language: ar
+  file: competition-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2026/02/23/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.14.116%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%20104.12%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D8%AD%D8%B1%D9%8A%D8%A9%20%D8%A7%D9%84%D8%A3%D8%B3%D8%B9%D8%A7%D8%B1%20%D9%88%D8%A7%D9%84%D9%85%D9%86%D8%A7%D9%81%D8%B3%D8%A9-1771857502394.pdf
+  sha256: f4c997e9c518680f74d4ef8f82056b134fd7bf1f4425c72e7318c20332b1f60b
+  _pages: 49
+  _articles: 106
+- slug: self-entrepreneur-ar
+  group: companies
+  title_ar: نظام المقاول الذاتي
+  title_fr: null
+  law_number: 114-13
+  year: 2015
+  domain: commercial
+  language: ar
+  file: self-entrepreneur-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2024/07/09/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%20114.13%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D9%86%D8%B8%D8%A7%D9%85%20%D8%A7%D9%84%D9%85%D9%82%D8%A7%D9%88%D9%84%20%D8%A7%D9%84%D8%B0%D8%A7%D8%AA%D9%8A-1720535300284.pdf
+  sha256: a4b8469c5e4e3c07def40882077e231477141a9a150d18b404a401c5350fee18
+  _pages: 8
+  _articles: 15
+- slug: nationality-fr
+  group: nationality
+  title_ar: قانون الجنسية المغربية
+  title_fr: Code de la nationalité marocaine
+  law_number: 1-58-250
+  year: 1958
+  domain: nationality
+  language: fr
+  file: nationality-fr.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2025/11/28/Dahir%20n%C2%B0%201-58-250%20portant%20code%20de%20la%20nationalit%C3%A9%20marocaine-1764341585221.pdf
+  sha256: 0f0dad4ce87a8f175869fbf6ed60da526adc89b89dc2c5b2dfd0eb9872eb11ad
+  _pages: 26
+  _articles: 45
+- slug: family-solidarity-ar
+  group: family-solidarity
+  title_ar: قانون صندوق التكافل العائلي
+  title_fr: null
+  law_number: 41-10
+  year: 2010
+  domain: family
+  language: ar
+  file: family-solidarity-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2024/02/07/%D8%B5%D9%86%D8%AF%D9%88%D9%82%20%D8%A7%D9%84%D8%AA%D9%83%D8%A7%D9%81%D9%84%20%D8%A7%D9%84%D8%B9%D8%A7%D8%A6%D9%84%D9%8A-1707305363226.pdf
+  sha256: 0b4bf2cba6734612b0f5bb282ac79599990cb8dd98d92fc0ce88badb13c64f5b
+  _pages: 9
+  _articles: 14
+- slug: domestic-workers-ar
+  group: domestic-workers
+  title_ar: قانون العاملات والعمال المنزليين
+  title_fr: null
+  law_number: 19-12
+  year: 2016
+  domain: labour
+  language: ar
+  file: domestic-workers-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2026/08/12/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.16.121%20%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2019.12-1786523202602.pdf
+  sha256: b204d04f60ea340dae1b5747301dbeceda3405dc3f698f7671e6ed35ed6f3841
+  _pages: 13
+  _articles: 26
+- slug: work-accidents-ar
+  group: work-accidents
+  title_ar: قانون حوادث الشغل والأمراض المهنية
+  title_fr: null
+  law_number: 18-12
+  year: 2014
+  domain: labour
+  language: ar
+  file: work-accidents-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2025/12/16/%D8%B8%D9%80%D9%80%D9%87%D9%80%D9%80%D9%8A%D9%80%D8%B1%20%D8%B4%D9%80%D8%B1%D9%8A%D9%80%D9%81%20%D8%B1%D9%82%D9%80%D9%85%201.14.190%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2018.12%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82-1765874452213.pdf
+  sha256: 2b4591fd8a8680c84527b7e179691353aed85728a71a52e90a375ac711c03347
+  _pages: 52
+  _articles: 193
+- slug: insurance-code-ar
+  group: insurance-code
+  title_ar: مدونة التأمينات
+  title_fr: Code des assurances
+  law_number: 17-99
+  year: 2002
+  domain: social
+  language: ar
+  file: insurance-code-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2025/11/26/%D8%B8%D9%80%D9%80%D9%87%D9%80%D9%80%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.02.238%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2017.99%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D9%85%D8%AF%D9%88%D9%86%D8%A9%20%D8%A7%D9%84%D8%AA%D8%A3%D9%85%D9%8A%D9%86%D8%A7%D8%AA-1764168111488.pdf
+  sha256: 9b5d7ac498f42d56458fc5c1c187d9c2249bfcb7b899228a8e0e0dd64027463a
+  _pages: 147
+  _articles: 329
+- slug: higher-education-ar
+  group: education
+  title_ar: قانون التعليم العالي
+  title_fr: null
+  law_number: 01-00
+  year: 2000
+  domain: education
+  language: ar
+  file: higher-education-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2026/03/06/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.00.199%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%20%2001.00-1772808846692.pdf
+  sha256: dfd2d6ef9fe02ac7ac0e6e8df107516d48de3d56173de974eb0508a329e07385
+  _pages: 32
+  _articles: 95
+- slug: nurseries-ar
+  group: education
+  title_ar: النظام الأساسي لدور الحضانة الخاصة
+  title_fr: null
+  law_number: 40-04
+  year: 2008
+  domain: education
+  language: ar
+  file: nurseries-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2026/04/08/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.08.77%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2040.04-1775656091525.pdf
+  sha256: eea8e7e3ba1381fc74bb624ad2678bf6725b26b1184407f6eeb5dcd80b052c59
+  _pages: 12
+  _articles: 8
+- slug: traffic-code-ar
+  group: traffic
+  title_ar: مدونة السير على الطرق
+  title_fr: null
+  law_number: 52-05
+  year: 2010
+  domain: transport
+  language: ar
+  file: traffic-code-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2025/06/11/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%201.10.07%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2052.05%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D9%85%D8%AF%D9%88%D9%86%D8%A9%20%D8%A7%D9%84%D8%B3%D9%8A%D8%B1%20%D8%B9%D9%84%D9%89%20%D8%A7%D9%84%D8%B7%D8%B1%D9%82%20-1749642259749.pdf
+  sha256: 20d808d759e1394651cb4f565a3cccdf1952ac7b12b1efab395c606846209e80
+  _pages: 161
+  _articles: 308
+- slug: real-rights-ar
+  group: property
+  title_ar: مدونة الحقوق العينية
+  title_fr: null
+  law_number: 39-08
+  year: 2011
+  domain: property
+  language: ar
+  file: real-rights-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2026/07/28/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.11.178%20%2039.08%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D9%85%D8%AF%D9%88%D9%86%D8%A9%20%D8%A7%D9%84%D8%AD%D9%82%D9%88%D9%82%20%D8%A7%D9%84%D8%B9%D9%8A%D9%86%D9%8A%D8%A9-1785250244908.pdf
+  sha256: 61728d5027518f92c516d63e522ac1d68b7516f2b29ca7ce04373d3e2cb40a60
+  _pages: 60
+  _articles: 324
+- slug: urbanism-ar
+  group: property
+  title_ar: قانون التعمير
+  title_fr: null
+  law_number: 12-90
+  year: 1992
+  domain: property
+  language: ar
+  file: urbanism-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2026/10/15/%D9%85%D8%B1%D8%B3%D9%88%D9%85%20%D8%B1%D9%82%D9%85%202.92.832%20%D9%84%D8%AA%D8%B7%D8%A8%D9%8A%D9%82%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2012.90%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D8%A7%D9%84%D8%AA%D8%B9%D9%85%D9%8A%D8%B1-1792066720715.pdf
+  sha256: 3f497ff85bc788704563b82715449991a3ab79bdf701f03e84a73ad19b1e4644
+  _pages: 13
+  _articles: 11
+- slug: joint-ownership-ar
+  group: property
+  title_ar: قانون الملكية المشتركة للعقارات المبنية
+  title_fr: null
+  law_number: 18-00
+  year: 2002
+  domain: property
+  language: ar
+  file: joint-ownership-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2026/07/29/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%20%201.02.298%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2018.00-1785318450026.pdf
+  sha256: a4127525615a106946c6cb90d9d8b9dbeaf975f84d92e756ccff2825a6e392dc
+  _pages: 42
+  _articles: 56
+- slug: press-code-ar
+  group: governance
+  title_ar: قانون الصحافة والنشر
+  title_fr: null
+  law_number: 88-13
+  year: 2016
+  domain: governance
+  language: ar
+  file: press-code-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2024/07/26/%D8%A7%D9%84%D8%B5%D8%AD%D8%A7%D9%81%D8%A9%20%D9%88%D8%A7%D9%84%D9%86%D8%B4%D8%B1-1721982145338.pdf
+  sha256: 3f2c46ee9751b3c39d66529fcfa03a65a04c19acc5028910c723a0c3ec736f76
+  _pages: 52
+  _articles: 105
+- slug: data-protection-ar
+  group: governance
+  title_ar: قانون حماية الأشخاص الذاتيين تجاه معالجة المعطيات ذات الطابع الشخصي
+  title_fr: null
+  law_number: 09-08
+  year: 2009
+  domain: governance
+  language: ar
+  file: data-protection-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2024/09/05/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.09.15%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2009.08%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D8%AD%D9%85%D8%A7%D9%8A%D8%A9%20%D8%A7%D9%84%D8%A3%D8%B4%D8%AE%D8%A7%D8%B5%20%D8%A7%D9%84.._-1725534598486.pdf
+  sha256: 01018cc1ef12b81c9379559bc0d6372ea8a686d0d5c2c273657b631882adf181
+  _pages: 36
+  _articles: 65
+- slug: public-debt-collection-ar
+  group: governance
+  title_ar: قانون تحصيل الديون العمومية
+  title_fr: null
+  law_number: 15-97
+  year: 2000
+  domain: governance
+  language: ar
+  file: public-debt-collection-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2026/10/05/%D8%B8%D9%80%D9%87%D9%8A%D8%B1%20%D8%B4%D9%80%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.00.175%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2015.97-1791213329814.pdf
+  sha256: 42a7e9c7df5c99df85726ed610204130ae779b65720147559fd0df0127a1f37c
+  _pages: 48
+  _articles: 146
+- slug: waqf-code-ar
+  group: governance
+  title_ar: مدونة الأوقاف
+  title_fr: null
+  law_number: 1-09-236
+  year: 2010
+  domain: governance
+  language: ar
+  file: waqf-code-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2024/02/20/%D9%85%D8%AF%D9%88%D9%86%D8%A9%20%D8%A7%D9%84%D8%A3%D9%88%D9%82%D8%A7%D9%81-1708419195028.pdf
+  sha256: e78cab122d90420f2c6cc4d3a949381b4f9428269ce3631ec2c975c4dadc1193
+  _pages: 44
+  _articles: 24
+- slug: foreigners-ar
+  group: governance
+  title_ar: قانون دخول وإقامة الأجانب بالمملكة المغربية
+  title_fr: null
+  law_number: 02-03
+  year: 2003
+  domain: governance
+  language: ar
+  file: foreigners-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2024/11/28/%D9%85%D8%B1%D8%B3%D9%88%D9%85%20%D8%B1%D9%82%D9%85%202.09.607%20%D8%A8%D8%AA%D8%B7%D8%A8%D9%8A%D9%82%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2002.03%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D8%AF%D8%AE%D9%88%D9%84%20%D9%88%D8%A5%D9%82%D8%A7%D9%85%D8%A9%20%D8%A7%D9%84%D8%A3%D8%AC%D8%A7%D9%86%D8%A8.._-1732801280633.pdf
+  sha256: f4bfa52c6ea3cfbb0a16c055e1261ba5915ea95d23b7ffa99045ded3100d64ef
+  _pages: 7
+  _articles: 25

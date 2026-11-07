@@ -67,6 +67,21 @@ KEYWORDS: dict[str, tuple[str, ...]] = {
         "محكمه", "محكمه النقض", "دعوي", "مرافعات", "قاضي", "رئيس المحكمه", "مجلس القضاء",
         "tribunal", "cour", "juge", "procedure", "procédure", "audience", "greffe",
     ),
+    "transport": (
+        "سياقه", "رخصة السياقه", "طريق", "طرق سياره", "مرور", "سير على الطرق", "مخالفه سير",
+        "plaque", "permis de conduire", "circulation", "code de la route", "automobile",
+        "contravention",
+    ),
+    "property": (
+        "تحفيظ عقاري", "سجل عقاري", "حقوق عينيه", "تعمير", "تجزئة", "ملكيه مشتركه", "نزع ملكيه",
+        "immatriculation", "foncier", "cadastre", "urbanisme", "lotissement", "copropriete",
+        "copropriété", "expropriation", "conservation foncière", "conservation fonciere",
+    ),
+    "governance": (
+        "جمعيه", "نقابه", "صحافي", "نشر", "معطيات شخصيه", "اجتماعي عمومي", "صفقات عموميه",
+        "ديون عموميه", "association", "syndicat", "presse", "donnees personnelles",
+        "données personnelles", "CNPD",
+    ),
 }
 # fmt: on
 

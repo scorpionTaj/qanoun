@@ -54,8 +54,14 @@ def ingest_all(args: argparse.Namespace) -> int:
     article_rows: list[dict] = []
     chunk_rows: list[dict] = []
     ingested: list[tuple[catalog.LawMeta, structure.StructureReport, int]] = []
+    failed: list[tuple[str, str]] = []
     for meta in laws:
-        report, page_count = _process_file(meta, args)
+        try:
+            report, page_count = _process_file(meta, args)
+        except Exception as exc:  # one broken file must not kill a 40-law run
+            failed.append((meta.slug, str(exc)[:120]))
+            print(f"  ✗ {meta.slug}: FAILED — {str(exc)[:120]}")
+            continue
         law_articles = [
             {
                 "law_slug": meta.slug,
@@ -81,6 +87,8 @@ def ingest_all(args: argparse.Namespace) -> int:
         ingested.append((meta, report, page_count))
         warnings = "; ".join(report.warnings) or "-"
         print(f"  {meta.slug}: {len(law_articles)} articles, {len(law_chunks)} chunks (warnings: {warnings})")
+    if failed:
+        print(f"\n{len(failed)} file(s) failed and were skipped: {[slug for slug, _ in failed]}")
 
     PROCESSED.mkdir(parents=True, exist_ok=True)
     _write_jsonl(ARTICLES_JSONL, article_rows)
