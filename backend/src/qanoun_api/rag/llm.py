@@ -1,9 +1,15 @@
 """Minimal client for any OpenAI-compatible chat endpoint: LM Studio, Ollama, vLLM,
-OpenRouter or a custom gateway (ported from darija-rag, plus SSE streaming).
+OpenRouter or a custom gateway (ported from darija-rag).
 
     QANOUN_LLM_URL    base URL ending in /v1 (default: LM Studio, http://localhost:1234/v1)
-    QANOUN_LLM_MODEL  model id; empty means the first model the server lists
+    QANOUN_LLM_MODEL  model id; empty means auto-detect (see _candidate_models)
     QANOUN_LLM_KEY    bearer token, if the endpoint needs one
+
+Model auto-detection builds an ordered candidate list — loaded models with a known chat
+architecture first, then other loaded models, then the server's listed models — and tries
+each until one answers. This survives LM Studio quirks like a non-chat model (e.g. a
+speech model with arch=None) sitting loaded while the real LLMs are unloaded. Every error
+carries the endpoint's response body, so "returned 400" always says WHY.
 """
 
 import json
@@ -25,7 +31,7 @@ class LLMError(RuntimeError):
 @dataclass
 class LLMClient:
     base_url: str = DEFAULT_URL
-    model: str = ""
+    model: str = ""  # explicit override from env; empty = auto-detect
     api_key: str = ""
     timeout: float = 120.0
     _http: httpx.Client | None = field(default=None, repr=False)
@@ -65,75 +71,121 @@ class LLMClient:
             raise LLMError(f"LLM endpoint returned {response.status_code}: {response.text[:300]}")
         return response.json()
 
-    def resolve_model(self) -> str:
-        if not self.model:
-            self.model = self._loaded_lm_studio_model() or self._first_listed_model()
-        return self.model
-
-    def _loaded_lm_studio_model(self) -> str | None:
-        """LM Studio's /v1/models lists every downloaded model; its native /api/v0/models
-        says which are loaded. Prefer a loaded chat model."""
+    def _candidate_models(self) -> list[str]:
+        """Ordered model candidates: LM Studio loaded models (known chat archs first),
+        then everything else the server lists that is not an embedding model."""
+        if self.model:
+            return [self.model]
+        candidates: list[str] = []
         root = self.base_url.removesuffix("/v1")
         try:
             data = self.http.get(f"{root}/api/v0/models", timeout=5).json().get("data", [])
         except (httpx.HTTPError, ValueError):
-            return None  # not LM Studio
+            data = []  # not LM Studio
         loaded = [m for m in data if m.get("state") == "loaded" and m.get("type") in ("llm", "vlm")]
+        # a known arch means a real LLM; arch=None models (speech adapters etc.) may not chat
         loaded.sort(key=lambda m: m.get("arch") is None)
-        return loaded[0]["id"] if loaded else None
-
-    def _first_listed_model(self) -> str:
-        models = self._request("GET", "/models").get("data", [])
-        chat_models = [m["id"] for m in models if "embed" not in m["id"].lower()]
-        if not chat_models:
-            raise LLMError(
-                f"no chat model at {self.base_url}; load one or set QANOUN_LLM_MODEL"
-            )
-        return chat_models[0]
+        candidates += [m["id"] for m in loaded]
+        try:
+            listed = self._request("GET", "/models").get("data", [])
+            candidates += [
+                m["id"]
+                for m in listed
+                if "embed" not in m["id"].lower() and m["id"] not in candidates
+            ]
+        except LLMError:
+            pass
+        return candidates
 
     def chat(self, messages: list[dict], temperature: float = 0.0, max_tokens: int = 600) -> str:
-        body = {
-            "model": self.resolve_model(),
-            "messages": messages,
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-        }
-        data = self._request("POST", "/chat/completions", json=body)
-        try:
-            return data["choices"][0]["message"]["content"] or ""
-        except (KeyError, IndexError) as exc:
-            raise LLMError(f"unexpected response shape: {str(data)[:300]}") from exc
+        candidates = self._candidate_models()
+        if not candidates:
+            raise LLMError(
+                f"no chat model available at {self.base_url} — load one in LM Studio "
+                "(Developer tab) or set QANOUN_LLM_MODEL"
+            )
+        last_error: LLMError | None = None
+        for candidate in candidates:
+            body = {
+                "model": candidate,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+            }
+            try:
+                data = self._request("POST", "/chat/completions", json=body)
+                content = data["choices"][0]["message"]["content"] or ""
+            except (LLMError, KeyError, IndexError) as exc:
+                last_error = exc if isinstance(exc, LLMError) else LLMError(f"unexpected response shape: {str(exc)[:200]}")
+                if self.model:
+                    raise  # explicit override: never silently fall back to another model
+                continue  # auto-detect: try the next candidate
+            self.model = candidate  # remember the winner for later calls
+            return content
+        raise LLMError(
+            f"all {len(candidates)} candidate model(s) failed at {self.base_url}. "
+            f"Load a chat model in LM Studio and retry. Last error: {last_error}"
+        )
 
     def chat_stream(
         self, messages: list[dict], temperature: float = 0.0, max_tokens: int = 600
     ) -> Iterator[str]:
-        """Yield answer tokens from an OpenAI-compatible SSE stream."""
-        body = {
-            "model": self.resolve_model(),
-            "messages": messages,
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-            "stream": True,
-        }
-        try:
-            with self.http.stream("POST", "/chat/completions", json=body) as response:
-                if response.status_code >= 400:
-                    raise LLMError(f"LLM endpoint returned {response.status_code}")
-                for line in response.iter_lines():
-                    if not line.startswith("data:"):
-                        continue
-                    payload = line.removeprefix("data:").strip()
-                    if payload == "[DONE]":
-                        return
-                    try:
-                        chunk = json.loads(payload)
-                        delta = chunk["choices"][0].get("delta", {})
-                    except (ValueError, KeyError, IndexError):
-                        continue
-                    if token := delta.get("content"):
-                        yield token
-        except httpx.HTTPError as exc:
-            raise LLMError(f"stream from {self.base_url} failed: {exc.__class__.__name__}") from exc
+        """Yield answer tokens from an OpenAI-compatible SSE stream. Tries each candidate
+        model until one accepts the request; once tokens flow, no retries."""
+        candidates = self._candidate_models()
+        if not candidates:
+            raise LLMError(
+                f"no chat model available at {self.base_url} — load one in LM Studio "
+                "(Developer tab) or set QANOUN_LLM_MODEL"
+            )
+        last_error: LLMError | None = None
+        for index, candidate in enumerate(candidates):
+            body = {
+                "model": candidate,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                "stream": True,
+            }
+            try:
+                with self.http.stream("POST", "/chat/completions", json=body) as response:
+                    if response.status_code >= 400:
+                        error_body = response.read().decode("utf-8", "replace")[:300]
+                        raise LLMError(
+                            f"model {candidate!r} → {response.status_code}: {error_body}"
+                        )
+                    first_token = True
+                    for line in response.iter_lines():
+                        if not line.startswith("data:"):
+                            continue
+                        payload = line.removeprefix("data:").strip()
+                        if payload == "[DONE]":
+                            return
+                        try:
+                            chunk = json.loads(payload)
+                            delta = chunk["choices"][0].get("delta", {})
+                        except (ValueError, KeyError, IndexError):
+                            continue
+                        if token := delta.get("content"):
+                            if first_token:
+                                self.model = candidate  # winner: pin for later calls
+                                first_token = False
+                            yield token
+                    return  # stream ended cleanly
+            except httpx.HTTPError as exc:
+                last_error = LLMError(f"stream from {self.base_url} failed: {exc.__class__.__name__}")
+                if self.model:
+                    raise
+                continue
+            except LLMError as exc:
+                last_error = exc
+                if self.model:
+                    raise
+                continue
+        raise LLMError(
+            f"all {len(candidates)} candidate model(s) failed at {self.base_url}. "
+            f"Load a chat model in LM Studio and retry. Last error: {last_error}"
+        )
 
 
 def strip_reasoning(text: str) -> str:

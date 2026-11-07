@@ -7,6 +7,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -30,6 +31,25 @@ export function InsightsDashboard({ locale }: { locale: string }) {
   const [keywords, setKeywords] = useState<KeywordCount[]>([]);
   const [keywordDomain, setKeywordDomain] = useState<string | undefined>();
   const [error, setError] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+
+  // Recharts tooltips are inline-styled SVG: follow the html class, including changes.
+  useEffect(() => {
+    const root = document.documentElement;
+    const update = () => setIsDark(root.classList.contains("dark"));
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  const tooltipStyle = {
+    backgroundColor: isDark ? "#12201a" : "#ffffff",
+    border: `1px solid ${isDark ? "#29553b" : "#c2dbc9"}`,
+    borderRadius: 12,
+    color: isDark ? "#e0ede5" : "#1d392a",
+    fontSize: 12,
+  };
 
   useEffect(() => {
     Promise.all([
@@ -115,9 +135,10 @@ export function InsightsDashboard({ locale }: { locale: string }) {
                     interval={0}
                   />
                   <YAxis tick={{ fontSize: 11, fill: "#44855d" }} allowDecimals={false} />
-                  <Tooltip />
-                  <Bar dataKey="articles" fill="#44855d" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="laws" fill="#ba8c4b" radius={[6, 6, 0, 0]} />
+                  <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: isDark ? '#e0ede5' : '#1d392a' }} cursor={{ fill: isDark ? 'rgba(68,133,93,0.15)' : 'rgba(68,133,93,0.10)' }} />
+                  <Legend wrapperStyle={{ color: isDark ? "#e0ede5" : "#29553b", fontSize: 12 }} />
+                  <Bar dataKey="articles" name={t("articles")} fill="#44855d" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="laws" name={t("laws")} fill="#ba8c4b" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -138,7 +159,7 @@ export function InsightsDashboard({ locale }: { locale: string }) {
                   <CartesianGrid strokeDasharray="3 3" stroke="#e0ede5" />
                   <XAxis dataKey="year" tick={{ fontSize: 11, fill: "#29553b" }} />
                   <YAxis tick={{ fontSize: 11, fill: "#44855d" }} allowDecimals={false} />
-                  <Tooltip />
+                  <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: isDark ? '#e0ede5' : '#1d392a' }} cursor={{ fill: isDark ? 'rgba(68,133,93,0.15)' : 'rgba(68,133,93,0.10)' }} />
                   <Bar dataKey="laws" fill="#29553b" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -169,7 +190,7 @@ export function InsightsDashboard({ locale }: { locale: string }) {
                       <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: isDark ? '#e0ede5' : '#1d392a' }} cursor={{ fill: isDark ? 'rgba(68,133,93,0.15)' : 'rgba(68,133,93,0.10)' }} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -209,7 +230,7 @@ export function InsightsDashboard({ locale }: { locale: string }) {
                   width={90}
                   tick={{ fontSize: 11, fill: "#29553b" }}
                 />
-                <Tooltip />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: isDark ? '#e0ede5' : '#1d392a' }} cursor={{ fill: isDark ? 'rgba(68,133,93,0.15)' : 'rgba(68,133,93,0.10)' }} />
                 <Bar dataKey="count" fill="#ba8c4b" radius={[0, 6, 6, 0]} />
               </BarChart>
             </ResponsiveContainer>

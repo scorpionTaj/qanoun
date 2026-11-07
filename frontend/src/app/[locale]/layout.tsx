@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Inter, Noto_Naskh_Arabic } from "next/font/google";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
@@ -7,6 +8,7 @@ import { routing } from "@/i18n/routing";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { themeInitScript } from "@/components/layout/theme-toggle";
+import { ThemeSync } from "@/components/layout/theme-sync";
 import "../globals.css";
 
 const naskh = Noto_Naskh_Arabic({
@@ -45,8 +47,17 @@ export default async function LocaleLayout({
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
 
+  // The theme is a cookie so the SERVER renders the class: switching locale (which
+  // reloads the document) and hard navigations keep the chosen theme, with no flash.
+  const theme = (await cookies()).get("qanoun-theme")?.value === "dark" ? "dark" : "";
+
   return (
-    <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"} suppressHydrationWarning>
+    <html
+      lang={locale}
+      dir={locale === "ar" ? "rtl" : "ltr"}
+      className={theme}
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
@@ -54,6 +65,7 @@ export default async function LocaleLayout({
         className={`${naskh.variable} ${inter.variable} min-h-screen font-latin [dir=rtl]:font-arabic`}
       >
         <NextIntlClientProvider>
+          <ThemeSync />
           <div className="flex min-h-screen flex-col">
             <Header />
             <main className="flex-1">{children}</main>

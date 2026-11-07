@@ -62,6 +62,7 @@ export function Header() {
               <Link
                 key={locale}
                 href={`/${locale}${rest ? `/${rest}` : ""}`}
+                prefetch={false}
                 className={cn(
                   "rounded-md px-2 py-1 text-xs font-semibold uppercase transition-colors",
                   locale === currentLocale

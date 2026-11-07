@@ -6,16 +6,22 @@ import { cn } from "@/lib/utils";
 
 type Theme = "light" | "dark";
 
-const STORAGE_KEY = "qanoun-theme";
+export const THEME_COOKIE = "qanoun-theme";
 
 function applyTheme(theme: Theme) {
   document.documentElement.classList.toggle("dark", theme === "dark");
+  // Cookie so the SERVER renders the right class on every navigation (soft or hard):
+  // localStorage alone does not survive locale switches, which reload the document.
+  document.cookie = `${THEME_COOKIE}=${theme}; path=/; max-age=31536000; samesite=lax`;
+  try {
+    localStorage.setItem(THEME_COOKIE, theme);
+  } catch {}
 }
 
 export function ThemeToggle({ className }: { className?: string }) {
   const [theme, setTheme] = useState<Theme | null>(null);
 
-  // Read the class the no-FOUC head script already applied.
+  // Read the class the server (cookie) or head script already applied.
   useEffect(() => {
     setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
   }, []);
@@ -24,9 +30,6 @@ export function ThemeToggle({ className }: { className?: string }) {
     const next: Theme = theme === "dark" ? "light" : "dark";
     setTheme(next);
     applyTheme(next);
-    try {
-      localStorage.setItem(STORAGE_KEY, next);
-    } catch {}
   };
 
   return (
@@ -45,13 +48,14 @@ export function ThemeToggle({ className }: { className?: string }) {
   );
 }
 
-/** Inline head script: applies the stored theme before first paint (no flash). */
+/** Inline head script: for first visits (no cookie yet) follow the OS preference. */
 export const themeInitScript = `
 (function () {
   try {
-    var stored = localStorage.getItem("${STORAGE_KEY}");
-    var dark = stored ? stored === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
-    if (dark) document.documentElement.classList.add("dark");
+    if (/(?:^|; )qanoun-theme=(light|dark)/.test(document.cookie)) return;
+    if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      document.documentElement.classList.add("dark");
+    }
   } catch (e) {}
 })();
 `;

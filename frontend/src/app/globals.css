@@ -22,12 +22,15 @@ body {
   font-family: var(--font-naskh), serif;
 }
 
-/* Subtle zellige-inspired backdrop for hero sections */
+/* Zellige dots layered OVER the hero gradient. This rule owns `background-image` for the
+   hero: Tailwind's bg-gradient-* utilities would be overridden here (same specificity,
+   later in the sheet), so the gradient lives in this stack as the bottom layer. */
 .zellige-pattern {
   background-image:
-    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.06) 2px, transparent 2.5px),
-    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.06) 2px, transparent 2.5px);
-  background-size: 28px 28px;
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.07) 2px, transparent 2.5px),
+    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.07) 2px, transparent 2.5px),
+    linear-gradient(to bottom, #1d392a, #234531 55%, #29553b);
+  background-size: 28px 28px, 28px 28px, 100% 100%;
 }
 
 .prose-legal p {

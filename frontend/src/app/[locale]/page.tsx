@@ -38,8 +38,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   return (
     <div className="flex flex-col">
-      {/* Hero */}
-      <section className="zellige-pattern bg-gradient-to-b from-zellige-900 via-zellige-800 to-zellige-700 text-white">
+      {/* Hero — the gradient comes from .zellige-pattern (see globals.css) */}
+      <section className="zellige-pattern text-white">
         <div className="mx-auto max-w-6xl px-4 py-20 text-center md:py-28">
           <Badge variant="sand" className="mx-auto mb-6 bg-white/10 text-sand-200 backdrop-blur">
             <Sparkles className="h-3.5 w-3.5" />
