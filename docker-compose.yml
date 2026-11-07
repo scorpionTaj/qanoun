@@ -1,0 +1,55 @@
+# Qanoun local stack: postgres+pgvector, the FastAPI backend, and the Next.js frontend.
+#
+#   docker compose up -d db          # database only (recommended while developing)
+#   docker compose up --build        # full stack on :8000 (API) and :3000 (web)
+#
+# The LLM is NOT containerized: it runs on the host (LM Studio / Ollama), which also
+# keeps GPU/MLX access simple. Point the backend at it with QANOUN_LLM_URL.
+
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: qanoun
+      POSTGRES_PASSWORD: qanoun
+      POSTGRES_DB: qanoun
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qanoun -d qanoun"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: ./backend
+    environment:
+      QANOUN_DB_URL: postgresql+psycopg://qanoun:qanoun@db:5432/qanoun
+      QANOUN_LLM_URL: ${QANOUN_LLM_URL:-http://host.docker.internal:1234/v1}
+      QANOUN_LLM_MODEL: ${QANOUN_LLM_MODEL:-}
+      QANOUN_LLM_KEY: ${QANOUN_LLM_KEY:-}
+      QANOUN_EMBED_MODEL: ${QANOUN_EMBED_MODEL:-BAAI/bge-m3}
+      QANOUN_DEVICE: ${QANOUN_DEVICE:-cpu}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  web:
+    build: ./frontend
+    environment:
+      QANOUN_API_URL: http://api:8000
+      # Browsers talk to the API from the host, so the frontend proxies through itself.
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

@@ -1,0 +1,29 @@
+# Data: raw PDFs and processed artifacts stay out of git; the fetch script recreates them.
+data/raw/*.pdf
+data/raw/*.txt
+data/processed/
+data/ocr/
+data/embeddings/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+
+# Node
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Env & tooling
+.env
+.env.local
+.DS_Store
+.coverage
+.ipynb_checkpoints/
