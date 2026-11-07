@@ -1,8 +1,8 @@
 # Qanoun — one entry point for the whole lifecycle.
 #
-#   make db        start postgres (docker)          make ingest   run the full DE pipeline
+#   make db        start postgres (docker)          make ingest   full DE pipeline → Postgres
 #   make api       start the FastAPI backend        make web      start the Next.js frontend
-#   make dev       db + api + web together          make eval     run the eval harness
+#   make dev       how to run all three             make eval     retrieval + LLM-judge evaluation
 #   make test      all offline tests                make clean    remove processed artifacts
 
 SHELL := /bin/bash
@@ -11,9 +11,11 @@ export
 
 DB_URL      ?= postgresql+psycopg://qanoun:qanoun@localhost:5433/qanoun
 PYPIPE      := uv run --project pipeline
+PYPIPE_MODELS := uv run --project pipeline --extra models
 PYAPI       := uv run --project backend
+PYAPI_MODELS := uv run --project backend --extra models
 
-.PHONY: help db db-stop api web dev ingest eval test lint clean ingest-pipeline migrate
+.PHONY: help db db-stop api web dev ingest ingest-smoke eval test lint clean
 
 help:
 	@grep -E '^# ' $(MAKEFILE_LIST) | cut -c3-
@@ -29,25 +31,23 @@ db-stop:
 
 # ── Data engineering pipeline ───────────────────────────────────────────────────
 
-# fetch PDFs (skips files already present), then parse → structure → chunk → embed → load
+# fetch PDFs (skips present files) → parse (OCR fallback) → structure → chunk → embed → load
 ingest:
-	$(PYPIPE) python -m qanoun_pipeline.cli ingest-all
+	$(PYPIPE_MODELS) python -m qanoun_pipeline.cli ingest-all
 
-ingest-pipeline:
-	$(PYPIPE) python -m qanoun_pipeline.cli ingest-all --skip-fetch
-
-migrate:
-	$(PYAPI) alembic upgrade head
+# same pipeline with hash-based embeddings — proves the plumbing without the model download
+ingest-smoke:
+	$(PYPIPE) python -m qanoun_pipeline.cli ingest-all --skip-fetch --fake-embed
 
 # ── Services ────────────────────────────────────────────────────────────────────
 
 api:
-	$(PYAPI) uvicorn qanoun_api.main:app --reload --port 8000
+	$(PYAPI_MODELS) uvicorn qanoun_api.main:app --reload --port 8000
 
 web:
 	cd frontend && npm run dev
 
-# db + api + web in three panes via your terminal; docker must be running.
+# db + api + web in three terminals; docker must be running.
 dev:
 	@echo "Run in separate terminals:"; echo "  make db"; echo "  make api"; echo "  make web"
 
@@ -59,12 +59,14 @@ test:
 	cd frontend && npx tsc --noEmit
 
 lint:
-	$(PYPIPE) ruff check pipeline backend
-	cd frontend && npx next lint || true
+	$(PYPIPE) ruff check pipeline/src pipeline/tests backend/src backend/tests
 
-# Retrieval + grounded-answer evaluation (needs the LLM endpoint running).
+# Retrieval metrics + grounded answers + LLM-as-judge (needs the LLM endpoint running).
 eval:
-	$(PYAPI) python -m qanoun_api.eval.run --report docs/eval-report.md
+	$(PYAPI_MODELS) python -m qanoun_api.eval.run --report docs/eval-report.md
+
+eval-retrieval:
+	$(PYAPI_MODELS) python -m qanoun_api.eval.run --retrieval-only --report docs/eval-report.md
 
 # ── Cleanup ─────────────────────────────────────────────────────────────────────
 

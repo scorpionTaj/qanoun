@@ -1,0 +1,41 @@
+[project]
+name = "qanoun-api"
+version = "0.1.0"
+description = "FastAPI backend for Qanoun: law explorer, hybrid search, grounded chat with citations"
+requires-python = ">=3.11"
+dependencies = [
+    "qanoun-pipeline",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "httpx>=0.27",
+    "psycopg[binary,pool]>=3.2",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+# Needed at query time: the API embeds the user's question with the same model
+# the pipeline used for passages (BGE-M3).
+models = ["sentence-transformers>=3.0"]
+
+[dependency-groups]
+dev = ["pytest>=8.0", "ruff>=0.5"]
+
+[tool.uv.sources]
+qanoun-pipeline = { path = "../pipeline", editable = true }
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+qanoun_api = ["data/*.tsv"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
