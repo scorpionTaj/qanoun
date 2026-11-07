@@ -124,6 +124,8 @@
     "privacy": "The key stays in your browser and is sent only with each question to your backend. Never stored server-side.",
     "save": "Save",
     "saved": "Saved ✓",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "local": "local",
+    "localHint": "unused with local LM Studio"
   }
 }

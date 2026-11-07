@@ -124,6 +124,8 @@
     "privacy": "La clé reste dans votre navigateur et n'est envoyée qu'avec chaque question à votre backend. Jamais stockée côté serveur.",
     "save": "Enregistrer",
     "saved": "Enregistré ✓",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "local": "local",
+    "localHint": "inutilisé avec LM Studio local"
   }
 }
