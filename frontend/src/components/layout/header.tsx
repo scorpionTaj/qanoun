@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Scale, Gavel, MessagesSquare, BarChart3 } from "lucide-react";
 import { locales, type Locale } from "@/i18n/routing";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { SettingsDialog } from "@/components/settings/settings-dialog";
 import { cn } from "@/lib/utils";
 
 export function Header() {
@@ -57,6 +58,7 @@ export function Header() {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
+          <SettingsDialog locale={currentLocale} />
           <div className="flex items-center gap-1 rounded-lg border border-zellige-200 p-0.5 dark:border-zellige-700">
             {locales.map((locale) => (
               <Link

@@ -70,10 +70,15 @@
       "What counts as legitimate dismissal under the Labour Code?",
       "How many paid annual leave days am I entitled to?",
       "Can the landlord raise the rent every year?",
-      "شنو هي شروط الزواج فالمغرب؟"
+      "شنو هي شروط الزواج فالمغرب؟",
+      "chno hiya churut zwaj f lmaghrib?",
+      "9addach men nhar dyal conge f lkhedma?"
     ],
     "errorLlm": "Language model unreachable. Make sure the local server (LM Studio / Ollama) is running.",
-    "emptyState": "Ask any legal question — I answer from official texts, citing the exact article."
+    "emptyState": "Ask any legal question — I answer from official texts, citing the exact article.",
+    "copyAnswer": "Copy answer",
+    "searchingSources": "Searching the legal texts…",
+    "sourcesAfter": "Sources will appear once the answer is complete"
   },
   "insights": {
     "title": "Insights",
@@ -102,5 +107,23 @@
     "share": "Copy link",
     "copied": "Copied",
     "noMatch": "No matching articles."
+  },
+  "settings": {
+    "title": "AI settings",
+    "intro": "Choose where your questions are processed: locally via LM Studio or on a free cloud platform. Settings stay in your browser.",
+    "useCustom": "Use a cloud platform",
+    "useCustomHint": "Turn off to fall back to local LM Studio",
+    "provider": "Provider",
+    "baseUrl": "API base URL",
+    "model": "Model",
+    "modelAuto": "Auto-detect",
+    "optional": "optional",
+    "apiKey": "API key",
+    "getKey": "Get a key",
+    "notNeeded": "Not needed locally",
+    "privacy": "The key stays in your browser and is sent only with each question to your backend. Never stored server-side.",
+    "save": "Save",
+    "saved": "Saved ✓",
+    "cancel": "Cancel"
   }
 }

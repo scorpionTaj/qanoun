@@ -2,14 +2,25 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { BookOpenCheck, CircleAlert, FileText, Scale, Send, Sparkles } from "lucide-react";
-import { api, lawUrl } from "@/lib/api";
+import {
+  BookOpenCheck,
+  Check,
+  ChevronDown,
+  CircleAlert,
+  Copy,
+  FileText,
+  Scale,
+  Search,
+  Send,
+  Sparkles,
+} from "lucide-react";
+import { lawUrl } from "@/lib/api";
+import { settingsForRequest, loadSettings } from "@/lib/settings";
 import { streamSse } from "@/lib/sse";
 import type { SearchHit } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 interface Message {
@@ -58,10 +69,11 @@ export function ChatPanel({ locale, initialQuestion }: { locale: string; initial
       abortRef.current = controller;
 
       try {
+        const settings = settingsForRequest(loadSettings());
         const response = await fetch(`${API_URL}/api/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question: trimmed }),
+          body: JSON.stringify({ question: trimmed, llm: settings }),
           signal: controller.signal,
         });
         if (!response.ok || !response.body) throw new Error(`HTTP ${response.status}`);
@@ -71,6 +83,7 @@ export function ChatPanel({ locale, initialQuestion }: { locale: string; initial
           if (event.event === "meta") {
             setMessages((prev) => patchLast(prev, { rewritten: data.rewritten, disclaimer: data.disclaimer }));
           } else if (event.event === "sources") {
+            // kept in state but NOT rendered until the answer completes
             setMessages((prev) => patchLast(prev, { sources: data.sources }));
           } else if (event.event === "token") {
             setMessages((prev) => patchLast(prev, (m) => ({ text: m.text + data.t })));
@@ -186,12 +199,14 @@ function patchLast(
 
 function MessageBubble({ message, locale }: { message: Message; locale: string }) {
   const t = useTranslations("chat");
+  const [copied, setCopied] = useState(false);
+  const [sourcesOpen, setSourcesOpen] = useState(true);
   const isUser = message.role === "user";
 
   if (isUser) {
     return (
       <div className="animate-fade-up flex justify-end">
-        <div className="max-w-[80%] rounded-2xl rounded-ee-md bg-zellige-700 px-4 py-3 text-white">
+        <div className="max-w-[80%] rounded-2xl rounded-ee-md bg-zellige-700 px-4 py-3 text-white dark:bg-zellige-600">
           {message.text}
         </div>
       </div>
@@ -202,17 +217,44 @@ function MessageBubble({ message, locale }: { message: Message; locale: string }
     .map((index) => message.sources?.[index])
     .filter((hit): hit is SearchHit => Boolean(hit));
 
+  const copyAnswer = async () => {
+    await navigator.clipboard.writeText(message.text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1600);
+  };
+
   return (
     <div className="animate-fade-up flex flex-col items-start gap-2">
+      {/* The answer — always the first thing on screen while streaming */}
       <div
         className={cn(
-          "max-w-[90%] rounded-2xl rounded-es-md px-4 py-3 leading-8",
-          message.error ? "bg-red-50 text-red-800 dark:bg-red-950/60 dark:text-red-300" : "bg-sand-50 text-zellige-950 dark:bg-[#161a12] dark:text-zellige-100"
+          "group relative w-full rounded-2xl rounded-es-md px-4 py-3 leading-8",
+          message.error
+            ? "bg-red-50 text-red-800 dark:bg-red-950/60 dark:text-red-300"
+            : "bg-sand-50 text-zellige-950 dark:bg-[#161a12] dark:text-zellige-100"
         )}
         dir="auto"
       >
-        {message.text || "…"}
-        {message.streaming && <span className="ms-1 inline-block h-4 w-1.5 animate-blink bg-zellige-400 align-middle" />}
+        {message.text ? (
+          message.text
+        ) : (
+          <span className="flex items-center gap-2 text-sm text-zellige-500 dark:text-zellige-400">
+            <Search className="h-4 w-4 animate-pulse" />
+            {t("searchingSources")}
+          </span>
+        )}
+        {message.streaming && message.text && (
+          <span className="ms-1 inline-block h-4 w-1.5 animate-blink bg-zellige-400 align-middle" />
+        )}
+        {!message.streaming && !message.error && message.text && (
+          <button
+            onClick={() => void copyAnswer()}
+            title={t("copyAnswer")}
+            className="absolute end-2 top-2 flex h-7 w-7 items-center justify-center rounded-md text-zellige-300 opacity-0 transition-opacity hover:bg-zellige-100 hover:text-zellige-700 group-hover:opacity-100 dark:text-zellige-600 dark:hover:bg-zellige-800 dark:hover:text-zellige-200"
+          >
+            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+          </button>
+        )}
       </div>
 
       {message.rewritten && message.rewritten !== message.text && !message.error && (
@@ -222,60 +264,73 @@ function MessageBubble({ message, locale }: { message: Message; locale: string }
         </p>
       )}
 
-      {message.abstained && (
-        <p className="text-xs font-medium text-sand-700 dark:text-sand-300">{t("abstained")}</p>
-      )}
+      {message.abstained && <p className="text-xs font-medium text-sand-700 dark:text-sand-300">{t("abstained")}</p>}
 
-      {/* Sources: all retrieved passages, with cited ones highlighted */}
-      {message.sources && message.sources.length > 0 && (
+      {/* Sources stay hidden until the answer completes; then collapsible */}
+      {!message.streaming && message.sources && message.sources.length > 0 && (
         <div className="w-full">
-          <p className="mb-2 flex items-center gap-1.5 text-xs font-bold text-zellige-600 dark:text-zellige-300">
+          <button
+            onClick={() => setSourcesOpen(!sourcesOpen)}
+            className="mb-2 flex items-center gap-1.5 text-xs font-bold text-zellige-600 dark:text-zellige-300"
+          >
             <BookOpenCheck className="h-3.5 w-3.5" />
-            {t("sources")}
-          </p>
-          <div className="flex flex-col gap-1.5">
-            {message.sources.map((hit, index) => {
-              const cited = (message.cited ?? []).includes(index);
-              return (
-                <a
-                  key={`${hit.law_slug}-${hit.article_number}-${index}`}
-                  href={lawUrl(locale, hit.law_slug, hit.article_number)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={cn(
-                    "group flex items-start gap-2.5 rounded-xl border p-2.5 text-xs transition-colors",
-                    cited
-                      ? "border-zellige-300 bg-zellige-50 hover:bg-zellige-100 dark:border-zellige-600 dark:bg-zellige-800/60 dark:hover:bg-zellige-800"
-                      : "border-zellige-100 bg-white hover:bg-zellige-50"
-                  )}
-                  dir="auto"
-                >
-                  <span
+            {t("sources")} ({message.sources.length})
+            {citedSources.length > 0 && (
+              <span className="font-normal text-zellige-400 dark:text-zellige-500">
+                · {t("cited")}: {citedSources.map((h) => h.article_number).join(", ")}
+              </span>
+            )}
+            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", sourcesOpen && "rotate-180")} />
+          </button>
+          {sourcesOpen && (
+            <div className="flex flex-col gap-1.5">
+              {message.sources.map((hit, index) => {
+                const cited = (message.cited ?? []).includes(index);
+                return (
+                  <a
+                    key={`${hit.law_slug}-${hit.article_number}-${index}`}
+                    href={lawUrl(locale, hit.law_slug, hit.article_number)}
+                    target="_blank"
+                    rel="noreferrer"
                     className={cn(
-                      "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md font-bold",
-                      cited ? "bg-zellige-700 text-white" : "bg-zellige-100 text-zellige-600 dark:bg-zellige-800 dark:text-zellige-200"
+                      "group flex items-start gap-2.5 rounded-xl border p-2.5 text-xs transition-colors",
+                      // one card style for both states — cited gets the accent ring + badge
+                      "border-zellige-100 bg-white hover:bg-zellige-50 dark:border-zellige-800 dark:bg-[#12201a] dark:hover:bg-zellige-800/40",
+                      cited &&
+                        "border-zellige-300 ring-1 ring-zellige-300 dark:border-zellige-600 dark:ring-zellige-700"
                     )}
+                    dir="auto"
                   >
-                    {index + 1}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="flex flex-wrap items-center gap-1.5">
-                      <FileText className="h-3 w-3 text-zellige-400" />
-                      <span className="font-bold text-zellige-800 dark:text-zellige-100">{hit.law_title}</span>
-                      <Badge variant={cited ? "domain" : "outline"}>
-                        {locale === "fr" ? `Art. ${hit.article_number}` : `المادة ${hit.article_number}`}
-                      </Badge>
+                    <span
+                      className={cn(
+                        "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md font-bold",
+                        cited
+                          ? "bg-zellige-700 text-white dark:bg-zellige-500 dark:text-zellige-950"
+                          : "bg-zellige-100 text-zellige-600 dark:bg-zellige-800 dark:text-zellige-300"
+                      )}
+                    >
+                      {index + 1}
                     </span>
-                    <span className="mt-1 line-clamp-2 block text-zellige-500">{hit.text}</span>
-                  </span>
-                </a>
-              );
-            })}
-          </div>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex flex-wrap items-center gap-1.5">
+                        <FileText className="h-3 w-3 text-zellige-400" />
+                        <span className="font-bold text-zellige-800 dark:text-zellige-100">{hit.law_title}</span>
+                        <Badge variant={cited ? "domain" : "outline"}>
+                          {locale === "fr" ? `Art. ${hit.article_number}` : `المادة ${hit.article_number}`}
+                        </Badge>
+                      </span>
+                      <span className="mt-1 line-clamp-2 block text-zellige-500 dark:text-zellige-400">{hit.text}</span>
+                    </span>
+                  </a>
+                );
+              })}
+            </div>
+          )}
+          <p className="mt-1.5 text-[11px] text-zellige-400 dark:text-zellige-500">{t("sourcesAfter")}</p>
         </div>
       )}
 
-      {message.disclaimer && !message.error && (
+      {message.disclaimer && !message.error && !message.streaming && (
         <p className="text-[11px] text-zellige-400 dark:text-zellige-500" dir="auto">
           {message.disclaimer}
         </p>

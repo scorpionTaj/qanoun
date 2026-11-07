@@ -52,9 +52,36 @@ def set_llm(llm: LLMClient | None, rewriter: QueryRewriter | None = None) -> Non
     _rewriter = rewriter
 
 
+class LLMConfig(BaseModel):
+    """Per-request LLM override: any OpenAI-compatible endpoint (LM Studio, OpenRouter,
+    Google Gemini's OpenAI layer, NVIDIA NIM…). The key lives in the browser and is used
+    for this request only — the backend never stores it."""
+
+    base_url: str = Field(min_length=8, max_length=300)
+    model: str = Field(default="", max_length=200)
+    api_key: str = Field(default="", max_length=400)
+
+
 class ChatRequest(BaseModel):
     question: str = Field(min_length=1, max_length=1000)
     k: int = Field(default=5, ge=1, le=20)
+    llm: LLMConfig | None = None
+
+
+def _client_for(req: ChatRequest) -> LLMClient:
+    if req.llm:
+        return LLMClient(
+            base_url=req.llm.base_url.rstrip("/"),
+            model=req.llm.model,
+            api_key=req.llm.api_key,
+        )
+    return get_llm()
+
+
+def _rewriter_for(req: ChatRequest) -> QueryRewriter:
+    if req.llm:
+        return QueryRewriter(_client_for(req), cache_path=SETTINGS.rewrite_cache)
+    return get_rewriter()
 
 
 def _sse(event: str, data: dict) -> str:
@@ -64,8 +91,9 @@ def _sse(event: str, data: dict) -> str:
 def _chat_stream(req: ChatRequest) -> Iterator[str]:
     question = req.question.strip()
     variety = detect_variety(question)
+    llm = _client_for(req)
     try:
-        rewriter = get_rewriter()
+        rewriter = _rewriter_for(req)
         rewritten = rewriter.rewrite(question)
     except Exception:  # rewriting is an optimization; never block answering on it
         rewritten = question
@@ -89,7 +117,7 @@ def _chat_stream(req: ChatRequest) -> Iterator[str]:
     messages = build_messages(question, result.hits, variety)
     chunks: list[str] = []
     try:
-        for token in get_llm().chat_stream(messages, max_tokens=600):
+        for token in llm.chat_stream(messages, max_tokens=600):
             chunks.append(token)
             yield _sse("token", {"t": token})
     except Exception as exc:

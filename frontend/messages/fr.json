@@ -70,10 +70,15 @@
       "Quels sont les cas de licenciement légitime ?",
       "Combien de jours de congé annuel payé ?",
       "Le bailleur peut-il augmenter le loyer chaque année ?",
-      "شنو هي شروط الزواج فالمغرب؟"
+      "شنو هي شروط الزواج فالمغرب؟",
+      "chno hia chourout l3rs f lmaghrib?",
+      "9addach men nhar dyal conge f lkhedma?"
     ],
     "errorLlm": "Modèle de langage inaccessible. Vérifiez que le serveur local (LM Studio / Ollama) tourne.",
-    "emptyState": "Posez une question juridique : je réponds à partir des textes officiels, article à l'appui."
+    "emptyState": "Posez une question juridique : je réponds à partir des textes officiels, article à l'appui.",
+    "copyAnswer": "Copier la réponse",
+    "searchingSources": "Recherche dans les textes juridiques…",
+    "sourcesAfter": "Les sources apparaîtront après la réponse"
   },
   "insights": {
     "title": "Tableau d'analyse",
@@ -102,5 +107,23 @@
     "share": "Copier le lien",
     "copied": "Copié",
     "noMatch": "Aucun article correspondant."
+  },
+  "settings": {
+    "title": "Paramètres IA",
+    "intro": "Choisissez où vos questions sont traitées : en local (LM Studio) ou via une plateforme cloud gratuite. Les réglages restent dans votre navigateur.",
+    "useCustom": "Utiliser une plateforme cloud",
+    "useCustomHint": "Désactivez pour revenir à LM Studio local",
+    "provider": "Fournisseur",
+    "baseUrl": "URL de l'API",
+    "model": "Modèle",
+    "modelAuto": "Détection auto",
+    "optional": "optionnel",
+    "apiKey": "Clé API",
+    "getKey": "Obtenir une clé",
+    "notNeeded": "Inutile en local",
+    "privacy": "La clé reste dans votre navigateur et n'est envoyée qu'avec chaque question à votre backend. Jamais stockée côté serveur.",
+    "save": "Enregistrer",
+    "saved": "Enregistré ✓",
+    "cancel": "Annuler"
   }
 }
