@@ -1,0 +1,131 @@
+# Qanoun seed catalog — one entry per document file.
+#
+# Fields:
+#   slug        unique id, used in URLs and the DB
+#   group       groups bilingual editions of the same law (retrieval stays per-file)
+#   title_ar / title_fr   display titles (title_fr optional for Arabic-only editions)
+#   law_number  official number, e.g. "70-03" (null if unknown)
+#   year        promulgation year
+#   domain      one of qanoun_pipeline.catalog.DOMAINS
+#   language    ar | fr
+#   file        file name under data/raw/
+#   source_url  where fetch downloads it from (Ministry of Justice portal)
+#   sha256      integrity proof of the exact file
+#
+# To add a law: download the PDF from adala.justice.gov.ma, put it in data/raw/,
+# run `shasum -a 256` on it, and fill an entry below.
+
+entries:
+  # ── Family ────────────────────────────────────────────────────────────────────
+  - slug: family-code-ar
+    group: moudawana
+    title_ar: مدونة الأسرة
+    title_fr: Code de la famille (Moudawana)
+    law_number: "70-03"
+    year: 2004
+    domain: family
+    language: ar
+    file: family_code_ar.pdf
+    source_url: https://adala.justice.gov.ma/api/uploads/2024/07/22/مدونة الأسرة-1721646687560.pdf
+    sha256: a6d5bd1c0f8e7320493d974c702cb874fbbeab07a730bf6c094002635e96a18f
+
+  - slug: family-code-fr
+    group: moudawana
+    title_ar: مدونة الأسرة
+    title_fr: Code de la famille (Moudawana)
+    law_number: "70-03"
+    year: 2004
+    domain: family
+    language: fr
+    file: family_code_fr.pdf
+    source_url: https://adala.justice.gov.ma/api/uploads/2024/12/12/DAHIR N° 1-04-22 PORTANT PROMULGATION DE LA LOI.PDF-1734012188728.pdf
+    sha256: b335d2c0163647fc6cf8f4496dfd273c6a5179a2e2728d0a93b325d81193b9eb
+
+  # ── Labour ────────────────────────────────────────────────────────────────────
+  - slug: labour-code-ar
+    group: labour-code
+    title_ar: مدونة الشغل
+    title_fr: Code du travail
+    law_number: "65-99"
+    year: 2004
+    domain: labour
+    language: ar
+    file: labour_code_ar.pdf
+    source_url: https://adala.justice.gov.ma/api/uploads/2026/07/28/ظهير شريف رقم 1.03.194 بتنفيذ القانون رقم 65.99 المتعلق بمدونة الشغل -1785240385771.pdf
+    sha256: dda82c7bb74f36cc2754ebb56ee218fa7a92b21bb99e902a29e5f9e57144d8ba
+
+  - slug: labour-code-fr
+    group: labour-code
+    title_ar: مدونة الشغل
+    title_fr: Code du travail
+    law_number: "65-99"
+    year: 2004
+    domain: labour
+    language: fr
+    file: labour_code_fr.pdf
+    source_url: https://adala.justice.gov.ma/api/uploads/2024/04/30/code du travail-1714463246806.pdf
+    sha256: 91c67dd23c5a2d9aa01c997542ed547b4077135c2528baf74e2a385ea5dfc8f3
+
+  # ── Civil: obligations and contracts ─────────────────────────────────────────
+  - slug: obligations-contracts-ar
+    group: doc
+    title_ar: قانون الالتزامات والعقود
+    title_fr: Code des obligations et des contrats (D.O.C.)
+    law_number: DOC
+    year: 1913
+    domain: civil
+    language: ar
+    file: obligations_contracts_ar.pdf
+    # The D.O.C. numbers its articles "الفصل N" instead of "المادة N".
+    article_words: الفصل,فصل
+    source_url: https://adala.justice.gov.ma/api/uploads/2024/10/24/ظهير بمثابة قانون الالتزامات والعقود-1729777400387.pdf
+    sha256: 1c1f2f01cab1b499c9812bb41b8f5ea774480a3acc017d442a061af9673a6991
+
+  - slug: obligations-contracts-fr
+    group: doc
+    title_ar: قانون الالتزامات والعقود
+    title_fr: Code des obligations et des contrats (D.O.C.)
+    law_number: DOC
+    year: 1913
+    domain: civil
+    language: fr
+    file: obligations_contracts_fr.pdf
+    source_url: https://adala.justice.gov.ma/api/uploads/2024/02/28/Code des Obligations et des Contrats_compressed-1709126934943.pdf
+    sha256: 9cc77a8bc445e6d4eaa9604e5350f6851ace35244adc46fa067eb2bc032710f1
+
+  # ── Housing: rentals ──────────────────────────────────────────────────────────
+  - slug: rental-law-ar
+    group: rental
+    title_ar: القانون رقم 67.12 المتعلق بالكراء
+    title_fr: Loi 67-12 relative au bail
+    law_number: "67-12"
+    year: 2023
+    domain: housing
+    language: ar
+    file: rental_law_ar.pdf
+    source_url: https://adala.justice.gov.ma/api/uploads/2026/04/15/ظهير شريف رقم 1.13.111 صادر في-1776242288111.pdf
+    sha256: 060a338aa1ae8bfe55caa9de510957d02b28cd13dddd1b3c3dd793172cf37311
+
+  - slug: commercial-lease-ar
+    group: commercial-lease
+    title_ar: كراء العقارات المخصصة للاستعمال التجاري أو الصناعي أو الحرفي
+    title_fr: Baux des locaux à usage commercial, industriel ou artisanal
+    law_number: null
+    year: 1962
+    domain: commercial
+    language: ar
+    file: commercial_lease_ar.pdf
+    source_url: https://adala.justice.gov.ma/api/uploads/2024/02/07/كراء العقارات والمحلات المخصصة للاستعمال التجاري أو الصناعي أو الحرفي-1707314492701.pdf
+    sha256: c28946a3f0d093a00e9424949cc652afeca60690f7cfbc96f7a90cd7a7821c60
+
+  # ── Next candidates (uncomment + fill source_url and sha256 to enable) ───────
+  # - slug: education-law-ar          # قانون 51.17, نظام التعليم (schools / high schools)
+  #   domain: education
+  # - slug: penal-code-ar             # القانون الجنائي
+  #   domain: penal
+  # - slug: nationality-code-ar       # قانون الجنسية
+  #   domain: nationality
+  # - slug: cnss-law-ar               # الضمان الاجتماعي
+  #   domain: social
+  # - slug: civil-procedure-ar        # قانون المسطرة المدنية
+  #   domain: justice
