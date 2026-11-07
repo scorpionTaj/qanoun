@@ -125,7 +125,7 @@ export function InsightsDashboard({ locale }: { locale: string }) {
           <CardContent className="h-72">
             {summary ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={domainData} margin={{ top: 8, right: 8, left: 0, bottom: 24 }}>
+                <BarChart data={domainData} margin={{ top: 8, right: 0, left: 0, bottom: 24 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e0ede5" />
                   <XAxis
                     dataKey="name"
@@ -134,11 +134,14 @@ export function InsightsDashboard({ locale }: { locale: string }) {
                     textAnchor="end"
                     interval={0}
                   />
-                  <YAxis tick={{ fontSize: 11, fill: "#44855d" }} allowDecimals={false} />
+                  {/* Two scales: articles run in the thousands, laws in single digits — on one
+                      axis the laws bars were invisible. */}
+                  <YAxis yAxisId="articles" tick={{ fontSize: 11, fill: "#44855d" }} allowDecimals={false} />
+                  <YAxis yAxisId="laws" orientation="right" tick={{ fontSize: 11, fill: "#ba8c4b" }} allowDecimals={false} />
                   <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: isDark ? '#e0ede5' : '#1d392a' }} cursor={{ fill: isDark ? 'rgba(68,133,93,0.15)' : 'rgba(68,133,93,0.10)' }} />
                   <Legend wrapperStyle={{ color: isDark ? "#e0ede5" : "#29553b", fontSize: 12 }} />
-                  <Bar dataKey="articles" name={t("articles")} fill="#44855d" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="laws" name={t("laws")} fill="#ba8c4b" radius={[6, 6, 0, 0]} />
+                  <Bar yAxisId="articles" dataKey="articles" name={t("articles")} fill="#44855d" radius={[6, 6, 0, 0]} />
+                  <Bar yAxisId="laws" dataKey="laws" name={t("laws")} fill="#ba8c4b" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (

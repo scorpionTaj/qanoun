@@ -41,8 +41,10 @@ ingest-smoke:
 
 # ── Services ────────────────────────────────────────────────────────────────────
 
+# --reload-dir: watching the whole repo restarted the API on every frontend build
 api:
-	$(PYAPI_MODELS) uvicorn qanoun_api.main:app --reload --port 8000
+	$(PYAPI_MODELS) uvicorn qanoun_api.main:app --port 8000 --reload \
+		--reload-dir backend/src --reload-dir pipeline/src
 
 web:
 	cd frontend && npm run dev

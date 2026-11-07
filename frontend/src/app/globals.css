@@ -89,3 +89,22 @@ body {
 .article-target:target {
   @apply ring-2 ring-sand-400 dark:ring-sand-500;
 }
+
+/* Long laws (the D.O.C. has 1,200+ articles): let the browser skip layout and paint for
+   off-screen articles. Native, keeps #article-N anchors and Ctrl+F working, unlike a
+   JS virtual list. */
+.article-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 180px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

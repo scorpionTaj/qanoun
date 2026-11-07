@@ -9,7 +9,6 @@ from dataclasses import dataclass
 
 import psycopg
 from pgvector.psycopg import register_vector
-from numpy import ndarray
 
 from qanoun_pipeline.catalog import LawMeta
 from qanoun_pipeline.schema import SCHEMA_SQL

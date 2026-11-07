@@ -11,7 +11,7 @@ def make_client(candidates: list[str], failing: set[str], reply: str = "مرحب
 
     def handler(request: httpx.Request) -> httpx.Response:
         url = request.url.path
-        if url.endswith("/models") or url.endswith("/api/v0/models"):
+        if url.endswith(("/models", "/api/v0/models")):
             return httpx.Response(
                 200,
                 json={"data": [{"id": m, "state": "loaded" if i == 0 else "not-loaded",

@@ -47,8 +47,8 @@ class LawMeta:
     article_words: tuple[str, ...] = ("المادة", "مادة")
 
     @property
-    def title(self, lang: str = "ar") -> str:  # convenience for CLI prints
-        return self.title_ar if lang == "ar" else (self.title_fr or self.title_ar)
+    def title(self) -> str:  # convenience for CLI prints (a property can't take a language)
+        return self.title_ar
 
 
 class CatalogError(ValueError):

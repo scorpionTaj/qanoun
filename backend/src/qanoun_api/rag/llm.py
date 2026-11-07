@@ -1,9 +1,6 @@
-"""Minimal client for any OpenAI-compatible chat endpoint: LM Studio, Ollama, vLLM,
-OpenRouter or a custom gateway (ported from darija-rag).
-
-    QANOUN_LLM_URL    base URL ending in /v1 (default: LM Studio, http://localhost:1234/v1)
-    QANOUN_LLM_MODEL  model id; empty means auto-detect (see _candidate_models)
-    QANOUN_LLM_KEY    bearer token, if the endpoint needs one
+"""Minimal client for one OpenAI-compatible chat endpoint: LM Studio, Ollama, vLLM,
+OpenRouter, Gemini's OpenAI layer, NVIDIA NIM (ported from darija-rag). Which endpoints
+exist, their keys and the fallback between them live in rag/providers.py.
 
 Model auto-detection builds an ordered candidate list — loaded models with a known chat
 architecture first, then other loaded models, then the server's listed models — and tries
@@ -13,19 +10,43 @@ carries the endpoint's response body, so "returned 400" always says WHY.
 """
 
 import json
-import os
+import re
 from collections.abc import Iterator
 from dataclasses import dataclass, field
+from typing import Protocol
 
 import httpx
-
-from qanoun_api.config import SETTINGS
 
 DEFAULT_URL = "http://localhost:1234/v1"
 
 
+class ChatModel(Protocol):
+    """What the answerer, rewriter and eval need: an LLMClient or a provider-router binding
+    (qanoun_api.rag.providers.BoundLLM)."""
+
+    def chat(self, messages: list[dict], **kwargs) -> str: ...
+
+
 class LLMError(RuntimeError):
-    pass
+    """`kind` lets callers react without parsing text: unreachable | auth | rate_limit |
+    unavailable | model | error. The UI maps it to a translated, actionable message."""
+
+    def __init__(self, message: str, kind: str = "error", status: int | None = None):
+        super().__init__(message)
+        self.kind = kind
+        self.status = status
+
+
+def _kind_for(status: int) -> str:
+    if status in (401, 403):
+        return "auth"
+    if status == 429:
+        return "rate_limit"
+    if status in (400, 404, 422):
+        return "model"
+    if status in (502, 503, 504, 529):
+        return "unavailable"  # provider overloaded: another model/provider may work now
+    return "error"
 
 
 @dataclass
@@ -34,23 +55,8 @@ class LLMClient:
     model: str = ""  # explicit override from env; empty = auto-detect
     api_key: str = ""
     timeout: float = 120.0
+    extra: dict = field(default_factory=dict)  # provider-specific body fields
     _http: httpx.Client | None = field(default=None, repr=False)
-
-    @classmethod
-    def from_settings(cls) -> "LLMClient":
-        return cls(
-            base_url=SETTINGS.llm_url,
-            model=SETTINGS.llm_model,
-            api_key=SETTINGS.llm_key,
-        )
-
-    @classmethod
-    def from_env(cls) -> "LLMClient":  # convenience for scripts/tests
-        return cls(
-            base_url=os.environ.get("QANOUN_LLM_URL", DEFAULT_URL).rstrip("/"),
-            model=os.environ.get("QANOUN_LLM_MODEL", ""),
-            api_key=os.environ.get("QANOUN_LLM_KEY", ""),
-        )
 
     @property
     def http(self) -> httpx.Client:
@@ -65,11 +71,26 @@ class LLMClient:
         except httpx.HTTPError as exc:
             raise LLMError(
                 f"LLM endpoint {self.base_url} is unreachable ({exc.__class__.__name__}). "
-                "Start the LM Studio server (Developer tab) or set QANOUN_LLM_URL."
+                "Start the LM Studio server (Developer tab) or set QANOUN_LLM_URL.",
+                kind="unreachable",
             ) from exc
         if response.status_code >= 400:
-            raise LLMError(f"LLM endpoint returned {response.status_code}: {response.text[:300]}")
+            raise LLMError(
+                f"LLM endpoint returned {response.status_code}: {response.text[:300]}",
+                kind=_kind_for(response.status_code),
+                status=response.status_code,
+            )
         return response.json()
+
+    def list_models(self) -> list[str]:
+        """Model ids the endpoint advertises (Gemini prefixes them with "models/")."""
+        data = self._request("GET", "/models").get("data", [])
+        return [str(m["id"]).removeprefix("models/") for m in data if m.get("id")]
+
+    def close(self) -> None:
+        if self._http is not None:
+            self._http.close()
+            self._http = None
 
     def _candidate_models(self) -> list[str]:
         """Ordered model candidates: LM Studio loaded models (known chat archs first),
@@ -102,7 +123,8 @@ class LLMClient:
         if not candidates:
             raise LLMError(
                 f"no chat model available at {self.base_url} — load one in LM Studio "
-                "(Developer tab) or set QANOUN_LLM_MODEL"
+                "(Developer tab) or set QANOUN_LLM_MODEL",
+                kind="unreachable",
             )
         last_error: LLMError | None = None
         for candidate in candidates:
@@ -111,12 +133,17 @@ class LLMClient:
                 "messages": messages,
                 "temperature": temperature,
                 "max_tokens": max_tokens,
+                **self.extra,
             }
             try:
                 data = self._request("POST", "/chat/completions", json=body)
                 content = data["choices"][0]["message"]["content"] or ""
             except (LLMError, KeyError, IndexError) as exc:
-                last_error = exc if isinstance(exc, LLMError) else LLMError(f"unexpected response shape: {str(exc)[:200]}")
+                last_error = (
+                    exc
+                    if isinstance(exc, LLMError)
+                    else LLMError(f"unexpected response shape: {str(exc)[:200]}")
+                )
                 if self.model:
                     raise  # explicit override: never silently fall back to another model
                 continue  # auto-detect: try the next candidate
@@ -124,7 +151,8 @@ class LLMClient:
             return content
         raise LLMError(
             f"all {len(candidates)} candidate model(s) failed at {self.base_url}. "
-            f"Load a chat model in LM Studio and retry. Last error: {last_error}"
+            f"Load a chat model in LM Studio and retry. Last error: {last_error}",
+            kind=last_error.kind if last_error else "error",
         )
 
     def chat_stream(
@@ -136,25 +164,29 @@ class LLMClient:
         if not candidates:
             raise LLMError(
                 f"no chat model available at {self.base_url} — load one in LM Studio "
-                "(Developer tab) or set QANOUN_LLM_MODEL"
+                "(Developer tab) or set QANOUN_LLM_MODEL",
+                kind="unreachable",
             )
         last_error: LLMError | None = None
-        for index, candidate in enumerate(candidates):
+        for candidate in candidates:
             body = {
                 "model": candidate,
                 "messages": messages,
                 "temperature": temperature,
                 "max_tokens": max_tokens,
                 "stream": True,
+                **self.extra,
             }
+            first_token = True
             try:
                 with self.http.stream("POST", "/chat/completions", json=body) as response:
                     if response.status_code >= 400:
                         error_body = response.read().decode("utf-8", "replace")[:300]
                         raise LLMError(
-                            f"model {candidate!r} → {response.status_code}: {error_body}"
+                            f"model {candidate!r} → {response.status_code}: {error_body}",
+                            kind=_kind_for(response.status_code),
+                            status=response.status_code,
                         )
-                    first_token = True
                     for line in response.iter_lines():
                         if not line.startswith("data:"):
                             continue
@@ -173,9 +205,14 @@ class LLMClient:
                             yield token
                     return  # stream ended cleanly
             except httpx.HTTPError as exc:
-                last_error = LLMError(f"stream from {self.base_url} failed: {exc.__class__.__name__}")
-                if self.model:
-                    raise
+                last_error = LLMError(
+                    f"stream from {self.base_url} failed: {exc.__class__.__name__}",
+                    kind="unreachable",
+                )
+                # Tokens already reached the caller: retrying another model would splice
+                # two different answers together.
+                if self.model or not first_token:
+                    raise last_error from exc
                 continue
             except LLMError as exc:
                 last_error = exc
@@ -184,12 +221,11 @@ class LLMClient:
                 continue
         raise LLMError(
             f"all {len(candidates)} candidate model(s) failed at {self.base_url}. "
-            f"Load a chat model in LM Studio and retry. Last error: {last_error}"
+            f"Load a chat model in LM Studio and retry. Last error: {last_error}",
+            kind=last_error.kind if last_error else "error",
         )
 
 
 def strip_reasoning(text: str) -> str:
     """Reasoning models served by LM Studio may prepend <think>...</think>."""
-    import re
-
     return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()

@@ -10,6 +10,7 @@ data-quality signal instead of silent corruption.
 
 import re
 from dataclasses import dataclass, field
+from itertools import pairwise
 
 from qanoun_pipeline.parse import Page
 
@@ -134,7 +135,7 @@ def segment(
     report.preamble = " ".join(preamble_lines).strip()
 
     numbers = [int(a.number.split("-")[0]) for a in report.articles]
-    for previous, number in zip(numbers, numbers[1:], strict=False):
+    for previous, number in pairwise(numbers):
         if number < previous:
             report.warnings.append(f"article numbers go {previous} → {number} (out of order)")
     if report.preamble and len(report.preamble) < 60:

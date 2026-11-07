@@ -1,11 +1,12 @@
 """Analytics endpoints: corpus statistics for the data-science dashboard."""
 
 import re
+import time
 
 from fastapi import APIRouter, Query
+from qanoun_pipeline.normalize import STOPWORDS
 
 from qanoun_api.db import db
-from qanoun_pipeline.normalize import STOPWORDS
 
 router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 
@@ -18,7 +19,7 @@ KEYWORD_BOILERPLATE = frozenset({
     # structural words: every law cites القانون رقم… and heads every المادة/الفصل
     "القانون", "القانوني", "القانونيه", "الماده", "الفصل", "الباب", "القسم", "الفقره",
     "الفقرات", "التماس", "التالي", "السابق", "السالف", "المشار", "الذكر", "اعلاه", "اعاله",
-    "بمقتضي", "مقتضي", "المنصوص", "منصوص", "طبقا", "عملا", "تحمل", "نص", "نصا", "نصا",
+    "بمقتضي", "مقتضي", "المنصوص", "منصوص", "طبقا", "عملا", "تحمل", "نص", "نصا",
     # modal / functional verbs
     "يمكن", "يجب", "تم", "يجوز", "يتعين", "تعتبر", "يعد", "كان", "تصبح", "قامت",
     "وتتميم", "تغيير", "تعديل", "المعدل", "المعدله",
@@ -89,8 +90,24 @@ def summary():
     }
 
 
+# The keyword scan tokenizes every article; the corpus only changes on ingest, so a short
+# TTL keeps the dashboard instant without serving stale data for long after a re-ingest.
+KEYWORDS_TTL = 600.0
+_keyword_cache: dict[tuple[str | None, int], tuple[float, list[dict]]] = {}
+
+
 @router.get("/keywords")
 def keywords(domain: str | None = Query(None), limit: int = Query(30, ge=5, le=100)):
+    key = (domain, limit)
+    cached = _keyword_cache.get(key)
+    if cached and time.monotonic() - cached[0] < KEYWORDS_TTL:
+        return cached[1]
+    result = _keywords(domain, limit)
+    _keyword_cache[key] = (time.monotonic(), result)
+    return result
+
+
+def _keywords(domain: str | None, limit: int) -> list[dict]:
     """Top informative tokens across article text — the dashboard's word-frequency panel.
 
     Three NLP filters, in order:
@@ -110,7 +127,7 @@ def keywords(domain: str | None = Query(None), limit: int = Query(30, ge=5, le=1
         # the cap must never drop below 1: single-law domains (transport) keep their tokens
         max_df = max(1, int(law_total * MAX_DF_RATIO))
         rows = conn.execute(
-            """
+            r"""
             SELECT word, sum(n) AS total, count(DISTINCT law_id) AS df FROM (
                 SELECT a.law_id, regexp_replace(w.word, '^[^\w]+|[^\w]+$', '', 'g') AS word, count(*) AS n
                 FROM articles a

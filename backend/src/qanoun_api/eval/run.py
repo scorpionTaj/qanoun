@@ -17,7 +17,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from qanoun_api.rag.answer import Answerer
-from qanoun_api.rag.llm import LLMClient
+from qanoun_api.rag.llm import ChatModel
+from qanoun_api.rag.providers import get_router
 from qanoun_api.rag.retrieval import search
 from qanoun_api.rag.rewrite import detect_variety
 
@@ -61,7 +62,7 @@ def evaluate_retrieval(questions: list[dict], k: int, log: bool = True) -> list[
             continue
         try:
             hits = search(q["question"], k=k).hits
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 — record per-question failures in the report
             res.error = f"retrieval failed: {exc}"
             results.append(res)
             continue
@@ -100,7 +101,7 @@ _JUDGE_SYSTEM = (
 )
 
 
-def judge_answer(llm: LLMClient, question: str, answer_text: str, sources: list[str]) -> dict:
+def judge_answer(llm: ChatModel, question: str, answer_text: str, sources: list[str]) -> dict:
     numbered = "\n\n".join(f"[{i}] {s[:600]}" for i, s in enumerate(sources, start=1))
     user = f"Question: {question}\n\nAnswer: {answer_text}\n\nSources:\n{numbered}"
     reply = llm.chat(
@@ -123,7 +124,7 @@ def evaluate_answers(questions: list[dict], results: list[QuestionResult], answe
             continue
         try:
             answer = answerer.ask(q["question"])
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 — record per-question failures in the report
             res.error = f"answer failed: {exc}"
             continue
         res.answer = answer.text
@@ -195,7 +196,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"hit@{args.k}={metrics['hit_rate']} mrr={metrics['mrr']}")
 
     if not args.retrieval_only:
-        answerer = Answerer(LLMClient.from_env(), k=5)
+        answerer = Answerer(get_router().bind(), k=5)  # same providers + fallback as /chat
         print("answering + judging…")
         evaluate_answers(questions, results, answerer)
 

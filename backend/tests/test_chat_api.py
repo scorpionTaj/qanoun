@@ -1,12 +1,12 @@
 """Chat endpoint over SSE with faked retrieval + LLM (no DB, no network)."""
 
+from conftest import make_hit, parse_sse
+from fastapi.testclient import TestClient
+
+from qanoun_api.main import app
 from qanoun_api.rag import retrieval
 from qanoun_api.rag.retrieval import RetrievalResult
 from qanoun_api.routers import chat as chat_router
-from qanoun_api.main import app
-from fastapi.testclient import TestClient
-
-from conftest import make_hit, parse_sse
 
 
 def post_chat(payload: dict) -> str:
@@ -46,10 +46,10 @@ def test_chat_abstains_without_sources(monkeypatch, fake_llm):
 
 
 def test_chat_abstains_on_no_answer_sentinel(monkeypatch):
-    from qanoun_api.rag.llm import LLMClient
 
     class SentinelLLM:
-        calls = []
+        def __init__(self):
+            self.calls = []
 
         def chat_stream(self, messages, **kw):
             self.calls.append(messages)
@@ -65,14 +65,17 @@ def test_chat_abstains_on_no_answer_sentinel(monkeypatch):
 def test_chat_reports_llm_failure(monkeypatch):
     class BrokenLLM:
         def chat_stream(self, messages, **kw):
-            raise RuntimeError("connection refused")
+            from qanoun_api.rag.llm import LLMError
+
+            raise LLMError("connection refused", kind="unreachable")
             yield  # pragma: no cover
 
     monkeypatch.setattr(retrieval, "search", lambda *a, **kw: RetrievalResult("q", "q", [make_hit()]))
     chat_router.set_llm(BrokenLLM(), None)
     events = parse_sse(post_chat({"question": "سؤال"}))
     assert events[-1][0] == "error"
-    assert "LLM unavailable" in events[-1][1]["message"]
+    assert events[-1][1]["code"] == "unreachable"
+    assert "connection refused" in events[-1][1]["message"]
 
 
 def test_chat_validates_input():
@@ -90,5 +93,5 @@ def test_chat_reports_mid_stream_interruption(monkeypatch):
     chat_router.set_llm(FlakyLLM(), None)
     events = parse_sse(post_chat({"question": "سؤال"}))
     assert events[-1][0] == "error"
-    assert "interrupted" in events[-1][1]["message"]
+    assert events[-1][1]["code"] == "interrupted"
     assert "done" not in [name for name, _ in events]

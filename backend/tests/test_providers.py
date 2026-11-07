@@ -1,0 +1,147 @@
+"""Provider registry: .env parsing, model recommendation, fallback between providers."""
+
+import pytest
+
+from qanoun_api.rag.llm import LLMError
+from qanoun_api.rag.providers import LLMRouter, load_providers, recommend_model
+
+
+def test_cloud_key_becomes_default_and_local_stays_available():
+    providers = load_providers({"QANOUN_GEMINI_KEY": "k"})
+    assert next(p.id for p in providers) == "gemini"
+    configured = [p.id for p in providers if p.configured]
+    assert configured == ["gemini", "local"]
+
+
+def test_explicit_preference_wins_and_unkeyed_preference_is_ignored():
+    env = {"QANOUN_GEMINI_KEY": "k", "QANOUN_LLM_PROVIDER": "local"}
+    assert load_providers(env)[0].id == "local"
+    env = {"QANOUN_LLM_PROVIDER": "nvidia"}  # no NVIDIA key → falls back to local
+    assert load_providers(env)[0].id == "local"
+
+
+def test_recommend_gemini_picks_newest_stable_flash():
+    ids = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite",
+           "gemini-3.0-flash-preview", "gemini-2.5-pro", "text-embedding-004",
+           "gemini-2.5-flash-preview-tts"]
+    assert recommend_model("gemini", ids) == "gemini-2.5-flash"
+
+
+def test_recommend_openrouter_prefers_free_known_family():
+    ids = ["openai/gpt-5", "meta-llama/llama-3.3-70b-instruct:free", "acme/tiny:free"]
+    assert recommend_model("openrouter", ids) == "meta-llama/llama-3.3-70b-instruct:free"
+
+
+def test_recommend_skips_non_chat_models():
+    assert recommend_model("nvidia", ["nvidia/nv-embedqa-e5-v5"]) is None
+
+
+class FakeClient:
+    def __init__(self, tokens=None, error=None, mid_error=False):
+        self.tokens, self.error, self.mid_error, self.model = tokens or [], error, mid_error, ""
+
+    def chat_stream(self, messages, **kw):
+        if self.error and not self.mid_error:
+            raise self.error
+        yield from self.tokens
+        if self.mid_error:
+            raise self.error
+
+    def chat(self, messages, **kw):
+        if self.error:
+            raise self.error
+        return "".join(self.tokens)
+
+
+def router_with(clients: dict) -> LLMRouter:
+    router = LLMRouter(load_providers({"QANOUN_GEMINI_KEY": "k", "QANOUN_LLM_MODEL": "m"}))
+    router.resolve_model = lambda provider, model="": model or "auto"  # no network
+    router.models = lambda pid: ["auto"]
+    router._client = lambda provider, model: clients[provider.id]
+    return router
+
+
+def test_falls_back_to_next_provider_and_reports_who_answered():
+    router = router_with({
+        "gemini": FakeClient(error=LLMError("429", kind="rate_limit")),
+        "local": FakeClient(tokens=["مرحبا"]),
+    })
+    started = []
+    out = list(router.chat_stream([], on_start=lambda p, m: started.append(p.id)))
+    assert out == ["مرحبا"] and started == ["local"]
+
+
+def test_all_providers_failing_reports_most_actionable_kind():
+    router = router_with({
+        "gemini": FakeClient(error=LLMError("bad key", kind="auth")),
+        "local": FakeClient(error=LLMError("refused", kind="unreachable")),
+    })
+    with pytest.raises(LLMError) as info:
+        list(router.chat_stream([]))
+    assert info.value.kind == "auth"
+    assert "bad key" in str(info.value) and "refused" in str(info.value)
+
+
+def test_mid_answer_failure_is_not_spliced_with_another_provider():
+    router = router_with({
+        "gemini": FakeClient(tokens=["half"], error=LLMError("reset", kind="unreachable"),
+                             mid_error=True),
+        "local": FakeClient(tokens=["other"]),
+    })
+    out = []
+    with pytest.raises(LLMError):
+        for token in router.chat_stream([]):
+            out.append(token)  # noqa: PERF402 — keep tokens seen before the raise
+    assert out == ["half"]
+
+
+def test_requesting_unkeyed_provider_is_a_clear_error():
+    router = LLMRouter(load_providers({}))
+    with pytest.raises(LLMError, match="QANOUN_GEMINI_KEY"):
+        router.get("gemini")
+
+
+def test_busy_model_falls_back_to_sibling_model_of_same_provider():
+    router = LLMRouter(load_providers({"QANOUN_GEMINI_KEY": "k"}))
+    router.models = lambda pid: ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.5-pro"]
+    clients = {
+        "gemini-3.8-flash": FakeClient(error=LLMError("503 high demand", kind="unavailable")),
+        "gemini-2.5-flash": FakeClient(tokens=["جواب"]),
+    }
+    router._client = lambda provider, model: clients[model]
+    used = []
+    out = list(router.chat_stream([], on_start=lambda p, m: used.append(m)))
+    assert out == ["جواب"] and used == ["gemini-2.5-flash"]
+
+
+def test_ranked_models_skips_non_chat_and_orders_best_first():
+    from qanoun_api.rag.providers import ranked_models
+
+    ids = ["deep-research-pro-preview-12-2025", "gemini-2.5-flash", "gemini-3.8-flash",
+           "gemini-2.5-flash-native-audio-latest", "gemini-2.5-pro", "gemini-3-flash-preview"]
+    assert ranked_models("gemini", ids)[:2] == ["gemini-3.8-flash", "gemini-2.5-flash"]
+
+
+def test_busy_model_is_tried_last_on_the_next_call():
+    router = LLMRouter(load_providers({"QANOUN_GEMINI_KEY": "k"}))
+    router.models = lambda pid: ["gemini-3.8-flash", "gemini-2.5-flash"]
+    busy = FakeClient(error=LLMError("503", kind="unavailable"))
+    ok = FakeClient(tokens=["x"])
+    calls = []
+
+    def client(provider, model):
+        calls.append(model)
+        return {"gemini-3.8-flash": busy, "gemini-2.5-flash": ok}[model]
+
+    router._client = client
+    list(router.chat_stream([]))
+    calls.clear()
+    list(router.chat_stream([]))
+    assert calls == ["gemini-2.5-flash"]  # the busy model is no longer tried first
+
+
+def test_gemini_requests_low_reasoning_effort():
+    router = LLMRouter(load_providers({"QANOUN_GEMINI_KEY": "k"}))
+    gemini = router.get("gemini")
+    assert router._client(gemini, "m").extra == {"reasoning_effort": "low"}
+    assert router._client(router.get("local"), "").extra == {}

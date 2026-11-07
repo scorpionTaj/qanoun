@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Check, Copy, Link2, Minus, Plus, Search } from "lucide-react";
 import type { Article } from "@/lib/types";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { cn, normalizeArabic } from "@/lib/utils";
 
 type FontSize = "sm" | "base" | "lg" | "xl";
 const FONT_KEY = "qanoun-reader-font";
@@ -35,14 +35,15 @@ export function ReaderClient({
     } catch {}
   }, []);
 
+  // Normalized once per law, not per keystroke.
+  const normalizedTexts = useMemo(() => articles.map((a) => normalizeArabic(a.text)), [articles]);
+
   const filtered = useMemo(() => {
-    const q = query.trim();
+    const q = normalizeArabic(query.trim());
     if (!q) return articles;
-    // match by article number prefix or by content
-    return articles.filter(
-      (a) => a.number.startsWith(q) || a.text.includes(q)
-    );
-  }, [articles, query]);
+    // match by article number prefix or by content (أحكام finds احكام, ١٢ finds 12)
+    return articles.filter((a, i) => a.number.startsWith(q) || normalizedTexts[i].includes(q));
+  }, [articles, normalizedTexts, query]);
 
   const setFont = (dir: 1 | -1) => {
     const order: FontSize[] = ["sm", "base", "lg", "xl"];
@@ -127,7 +128,7 @@ export function ReaderClient({
           <article
             key={article.id}
             id={`article-${encodeURIComponent(article.number)}`}
-            className="article-target scroll-mt-32 rounded-xl border border-zellige-100 bg-white p-5 shadow-sm transition-shadow hover:shadow dark:border-zellige-800 dark:bg-[#12201a]"
+            className="article-target article-card scroll-mt-32 rounded-xl border border-zellige-100 bg-white p-5 shadow-sm transition-shadow hover:shadow dark:border-zellige-800 dark:bg-[#12201a]"
           >
             <div className="flex items-center justify-between gap-3">
               <span className="inline-flex items-center rounded-lg bg-zellige-700 px-2.5 py-1 text-sm font-bold text-white dark:bg-zellige-600">

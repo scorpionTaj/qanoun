@@ -1,7 +1,7 @@
 """Single source of truth for the Qanoun schema (Postgres + pgvector).
 
-The pipeline applies it idempotently on every load; the backend's Alembic migration runs
-the same DDL so containers come up already consistent. `chunks.embedding` is fixed at 1024
+The pipeline applies it idempotently on every load and the API applies it at startup
+(qanoun_api.main), so containers come up already consistent. `chunks.embedding` is fixed at 1024
 (BGE-M3); switching embedding models means a migration plus a full re-embed.
 """
 

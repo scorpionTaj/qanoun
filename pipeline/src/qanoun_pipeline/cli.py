@@ -14,7 +14,8 @@ import shutil
 import sys
 from pathlib import Path
 
-from qanoun_pipeline import catalog, chunk, embed as embed_mod, load_db, parse, structure
+from qanoun_pipeline import catalog, chunk, load_db, parse, structure
+from qanoun_pipeline import embed as embed_mod
 from qanoun_pipeline.normalize import normalize
 from qanoun_pipeline.sources import fetch
 
@@ -58,7 +59,7 @@ def ingest_all(args: argparse.Namespace) -> int:
     for meta in laws:
         try:
             report, page_count = _process_file(meta, args)
-        except Exception as exc:  # one broken file must not kill a 40-law run
+        except Exception as exc:  # noqa: BLE001 — one broken file must not kill a 40-law run
             failed.append((meta.slug, str(exc)[:120]))
             print(f"  ✗ {meta.slug}: FAILED — {str(exc)[:120]}")
             continue

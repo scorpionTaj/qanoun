@@ -24,12 +24,14 @@ French — answered only from the retrieved sources, with citations to the exact
 
 ## Quick start
 
-Prerequisites: [uv](https://docs.astral.sh/uv/), Docker, Node 20+, and for the chat an
-OpenAI-compatible LLM endpoint ([LM Studio](https://lmstudio.ai) at `localhost:1234/v1` or
-Ollama — see `.env.example`).
+Prerequisites: [uv](https://docs.astral.sh/uv/), Docker, Node 20+, and for the chat one
+LLM: the quickest is a free [Google AI Studio key](https://aistudio.google.com/apikey) in
+`.env` (`QANOUN_GEMINI_KEY=…`); OpenRouter, NVIDIA NIM, LM Studio and Ollama work too. Keys
+stay on the server; the ⚙ dialog picks among configured providers, tests the connection, and
+questions fall back automatically to the next model/provider when one is busy.
 
 ```bash
-cp .env.example .env           # adjust QANOUN_LLM_URL if needed
+cp .env.example .env           # add QANOUN_GEMINI_KEY (or another provider)
 make db                        # postgres + pgvector on :5433
 
 make ingest                    # full pipeline: fetch → parse → structure → embed → load

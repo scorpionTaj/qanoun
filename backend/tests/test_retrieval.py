@@ -1,7 +1,7 @@
-from qanoun_api.rag.retrieval import RetrievalResult
-from qanoun_api.rag.answer import merge
-
 from conftest import make_hit
+
+from qanoun_api.rag.answer import merge
+from qanoun_api.rag.retrieval import RetrievalResult
 
 
 def test_merge_fuses_and_dedupes_by_identity():

@@ -16,11 +16,11 @@ class FakeLLM:
         self.stream_tokens = stream_tokens or ["الجواب", " التجريبي", " [1]"]
         self.calls: list[list[dict]] = []
 
-    def chat(self, messages, temperature=0.0, max_tokens=600):
+    def chat(self, messages, temperature=0.0, max_tokens=600, **kwargs):
         self.calls.append(messages)
         return self.reply
 
-    def chat_stream(self, messages, temperature=0.0, max_tokens=600):
+    def chat_stream(self, messages, temperature=0.0, max_tokens=600, **kwargs):
         self.calls.append(messages)
         yield from self.stream_tokens
 
@@ -29,12 +29,12 @@ class FakeLLM:
 
 
 def make_hit(slug: str = "family-code-ar", number: str = "12", **overrides) -> Hit:
-    base = dict(
-        law_slug=slug, law_title="مدونة الأسرة", law_title_fr="Code de la famille",
-        group_slug="moudawana", domain="family", language="ar", article_number=number,
-        article_id=1, page=30, text="يتم الزواج بعقد يبرره بين الزوجين.",
-        rrf=0.016, dense_rank=1, lexical_rank=None,
-    )
+    base = {
+        "law_slug": slug, "law_title": "مدونة الأسرة", "law_title_fr": "Code de la famille",
+        "group_slug": "moudawana", "domain": "family", "language": "ar", "article_number": number,
+        "article_id": 1, "page": 30, "text": "يتم الزواج بعقد يبرره بين الزوجين.",
+        "rrf": 0.016, "dense_rank": 1, "lexical_rank": None,
+    }
     base.update(overrides)
     return Hit(**base)
 

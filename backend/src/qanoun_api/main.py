@@ -7,11 +7,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from qanoun_pipeline.load_db import ensure_schema
 
 from qanoun_api import __version__
 from qanoun_api.db import close_pool, db
-from qanoun_api.routers import analytics, chat, laws, search
-from qanoun_pipeline.load_db import ensure_schema
+from qanoun_api.routers import analytics, chat, laws, llm, search
 
 
 @asynccontextmanager
@@ -41,6 +41,7 @@ app.include_router(laws.router)
 app.include_router(search.router)
 app.include_router(chat.router)
 app.include_router(analytics.router)
+app.include_router(llm.router)
 
 
 @app.get("/api/health")

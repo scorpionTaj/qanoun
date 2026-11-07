@@ -8,7 +8,6 @@ the rest of the pipeline and strips the definite article (ال) from both sides,
 """
 
 import re
-from collections import Counter
 
 from qanoun_pipeline.normalize import normalize, strip_article
 

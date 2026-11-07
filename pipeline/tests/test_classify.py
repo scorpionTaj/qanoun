@@ -1,5 +1,4 @@
 from qanoun_pipeline.classify import domain_votes, suggest_domain
-from qanoun_pipeline.normalize import normalize
 
 
 def test_family_text_suggests_family():

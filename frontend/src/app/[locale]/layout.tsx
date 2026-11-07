@@ -7,6 +7,7 @@ import { getTranslations } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import { FooterGate } from "@/components/layout/footer-gate";
 import { themeInitScript } from "@/components/layout/theme-toggle";
 import { ThemeSync } from "@/components/layout/theme-sync";
 import "../globals.css";
@@ -50,6 +51,7 @@ export default async function LocaleLayout({
   // The theme is a cookie so the SERVER renders the class: switching locale (which
   // reloads the document) and hard navigations keep the chosen theme, with no flash.
   const theme = (await cookies()).get("qanoun-theme")?.value === "dark" ? "dark" : "";
+  const t = await getTranslations({ locale, namespace: "app" });
 
   return (
     <html
@@ -66,10 +68,21 @@ export default async function LocaleLayout({
       >
         <NextIntlClientProvider>
           <ThemeSync />
+          <a
+            href="#main"
+            className="sr-only focus:not-sr-only focus:fixed focus:start-3 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-zellige-700 focus:px-3 focus:py-2 focus:text-white"
+          >
+            {t("skipToContent")}
+          </a>
           <div className="flex min-h-screen flex-col">
             <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
+            {/* bottom padding clears the phone tab bar */}
+            <main id="main" className="flex-1 pb-16 md:pb-0">
+              {children}
+            </main>
+            <FooterGate>
+              <Footer />
+            </FooterGate>
           </div>
         </NextIntlClientProvider>
       </body>

@@ -7,10 +7,12 @@
       "home": "Accueil",
       "laws": "Lois",
       "chat": "Demander",
-      "insights": "Analyses"
+      "insights": "Analyses",
+      "label": "Principal"
     },
     "footer": "Projet open source mêlant data engineering, IA et droit marocain.",
-    "language": "Langue"
+    "language": "Langue",
+    "skipToContent": "Aller au contenu"
   },
   "home": {
     "heroTitle": "Les lois marocaines, à portée de main",
@@ -74,11 +76,41 @@
       "chno hia chourout l3rs f lmaghrib?",
       "9addach men nhar dyal conge f lkhedma?"
     ],
-    "errorLlm": "Modèle de langage inaccessible. Vérifiez que le serveur local (LM Studio / Ollama) tourne.",
     "emptyState": "Posez une question juridique : je réponds à partir des textes officiels, article à l'appui.",
     "copyAnswer": "Copier la réponse",
     "searchingSources": "Recherche dans les textes juridiques…",
-    "sourcesAfter": "Les sources apparaîtront après la réponse"
+    "sourcesAfter": "Les sources apparaîtront après la réponse",
+    "errors": {
+      "unreachable": "Aucun modèle IA joignable. Ajoutez une clé gratuite (par ex. QANOUN_GEMINI_KEY) dans .env et redémarrez l'API, ou lancez LM Studio / Ollama.",
+      "auth": "La clé API a été refusée. Vérifiez-la dans .env et redémarrez l'API.",
+      "rate_limit": "Limite de requêtes atteinte chez le fournisseur. Patientez une minute ou choisissez-en un autre dans ⚙.",
+      "model": "Ce modèle n'est pas disponible chez ce fournisseur. Choisissez-en un autre dans ⚙.",
+      "empty": "Le modèle a renvoyé une réponse vide. Réessayez ou changez de modèle dans ⚙.",
+      "interrupted": "La réponse a été interrompue. Reposez la question.",
+      "retrieval": "La recherche dans les lois a échoué. Vérifiez que la base tourne (make db).",
+      "network": "API Qanoun injoignable. Lancez-la avec make api.",
+      "error": "Un problème est survenu. Réessayez.",
+      "unavailable": "Le fournisseur IA est surchargé. Réessayez dans un instant ou choisissez un autre modèle dans ⚙."
+    },
+    "answeredBy": "Réponse de",
+    "errorDetails": "Détails",
+    "history": "Historique",
+    "closeHistory": "Fermer l'historique",
+    "newChat": "Nouvelle question",
+    "noHistory": "Vos questions seront enregistrées ici, dans ce navigateur.",
+    "browseLaws": "Parcourir les lois",
+    "deleteChat": "Supprimer",
+    "confirmDelete": "Supprimer ?",
+    "stop": "Arrêter",
+    "stopped": "Arrêté — cette réponse peut être incomplète.",
+    "stoppedEmpty": "Arrêté avant la réponse.",
+    "panelTitle": "Article cité",
+    "panelHint": "Cliquez sur une citation comme [1] dans une réponse pour lire l'article complet ici.",
+    "closePanel": "Fermer l'article",
+    "openInReader": "Ouvrir dans la loi",
+    "copyArticle": "Copier",
+    "copied": "Copié",
+    "loadingArticle": "Chargement de l'article…"
   },
   "insights": {
     "title": "Tableau d'analyse",
@@ -110,22 +142,26 @@
   },
   "settings": {
     "title": "Paramètres IA",
-    "intro": "Choisissez où vos questions sont traitées : en local (LM Studio) ou via une plateforme cloud gratuite. Les réglages restent dans votre navigateur.",
-    "useCustom": "Utiliser une plateforme cloud",
-    "useCustomHint": "Désactivez pour revenir à LM Studio local",
+    "intro": "Choisissez le modèle qui répond à vos questions. Les clés API restent sur le serveur, dans le fichier .env — jamais dans votre navigateur.",
     "provider": "Fournisseur",
-    "baseUrl": "URL de l'API",
     "model": "Modèle",
-    "modelAuto": "Détection auto",
-    "optional": "optionnel",
-    "apiKey": "Clé API",
-    "getKey": "Obtenir une clé",
-    "notNeeded": "Inutile en local",
-    "privacy": "La clé reste dans votre navigateur et n'est envoyée qu'avec chaque question à votre backend. Jamais stockée côté serveur.",
+    "modelAuto": "Recommandé",
+    "recommended": "recommandé",
+    "ready": "Prêt",
+    "needsKey": "Clé requise",
+    "addKeyHint": "Ajoutez {env}=… dans le fichier .env, puis redémarrez l'API.",
+    "getKey": "Obtenir une clé gratuite",
+    "localHint": "Tourne sur cet ordinateur — lancez LM Studio ou Ollama.",
+    "test": "Tester la connexion",
+    "testing": "Test en cours…",
+    "testOk": "Connecté · {model} · {ms} ms",
+    "testFail": "Non connecté",
+    "fallback": "Si ce fournisseur échoue, Qanoun essaie automatiquement le suivant.",
     "save": "Enregistrer",
-    "saved": "Enregistré ✓",
+    "saved": "Enregistré",
     "cancel": "Annuler",
-    "local": "local",
-    "localHint": "inutilisé avec LM Studio local"
+    "close": "Fermer",
+    "loadError": "API injoignable. Lancez-la avec `make api`.",
+    "modelsError": "Impossible de charger la liste des modèles."
   }
 }

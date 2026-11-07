@@ -1,8 +1,8 @@
 from qanoun_api.rag.rewrite import (
+    QueryRewriter,
+    build_rewrite_messages,
     detect_variety,
     glossary_hints,
-    build_rewrite_messages,
-    QueryRewriter,
 )
 
 

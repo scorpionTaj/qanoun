@@ -1,4 +1,4 @@
-import { ChatPanel } from "@/components/chat/chat-panel";
+import { Workspace } from "@/components/chat/workspace";
 
 export default async function ChatPage({
   params,
@@ -8,5 +8,6 @@ export default async function ChatPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { locale } = await params;
-  const { q } = await searchParams;  return <ChatPanel locale={locale} initialQuestion={q ?? ""} />;
+  const { q } = await searchParams;
+  return <Workspace locale={locale} initialQuestion={q ?? ""} />;
 }

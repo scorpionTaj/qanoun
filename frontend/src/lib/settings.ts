@@ -1,132 +1,79 @@
-/** Client-side LLM provider settings: stored in localStorage, sent per request to the
- * backend (which never persists them). Works with any OpenAI-compatible endpoint. */
+/** AI provider preference. API keys live in the backend's .env file — the browser only
+ * remembers WHICH configured provider and model to prefer, and sends those two ids with
+ * each question. Nothing secret is ever stored here. */
 
-export interface LlmSettings {
-  enabled: boolean;
-  baseUrl: string;
-  model: string;
-  apiKey: string;
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const STORAGE_KEY = "qanoun-llm-choice";
+const LEGACY_KEY = "qanoun-llm-settings"; // held a base URL + API key before keys moved to .env
+
+export interface LlmChoice {
+  provider: string; // "" = the server's default
+  model: string; // "" = the provider's recommended model
 }
 
-export interface ProviderPreset {
+export interface ProviderInfo {
   id: string;
-  label: { ar: string; fr: string; en: string };
-  baseUrl: string;
-  needsKey: boolean;
-  keyUrl?: string;
-  models: string[]; // free-tier-friendly suggestions, first = default
-  hint: { ar: string; fr: string; en: string };
+  label: string;
+  configured: boolean;
+  local: boolean;
+  model: string;
+  key_env: string;
+  key_url: string;
+  base_url: string | null;
 }
 
-export const PRESETS: ProviderPreset[] = [
-  {
-    id: "lmstudio",
-    label: { ar: "LM Studio (محلي)", fr: "LM Studio (local)", en: "LM Studio (local)" },
-    baseUrl: "http://localhost:1234/v1",
-    needsKey: false,
-    models: [],
-    hint: {
-      ar: "قم بتحميل نموذج محادثة في LM Studio ثم اتركه يعمل.",
-      fr: "Chargez un modèle de chat dans LM Studio et laissez le serveur tourner.",
-      en: "Load a chat model in LM Studio and keep the server running.",
-    },
-  },
-  {
-    id: "openrouter",
-    label: { ar: "OpenRouter", fr: "OpenRouter", en: "OpenRouter" },
-    baseUrl: "https://openrouter.ai/api/v1",
-    needsKey: true,
-    keyUrl: "https://openrouter.ai/keys",
-    models: [
-      "meta-llama/llama-3.3-70b-instruct:free",
-      "google/gemini-2.0-flash-exp:free",
-      "qwen/qwen-2.5-72b-instruct:free",
-      "mistralai/mistral-small-3.1-24b-instruct:free",
-    ],
-    hint: {
-      ar: "مجاني للنماذج التي تنتهي بـ :free — أنشئ مفتاحاً من openrouter.ai/keys",
-      fr: "Gratuit pour les modèles suffixés :free — créez une clé sur openrouter.ai/keys",
-      en: "Free for models ending in :free — create a key at openrouter.ai/keys",
-    },
-  },
-  {
-    id: "gemini",
-    label: { ar: "Google Gemini", fr: "Google Gemini", en: "Google Gemini" },
-    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
-    needsKey: true,
-    keyUrl: "https://aistudio.google.com/apikey",
-    models: ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.1-pro-preview"],
-    hint: {
-      ar: "طبقة مجانية سخية — أنشئ مفتاح API مجاني من Google AI Studio",
-      fr: "Palier gratuit généreux — créez une clé API gratuite dans Google AI Studio",
-      en: "Generous free tier — create a free API key in Google AI Studio",
-    },
-  },
-  {
-    id: "nvidia",
-    label: { ar: "NVIDIA NIM", fr: "NVIDIA NIM", en: "NVIDIA NIM" },
-    baseUrl: "https://integrate.api.nvidia.com/v1",
-    needsKey: true,
-    keyUrl: "https://build.nvidia.com/",
-    models: [
-      "meta/llama-3.3-70b-instruct",
-      "mistralai/mistral-nemotron",
-      "qwen/qwen2.5-coder-32b-instruct",
-    ],
-    hint: {
-      ar: "رصيد مجاني عند التسجيل في build.nvidia.com",
-      fr: "Crédit gratuit à l'inscription sur build.nvidia.com",
-      en: "Free credits when you sign up at build.nvidia.com",
-    },
-  },
-  {
-    // Any other OpenAI-compatible endpoint (Ollama, vLLM, a remote LM Studio…).
-    // Must stay last: it is the fallback for URLs that match no preset.
-    id: "custom",
-    label: { ar: "مخصص", fr: "Personnalisé", en: "Custom" },
-    baseUrl: "",
-    needsKey: false,
-    models: [],
-    hint: {
-      ar: "أي واجهة متوافقة مع OpenAI — مثلا Ollama على http://localhost:11434/v1",
-      fr: "Tout endpoint compatible OpenAI — ex. Ollama sur http://localhost:11434/v1",
-      en: "Any OpenAI-compatible endpoint — e.g. Ollama at http://localhost:11434/v1",
-    },
-  },
-];
-
-export const CUSTOM_PRESET = PRESETS[PRESETS.length - 1];
-
-/** The preset a stored URL belongs to; unknown URLs are "custom", not LM Studio. */
-export function presetFor(settings: LlmSettings): ProviderPreset {
-  if (!settings.enabled) return PRESETS[0];
-  return PRESETS.find((p) => p.id !== "custom" && p.baseUrl === settings.baseUrl) ?? CUSTOM_PRESET;
+export interface ProvidersResponse {
+  default: string;
+  providers: ProviderInfo[];
 }
 
-const STORAGE_KEY = "qanoun-llm-settings";
+export interface TestResult {
+  ok: boolean;
+  provider: string;
+  model?: string;
+  latency_ms?: number;
+  code?: string;
+  message?: string;
+}
 
-export const DEFAULT_SETTINGS: LlmSettings = {
-  enabled: false,
-  baseUrl: "http://localhost:1234/v1",
-  model: "",
-  apiKey: "",
-};
+export const DEFAULT_CHOICE: LlmChoice = { provider: "", model: "" };
 
-export function loadSettings(): LlmSettings {
+export function loadChoice(): LlmChoice {
   try {
+    localStorage.removeItem(LEGACY_KEY); // drop any API key saved by older versions
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_SETTINGS;
-    return { ...DEFAULT_SETTINGS, ...(JSON.parse(raw) as Partial<LlmSettings>) };
+    if (!raw) return DEFAULT_CHOICE;
+    const parsed = JSON.parse(raw) as Partial<LlmChoice>;
+    return {
+      provider: typeof parsed.provider === "string" ? parsed.provider : "",
+      model: typeof parsed.model === "string" ? parsed.model : "",
+    };
   } catch {
-    return DEFAULT_SETTINGS;
+    return DEFAULT_CHOICE;
   }
 }
 
-export function saveSettings(settings: LlmSettings) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+export function saveChoice(choice: LlmChoice) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(choice));
+  } catch {}
 }
 
-export function settingsForRequest(settings: LlmSettings): LlmSettings | undefined {
-  if (!settings.enabled || !settings.baseUrl) return undefined;
-  return settings;
+async function json<T>(response: Response): Promise<T> {
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.json() as Promise<T>;
 }
+
+export const llmApi = {
+  providers: () => fetch(`${API_URL}/api/llm/providers`).then((r) => json<ProvidersResponse>(r)),
+  models: (provider: string) =>
+    fetch(`${API_URL}/api/llm/providers/${encodeURIComponent(provider)}/models`).then((r) =>
+      json<{ recommended: string | null; models: string[] }>(r)
+    ),
+  test: (choice: LlmChoice) =>
+    fetch(`${API_URL}/api/llm/test`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(choice),
+    }).then((r) => json<TestResult>(r)),
+};

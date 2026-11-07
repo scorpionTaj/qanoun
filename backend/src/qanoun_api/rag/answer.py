@@ -10,7 +10,7 @@ the reader.
 import re
 from dataclasses import dataclass, field
 
-from qanoun_api.rag.llm import LLMClient, strip_reasoning
+from qanoun_api.rag.llm import ChatModel, strip_reasoning
 from qanoun_api.rag.retrieval import Hit, RetrievalResult
 from qanoun_api.rag.rewrite import QueryRewriter, detect_variety
 
@@ -110,7 +110,7 @@ class Answerer:
 
     def __init__(
         self,
-        llm: LLMClient,
+        llm: ChatModel,
         k: int = 5,
         rewriter: QueryRewriter | None = None,
     ):

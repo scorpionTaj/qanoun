@@ -1,3 +1,5 @@
+from conftest import make_hit
+
 from qanoun_api.rag.answer import (
     ABSTENTION,
     DISCLAIMER,
@@ -7,9 +9,6 @@ from qanoun_api.rag.answer import (
     parse_citations,
     source_label,
 )
-from qanoun_api.rag.retrieval import Hit
-
-from conftest import make_hit
 
 
 def test_parse_citations_extracts_and_dedupes():

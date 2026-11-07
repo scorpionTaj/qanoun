@@ -7,10 +7,12 @@
       "home": "Home",
       "laws": "Laws",
       "chat": "Ask",
-      "insights": "Insights"
+      "insights": "Insights",
+      "label": "Main"
     },
     "footer": "An open-source project combining data engineering, AI and Moroccan law.",
-    "language": "Language"
+    "language": "Language",
+    "skipToContent": "Skip to content"
   },
   "home": {
     "heroTitle": "Moroccan law, at your fingertips",
@@ -74,11 +76,41 @@
       "chno hiya churut zwaj f lmaghrib?",
       "9addach men nhar dyal conge f lkhedma?"
     ],
-    "errorLlm": "Language model unreachable. Make sure the local server (LM Studio / Ollama) is running.",
     "emptyState": "Ask any legal question — I answer from official texts, citing the exact article.",
     "copyAnswer": "Copy answer",
     "searchingSources": "Searching the legal texts…",
-    "sourcesAfter": "Sources will appear once the answer is complete"
+    "sourcesAfter": "Sources will appear once the answer is complete",
+    "errors": {
+      "unreachable": "No AI model is reachable. Add a free key (for example QANOUN_GEMINI_KEY) to .env and restart the API, or start LM Studio / Ollama.",
+      "auth": "The API key was rejected. Check it in .env and restart the API.",
+      "rate_limit": "The AI provider's rate limit was hit. Wait a minute or choose another provider in ⚙ settings.",
+      "model": "That model isn't available from this provider. Choose another one in ⚙ settings.",
+      "empty": "The model returned an empty answer. Try again or choose another model in ⚙ settings.",
+      "interrupted": "The answer was cut off. Ask again.",
+      "retrieval": "Searching the laws failed. Check that the database is running (make db).",
+      "network": "Couldn't reach the Qanoun API. Start it with make api.",
+      "error": "Something went wrong while answering. Try again.",
+      "unavailable": "The AI provider is busy right now. Try again in a moment, or choose another model in ⚙ settings."
+    },
+    "answeredBy": "Answered by",
+    "errorDetails": "Details",
+    "history": "History",
+    "closeHistory": "Close history",
+    "newChat": "New question",
+    "noHistory": "Your questions will be saved here, in this browser.",
+    "browseLaws": "Browse all laws",
+    "deleteChat": "Delete",
+    "confirmDelete": "Delete?",
+    "stop": "Stop",
+    "stopped": "Stopped — this answer may be incomplete.",
+    "stoppedEmpty": "Stopped before an answer arrived.",
+    "panelTitle": "Cited article",
+    "panelHint": "Click a citation like [1] in an answer to read the full article here.",
+    "closePanel": "Close article",
+    "openInReader": "Open in the law",
+    "copyArticle": "Copy",
+    "copied": "Copied",
+    "loadingArticle": "Loading the article…"
   },
   "insights": {
     "title": "Insights",
@@ -110,22 +142,26 @@
   },
   "settings": {
     "title": "AI settings",
-    "intro": "Choose where your questions are processed: locally via LM Studio or on a free cloud platform. Settings stay in your browser.",
-    "useCustom": "Use a cloud platform",
-    "useCustomHint": "Turn off to fall back to local LM Studio",
+    "intro": "Choose which AI model answers your questions. API keys stay on the server in the .env file — never in your browser.",
     "provider": "Provider",
-    "baseUrl": "API base URL",
     "model": "Model",
-    "modelAuto": "Auto-detect",
-    "optional": "optional",
-    "apiKey": "API key",
-    "getKey": "Get a key",
-    "notNeeded": "Not needed locally",
-    "privacy": "The key stays in your browser and is sent only with each question to your backend. Never stored server-side.",
+    "modelAuto": "Recommended",
+    "recommended": "recommended",
+    "ready": "Ready",
+    "needsKey": "Needs a key",
+    "addKeyHint": "Add {env}=… to the .env file, then restart the API.",
+    "getKey": "Get a free key",
+    "localHint": "Runs on this computer — start LM Studio or Ollama.",
+    "test": "Test connection",
+    "testing": "Testing…",
+    "testOk": "Connected · {model} · {ms} ms",
+    "testFail": "Not connected",
+    "fallback": "If this provider fails, Qanoun automatically tries the next configured one.",
     "save": "Save",
-    "saved": "Saved ✓",
+    "saved": "Saved",
     "cancel": "Cancel",
-    "local": "local",
-    "localHint": "unused with local LM Studio"
+    "close": "Close",
+    "loadError": "Couldn't reach the API. Start it with `make api`.",
+    "modelsError": "Couldn't load the model list."
   }
 }

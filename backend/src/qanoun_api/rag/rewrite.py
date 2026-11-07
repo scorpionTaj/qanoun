@@ -13,8 +13,9 @@ import threading
 from importlib.resources import files
 from pathlib import Path
 
-from qanoun_api.rag.llm import LLMClient
 from qanoun_pipeline.normalize import normalize
+
+from qanoun_api.rag.llm import ChatModel
 
 # Frequent Darija function words and verb forms that MSA legal text never uses. Left out on
 # purpose: words shared with MSA (إلا، ولا، غير، بلا، الخدمة).
@@ -128,8 +129,11 @@ def build_rewrite_messages(question: str) -> list[dict]:
     return [{"role": "system", "content": _PROMPT}, {"role": "user", "content": user}]
 
 
+REWRITE_TOKENS = 1500
+
+
 class QueryRewriter:
-    def __init__(self, llm: LLMClient, cache_path: Path | None = None):
+    def __init__(self, llm: ChatModel, cache_path: Path | None = None):
         self.llm = llm
         self.cache_path = cache_path
         self.cache: dict[str, str] = {}
@@ -139,13 +143,17 @@ class QueryRewriter:
             if stored.get("prompt_id") == _PROMPT_ID:
                 self.cache = stored["rewrites"]
 
-    def rewrite(self, question: str) -> str:
+    def rewrite(self, question: str, llm=None) -> str:
+        """`llm` overrides the default client for this call (e.g. the user's chosen
+        provider); the cache is shared either way."""
         if detect_variety(question) not in ("darija", "arabizi"):
             return question
         with self._lock:
             if question in self.cache:
                 return self.cache[question]
-        reply = self.llm.chat(build_rewrite_messages(question), max_tokens=120)
+        # Generous cap: reasoning models (Gemini 3.x, DeepSeek) spend hidden thinking tokens
+        # before the one-line answer, and a cut-off rewrite silently hurts retrieval.
+        reply = (llm or self.llm).chat(build_rewrite_messages(question), max_tokens=REWRITE_TOKENS)
         lines = [line.strip() for line in reply.strip().splitlines() if line.strip()]
         rewritten = lines[0] if lines else question
         with self._lock:

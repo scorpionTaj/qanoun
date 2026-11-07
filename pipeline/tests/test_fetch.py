@@ -7,19 +7,19 @@ from qanoun_pipeline.sources.fetch import FetchError, ensure_file, upload_url
 
 
 def meta(**overrides) -> LawMeta:
-    base = dict(
-        slug="t",
-        group="t",
-        title_ar="ت",
-        title_fr=None,
-        law_number=None,
-        year=None,
-        domain="family",
-        language="ar",
-        file="t.pdf",
-        source_url=None,
-        sha256=None,
-    )
+    base = {
+        "slug": "t",
+        "group": "t",
+        "title_ar": "ت",
+        "title_fr": None,
+        "law_number": None,
+        "year": None,
+        "domain": "family",
+        "language": "ar",
+        "file": "t.pdf",
+        "source_url": None,
+        "sha256": None,
+    }
     return LawMeta(**{**base, **overrides})
 
 
