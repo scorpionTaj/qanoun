@@ -91,13 +91,13 @@ def ingest_all(args: argparse.Namespace) -> int:
         return 0
 
     with load_db.connect(args.db_url) as conn:
+        load_db.ensure_schema(conn)
         dim = load_db.embedding_dim(conn)
         if dim != embedder.spec.dim:
             sys.exit(
                 f"DB embedding column is {dim}-dim but the model outputs {embedder.spec.dim}; "
                 "run the matching model or migrate the schema and re-embed everything"
             )
-        load_db.ensure_schema(conn)
         for meta, report, page_count in ingested:
             law_id = load_db.upsert_law(
                 conn,

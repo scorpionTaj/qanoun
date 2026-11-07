@@ -55,8 +55,8 @@ def list_laws(
                    l.language, l.source_url, l.page_count, l.article_count,
                    (SELECT count(*) FROM chunks c WHERE c.law_id = l.id) AS chunk_count
             FROM laws l
-            WHERE (%(domain)s IS NULL OR l.domain = %(domain)s)
-              AND (%(group)s IS NULL OR l.group_slug = %(group)s)
+            WHERE (%(domain)s::text IS NULL OR l.domain = %(domain)s)
+              AND (%(group)s::text IS NULL OR l.group_slug = %(group)s)
             ORDER BY l.domain, l.year NULLS LAST, l.slug
             """,
             {"domain": domain, "group": group},

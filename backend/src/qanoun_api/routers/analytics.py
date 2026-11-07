@@ -61,7 +61,7 @@ def keywords(domain: str | None = Query(None), limit: int = Query(30, ge=5, le=1
             SELECT word, count(*) AS n FROM (
                 SELECT unnest(string_to_array(a.normalized, ' ')) AS word
                 FROM articles a JOIN laws l ON l.id = a.law_id
-                WHERE (%(domain)s IS NULL OR l.domain = %(domain)s)
+                WHERE (%(domain)s::text IS NULL OR l.domain = %(domain)s)
                   AND length(a.normalized) > 0
             ) t
             WHERE word !~ '^[0-9]+$' AND length(word) > 1

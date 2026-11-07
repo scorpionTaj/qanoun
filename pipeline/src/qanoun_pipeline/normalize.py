@@ -38,6 +38,15 @@ STOPWORDS = frozenset({
     # French
     "le", "la", "les", "de", "des", "du", "un", "une", "et", "ou", "en", "dans", "au", "aux",
     "par", "pour", "sur", "est", "que", "qui", "ne", "pas", "se", "sa", "son",
+    # French legal boilerplate (corpus-high, meaning-free)
+    "sont", "etre", "être", "peut", "peuvent", "cas", "article", "code", "alinea", "alinéa",
+    "present", "présent", "presente", "présente", "conformement", "conformément", "cet",
+    "cette", "ces", "il", "elle", "ils", "elles", "nous", "vous", "tout", "toute", "tous",
+    "toutes", "autre", "autres", "meme", "mêmes", "entre", "sans", "sous", "apres", "après",
+    "avant", "dont", "leur", "leurs", "ce", "plus", "toutefois", "cependant", "ainsi",
+    "lorsque", "lorsqu",
+    # Arabic high-frequency function words in legal prose
+    "يكون", "مما", "عندما", "الا", "بل", "ثمة",
 })
 # fmt: on
 

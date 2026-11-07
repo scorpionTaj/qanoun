@@ -20,9 +20,17 @@ def db_url(url: str) -> str:
     return url.replace("postgresql+psycopg://", "postgresql://")
 
 
+def prepare_connection(conn: psycopg.Connection) -> None:
+    """Idempotent per-connection setup: make sure the vector extension exists, then bind
+    the pgvector adapters. Handles a fresh database (extension before registration)."""
+    conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
+    conn.commit()
+    register_vector(conn)
+
+
 def connect(url: str) -> psycopg.Connection:
     conn = psycopg.connect(db_url(url))
-    register_vector(conn)
+    prepare_connection(conn)
     return conn
 
 

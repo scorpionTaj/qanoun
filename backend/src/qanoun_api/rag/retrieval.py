@@ -88,8 +88,8 @@ WITH dense AS (
     SELECT c.id, row_number() OVER (ORDER BY c.embedding <=> %(vec)s::vector) AS rank
     FROM chunks c
     JOIN laws l ON l.id = c.law_id
-    WHERE (%(domain)s IS NULL OR l.domain = %(domain)s)
-      AND (%(law_slug)s IS NULL OR l.slug = %(law_slug)s)
+    WHERE (%(domain)s::text IS NULL OR l.domain = %(domain)s)
+      AND (%(law_slug)s::text IS NULL OR l.slug = %(law_slug)s)
     ORDER BY c.embedding <=> %(vec)s::vector
     LIMIT %(n)s
 ),
@@ -101,8 +101,8 @@ lexical AS (
     JOIN articles a ON a.id = c.article_id
     JOIN laws l ON l.id = c.law_id
     WHERE to_tsvector('simple', a.normalized) @@ plainto_tsquery('simple', %(tsq)s)
-      AND (%(domain)s IS NULL OR l.domain = %(domain)s)
-      AND (%(law_slug)s IS NULL OR l.slug = %(law_slug)s)
+      AND (%(domain)s::text IS NULL OR l.domain = %(domain)s)
+      AND (%(law_slug)s::text IS NULL OR l.slug = %(law_slug)s)
     LIMIT %(n)s
 ),
 fused AS (
