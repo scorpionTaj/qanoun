@@ -117,7 +117,12 @@
     "stageRewriting": "Understanding your question…",
     "stageSearching": "Searching the laws…",
     "stageAnswering": "Writing the answer…",
-    "answeredIn": "{seconds} s"
+    "answeredIn": "{seconds} s",
+    "scopeLabel": "Search in",
+    "scopeAll": "All laws",
+    "scopeDomains": "Domains",
+    "scopeLaws": "Laws",
+    "scopeIn": "In: {name}"
   },
   "insights": {
     "title": "Insights",

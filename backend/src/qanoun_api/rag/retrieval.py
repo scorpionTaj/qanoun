@@ -94,6 +94,7 @@ WITH dense AS (
     JOIN laws l ON l.id = c.law_id
     WHERE (%(domain)s::text IS NULL OR l.domain = %(domain)s)
       AND (%(law_slug)s::text IS NULL OR l.slug = %(law_slug)s)
+      AND (%(group)s::text IS NULL OR l.group_slug = %(group)s)
     ORDER BY c.embedding <=> %(vec)s::vector
     LIMIT %(n)s
 ),
@@ -107,6 +108,7 @@ lexical AS (
     WHERE to_tsvector('simple', a.normalized) @@ plainto_tsquery('simple', %(tsq)s)
       AND (%(domain)s::text IS NULL OR l.domain = %(domain)s)
       AND (%(law_slug)s::text IS NULL OR l.slug = %(law_slug)s)
+      AND (%(group)s::text IS NULL OR l.group_slug = %(group)s)
     ORDER BY rank  -- without this, LIMIT keeps an arbitrary 50 matches, not the best 50
     LIMIT %(n)s
 ),
@@ -138,6 +140,7 @@ def search(
     k: int = 8,
     domain: str | None = None,
     law_slug: str | None = None,
+    group: str | None = None,  # every edition of one law (AR + FR)
     search_query: str | None = None,
     conn: psycopg.Connection | None = None,
 ) -> RetrievalResult:
@@ -152,6 +155,7 @@ def search(
         "tsq": tsq,
         "domain": domain,
         "law_slug": law_slug,
+        "group": group,
         "n": CANDIDATES,
         "k": k,
         "rrf_k": RRF_K,

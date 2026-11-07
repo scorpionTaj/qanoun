@@ -117,7 +117,12 @@
     "stageRewriting": "جاري فهم سؤالك…",
     "stageSearching": "جاري البحث في القوانين…",
     "stageAnswering": "جاري كتابة الجواب…",
-    "answeredIn": "{seconds} ث"
+    "answeredIn": "{seconds} ث",
+    "scopeLabel": "البحث في",
+    "scopeAll": "كل القوانين",
+    "scopeDomains": "المجالات",
+    "scopeLaws": "القوانين",
+    "scopeIn": "في: {name}"
   },
   "insights": {
     "title": "لوحة التحليل",

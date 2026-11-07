@@ -117,7 +117,12 @@
     "stageRewriting": "Compréhension de la question…",
     "stageSearching": "Recherche dans les lois…",
     "stageAnswering": "Rédaction de la réponse…",
-    "answeredIn": "{seconds} s"
+    "answeredIn": "{seconds} s",
+    "scopeLabel": "Chercher dans",
+    "scopeAll": "Toutes les lois",
+    "scopeDomains": "Domaines",
+    "scopeLaws": "Lois",
+    "scopeIn": "Dans : {name}"
   },
   "insights": {
     "title": "Tableau d'analyse",

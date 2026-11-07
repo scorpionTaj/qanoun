@@ -97,3 +97,26 @@ def test_chat_reports_mid_stream_interruption(monkeypatch):
     assert events[-1][0] == "error"
     assert events[-1][1]["code"] == "interrupted"
     assert "done" not in [name for name, _ in events]
+
+
+def test_chat_scopes_retrieval_to_domain_or_law(monkeypatch, fake_llm):
+    calls = []
+
+    def search(*a, **kw):
+        calls.append(kw)
+        return RetrievalResult("q", "q", [make_hit()])
+
+    monkeypatch.setattr(retrieval, "search", search)
+    chat_router.set_llm(fake_llm, None)
+    parse_sse(post_chat({"question": "ما هي شروط الزواج؟", "group": "family-code"}))
+    assert calls and all(c["group"] == "family-code" and c["domain"] is None for c in calls)
+
+    calls.clear()
+    parse_sse(post_chat({"question": "ما هي شروط الزواج؟", "domain": "family"}))
+    assert all(c["domain"] == "family" for c in calls)
+
+
+def test_chat_rejects_malformed_scope():
+    client = TestClient(app)
+    bad = client.post("/api/chat", json={"question": "q", "group": "x; DROP TABLE laws"})
+    assert bad.status_code == 422

@@ -7,6 +7,7 @@ import type { SearchHit } from "./types";
 export interface Message {
   role: "user" | "assistant";
   text: string;
+  scopeLabel?: string; // user questions: the domain or law the answer was limited to
   sources?: SearchHit[];
   cited?: number[];
   abstained?: boolean;

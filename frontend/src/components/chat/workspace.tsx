@@ -18,6 +18,7 @@ import type { SearchHit } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ChatPanel } from "./chat-panel";
 import { ArticlePlaceholder, ArticleView, type OpenedSource } from "./article-panel";
+import { loadScope, saveScope, type Scope } from "./scope-select";
 
 const DESKTOP = "(min-width: 1024px)";
 
@@ -36,7 +37,15 @@ function useIsDesktop(): boolean {
 
 /** "Majlis": history · conversation · cited article. Below lg, history and article are
  * HeroUI drawers (start side and bottom). */
-export function Workspace({ locale, initialQuestion }: { locale: string; initialQuestion: string }) {
+export function Workspace({
+  locale,
+  initialQuestion,
+  initialScope,
+}: {
+  locale: string;
+  initialQuestion: string;
+  initialScope: Scope | null; // from ?group= / ?domain= (e.g. "Ask about this law")
+}) {
   const t = useTranslations("chat");
   const router = useRouter();
   const pathname = usePathname();
@@ -48,14 +57,22 @@ export function Workspace({ locale, initialQuestion }: { locale: string; initial
   const [loaded, setLoaded] = useState(false);
   const [source, setSource] = useState<OpenedSource | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [scope, setScope] = useState<Scope>({});
+  const changeScope = useCallback((next: Scope) => {
+    setScope(next);
+    saveScope(next);
+  }, []);
 
   // Saved conversations load after mount (no hydration mismatch). Drop ?q= from the URL
   // through the router (a raw history.replaceState is overwritten by Next's own state).
   useEffect(() => {
     setConversations(loadConversations());
     setLoaded(true);
-    if (initialQuestion) router.replace(pathname, { scroll: false });
-  }, [initialQuestion, pathname, router]);
+    // A link's scope wins over the remembered one (and becomes the remembered one).
+    if (initialScope) changeScope(initialScope);
+    else setScope(loadScope());
+    if (initialQuestion || initialScope) router.replace(pathname, { scroll: false });
+  }, [initialQuestion, initialScope, pathname, router, changeScope]);
 
   const onChange = useCallback(
     (messages: Message[]) => {
@@ -136,6 +153,8 @@ export function Workspace({ locale, initialQuestion }: { locale: string; initial
         onOpenSource={openSource}
         activeArticleId={source?.hit.article_id ?? null}
         onShowHistory={() => setHistoryOpen(true)}
+        scope={scope}
+        onScopeChange={changeScope}
       />
 
       {isDesktop ? (

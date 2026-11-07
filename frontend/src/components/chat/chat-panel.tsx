@@ -3,12 +3,13 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Alert, Button, Chip, Disclosure, Spinner, TextArea, Tooltip } from "@heroui/react";
-import { ArrowUp, BookOpenCheck, Check, Copy, History, Scale, Sparkles, Square } from "lucide-react";
+import { ArrowUp, BookOpenCheck, Check, Copy, History, Library, Scale, Sparkles, Square } from "lucide-react";
 import type { Message } from "@/lib/conversations";
 import { loadChoice } from "@/lib/settings";
 import { streamSse } from "@/lib/sse";
 import type { SearchHit } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { ScopeSelect, type Scope } from "./scope-select";
 
 const ERROR_CODES = [
   "unreachable", "auth", "rate_limit", "unavailable", "model", "empty", "interrupted", "retrieval", "network",
@@ -27,7 +28,11 @@ export function ChatPanel({
   onOpenSource,
   activeArticleId,
   onShowHistory,
+  scope,
+  onScopeChange,
 }: {
+  scope: Scope;
+  onScopeChange: (scope: Scope) => void;
   locale: string;
   initialMessages: Message[];
   initialQuestion: string;
@@ -64,7 +69,7 @@ export function ChatPanel({
       setInput("");
       setMessages((prev) => [
         ...prev,
-        { role: "user", text: trimmed },
+        { role: "user", text: trimmed, scopeLabel: scope.group || scope.domain ? scope.label : undefined },
         { role: "assistant", text: "", streaming: true, stage: "searching" },
       ]);
       requestAnimationFrame(() => {
@@ -79,7 +84,13 @@ export function ChatPanel({
         const response = await fetch(`${API_URL}/api/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question: trimmed, provider: provider || undefined, model }),
+          body: JSON.stringify({
+            question: trimmed,
+            provider: provider || undefined,
+            model,
+            domain: scope.domain,
+            group: scope.group,
+          }),
           signal: controller.signal,
         });
         if (!response.ok || !response.body) throw new Error(`HTTP ${response.status}`);
@@ -147,7 +158,7 @@ export function ChatPanel({
         inputRef.current?.focus();
       }
     },
-    [busy, t]
+    [busy, t, scope]
   );
 
   // Auto-ask when arriving with ?q= (from the home search or a law page).
@@ -212,6 +223,10 @@ export function ChatPanel({
         }}
         className="border-t border-separator bg-background/80 px-4 py-3 backdrop-blur-md"
       >
+        <div className="mx-auto mb-2 flex max-w-3xl items-center gap-2">
+          <span className="shrink-0 text-xs text-muted">{t("scopeLabel")}</span>
+          <ScopeSelect locale={locale} scope={scope} onChange={onScopeChange} />
+        </div>
         <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-[1.25rem] border border-border bg-surface p-1.5 shadow-sm focus-within:border-accent">
           <TextArea
             ref={inputRef}
@@ -296,10 +311,16 @@ function MessageBubble({
 
   if (message.role === "user") {
     return (
-      <div className="animate-fade-up flex justify-end">
+      <div className="animate-fade-up flex flex-col items-end gap-1">
         <div className="max-w-[85%] whitespace-pre-wrap rounded-[1.25rem] rounded-ee-md bg-accent px-4 py-2.5 text-accent-foreground" dir="auto">
           {message.text}
         </div>
+        {message.scopeLabel && (
+          <span className="flex items-center gap-1 text-[11px] text-muted" dir="auto">
+            <Library className="size-3" aria-hidden />
+            {t("scopeIn", { name: message.scopeLabel })}
+          </span>
+        )}
       </div>
     );
   }

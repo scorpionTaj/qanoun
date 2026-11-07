@@ -93,7 +93,7 @@ export default async function LawReaderPage({
               </a>
             )}
             <Link
-              href={`/${locale}/chat?q=${encodeURIComponent(title)}`}
+              href={`/${locale}/chat?group=${encodeURIComponent(law.group_slug)}`}
               className="inline-flex h-9 items-center gap-1.5 rounded-full bg-accent px-4 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90"
             >
               <MessagesSquare className="size-4" aria-hidden />

@@ -66,6 +66,10 @@ class ChatRequest(BaseModel):
     # Never a URL or a key: those stay in .env.
     provider: str | None = Field(default=None, pattern=r"^[a-z]{2,20}$")
     model: str = Field(default="", max_length=200)
+    # Where the answer may come from: one legal domain, or one law (all its editions).
+    # Both empty = the whole corpus.
+    domain: str | None = Field(default=None, pattern=r"^[a-z]{2,30}$")
+    group: str | None = Field(default=None, pattern=r"^[a-z0-9][a-z0-9-]{0,79}$")
 
 
 def _sse(event: str, data: dict) -> str:
@@ -100,7 +104,8 @@ def _chat_stream(req: ChatRequest) -> Iterator[str]:
     yield _sse("status", {"stage": "rewriting" if needs_rewrite else "searching"})
     rewriter = _rewriter or get_rewriter()
     with ThreadPoolExecutor(max_workers=2) as pool:
-        original_future = pool.submit(retrieval.search, question, k=req.k)
+        scope = {"domain": req.domain, "group": req.group}
+        original_future = pool.submit(retrieval.search, question, k=req.k, **scope)
         rewrite_future = pool.submit(rewriter.rewrite, question, llm=llm)
         try:
             rewritten = rewrite_future.result()
@@ -114,7 +119,7 @@ def _chat_stream(req: ChatRequest) -> Iterator[str]:
             result = original_future.result()
             if rewritten != question:
                 # Merge both runs: a bad rewrite can only add hits, never lose them.
-                rewritten_result = retrieval.search(question, k=req.k, search_query=rewritten)
+                rewritten_result = retrieval.search(question, k=req.k, search_query=rewritten, **scope)
                 result = answer_mod.merge(result, rewritten_result, req.k)
         except Exception as exc:  # noqa: BLE001 — surfaced to the client as an SSE error event
             yield _sse("error", {"code": "retrieval", "message": f"retrieval failed: {exc}"})
