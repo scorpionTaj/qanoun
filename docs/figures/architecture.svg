@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 780" width="1200" height="780" font-family="-apple-system, 'Segoe UI', Roboto, 'Noto Sans Arabic', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a5560"/>
+    </marker>
+    <style>
+      .title { font-size: 24px; font-weight: 700; fill: #1d2b24; }
+      .section { font-size: 15px; font-weight: 700; letter-spacing: .04em; }
+      .box-title { font-size: 15px; font-weight: 700; fill: #1d2b24; }
+      .box-text { font-size: 12.5px; fill: #44525c; }
+      .label { font-size: 12px; fill: #4a5560; font-style: italic; }
+      .edge { stroke: #4a5560; stroke-width: 1.8; fill: none; marker-end: url(#arrow); }
+      .ingest { fill: #e8f3ee; stroke: #2f6b4f; stroke-width: 1.5; }
+      .online { fill: #e9f0fb; stroke: #3a5a99; stroke-width: 1.5; }
+      .db { fill: #fdf3e1; stroke: #b7791f; stroke-width: 2; }
+      .llm { fill: #f3ecfb; stroke: #6b46c1; stroke-width: 1.5; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="780" rx="16" fill="#ffffff"/>
+  <text x="40" y="44" class="title">Qanoun — how it works</text>
+  <text x="40" y="66" class="box-text">Two flows share one database: laws are prepared once (top), then every question is answered from them (bottom).</text>
+
+  <!-- ── Flow 1: ingest ─────────────────────────────────────────── -->
+  <rect x="24" y="84" width="1152" height="150" rx="12" fill="#f6faf8" stroke="#cfe3d8"/>
+  <text x="40" y="108" class="section" fill="#2f6b4f">① PREPARE THE LAWS · offline · make ingest · pipeline/</text>
+
+  <rect x="40" y="124" width="190" height="92" rx="10" class="ingest"/>
+  <text x="56" y="148" class="box-title">Official PDFs</text>
+  <text x="56" y="168" class="box-text">adala.justice.gov.ma</text>
+  <text x="56" y="186" class="box-text">42 laws · laws.yaml</text>
+  <text x="56" y="204" class="box-text">sha256 verified</text>
+
+  <rect x="270" y="124" width="190" height="92" rx="10" class="ingest"/>
+  <text x="286" y="148" class="box-title">Read the text</text>
+  <text x="286" y="168" class="box-text">PyMuPDF text layer</text>
+  <text x="286" y="186" class="box-text">OCR (tesseract) when</text>
+  <text x="286" y="204" class="box-text">the PDF is a scan</text>
+
+  <rect x="500" y="124" width="190" height="92" rx="10" class="ingest"/>
+  <text x="516" y="148" class="box-title">Split into articles</text>
+  <text x="516" y="168" class="box-text">by «المادة» / «الفصل» headers</text>
+  <text x="516" y="186" class="box-text">= the citation unit</text>
+  <text x="516" y="204" class="box-text">11,600+ articles</text>
+
+  <rect x="730" y="124" width="190" height="92" rx="10" class="ingest"/>
+  <text x="746" y="148" class="box-title">Chunk + embed</text>
+  <text x="746" y="168" class="box-text">180-word passages</text>
+  <text x="746" y="186" class="box-text">BGE-M3 vectors</text>
+  <text x="746" y="204" class="box-text">(1024 numbers each)</text>
+
+  <rect x="960" y="124" width="200" height="92" rx="10" class="ingest"/>
+  <text x="976" y="148" class="box-title">Normalize Arabic</text>
+  <text x="976" y="168" class="box-text">same folding for laws</text>
+  <text x="976" y="186" class="box-text">and questions → keyword</text>
+  <text x="976" y="204" class="box-text">search matches</text>
+
+  <path d="M230 170 H266" class="edge"/>
+  <path d="M460 170 H496" class="edge"/>
+  <path d="M690 170 H726" class="edge"/>
+  <path d="M920 170 H956" class="edge"/>
+  <path d="M1060 216 V330 H784" class="edge"/>
+  <text x="1070" y="290" class="label">load</text>
+
+  <!-- ── Database ─────────────────────────────────────────────── -->
+  <rect x="420" y="282" width="360" height="104" rx="14" class="db"/>
+  <text x="600" y="310" class="box-title" text-anchor="middle">PostgreSQL + pgvector</text>
+  <text x="600" y="332" class="box-text" text-anchor="middle">laws → articles → chunks</text>
+  <text x="600" y="351" class="box-text" text-anchor="middle">keyword index (FTS) + vector index (HNSW)</text>
+  <text x="600" y="370" class="box-text" text-anchor="middle">docker · port 5433</text>
+
+  <!-- ── Flow 2: ask ───────────────────────────────────────────── -->
+  <rect x="24" y="440" width="1152" height="316" rx="12" fill="#f7f9fd" stroke="#d3ddef"/>
+  <text x="40" y="464" class="section" fill="#3a5a99">② ASK A QUESTION · online · frontend/ + backend/</text>
+
+  <rect x="40" y="500" width="220" height="132" rx="10" class="online"/>
+  <text x="56" y="524" class="box-title">Web app (Next.js)</text>
+  <text x="56" y="545" class="box-text">العربية · Français · English</text>
+  <text x="56" y="565" class="box-text">Home · Laws reader</text>
+  <text x="56" y="584" class="box-text">Ask (chat) · Insights</text>
+  <text x="56" y="603" class="box-text">⚙ AI settings (provider/key)</text>
+  <text x="56" y="622" class="box-text">port 3000</text>
+
+  <rect x="320" y="500" width="240" height="132" rx="10" class="online"/>
+  <text x="336" y="524" class="box-title">API (FastAPI)</text>
+  <text x="336" y="545" class="box-text">/laws · /search · /analytics</text>
+  <text x="336" y="565" class="box-text">/chat (streams the answer)</text>
+  <text x="336" y="590" class="box-text">Darija / Arabizi → rewritten</text>
+  <text x="336" y="608" class="box-text">to formal Arabic first</text>
+  <text x="336" y="626" class="box-text">port 8000</text>
+
+  <rect x="620" y="500" width="230" height="132" rx="10" class="online"/>
+  <text x="636" y="524" class="box-title">Hybrid search</text>
+  <text x="636" y="545" class="box-text">meaning (vectors)</text>
+  <text x="636" y="565" class="box-text">+ exact words (keywords)</text>
+  <text x="636" y="585" class="box-text">merged by rank fusion</text>
+  <text x="636" y="605" class="box-text">→ top 5 articles</text>
+
+  <rect x="910" y="500" width="250" height="132" rx="10" class="llm"/>
+  <text x="926" y="524" class="box-title">Language model (LLM)</text>
+  <text x="926" y="545" class="box-text">LM Studio (local, default)</text>
+  <text x="926" y="565" class="box-text">or OpenRouter · Gemini · NVIDIA</text>
+  <text x="926" y="590" class="box-text">answers ONLY from the</text>
+  <text x="926" y="608" class="box-text">sources, cites [1] [2]…</text>
+  <text x="926" y="626" class="box-text">or says "no answer"</text>
+
+  <path d="M260 548 H316" class="edge"/>
+  <text x="264" y="540" class="label">question</text>
+  <path d="M560 566 H616" class="edge"/>
+  <path d="M850 566 H906" class="edge"/>
+  <text x="854" y="558" class="label">sources</text>
+
+  <!-- DB reads -->
+  <path d="M735 500 V390" class="edge"/>
+  <text x="744" y="420" class="label">find passages</text>
+  <path d="M440 500 V390" class="edge"/>
+  <text x="449" y="420" class="label">browse laws, stats</text>
+
+  <!-- answer back to the browser -->
+  <path d="M1035 632 V704 H150 V636" class="edge"/>
+  <text x="420" y="724" class="label">answer streamed word by word, with clickable citations (e.g. Family Code, art. 12)</text>
+</svg>

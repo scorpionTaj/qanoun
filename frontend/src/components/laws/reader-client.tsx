@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Check, Copy, Link2, Minus, Plus, Search } from "lucide-react";
 import type { Article } from "@/lib/types";
@@ -25,6 +25,15 @@ export function ReaderClient({
   const [fontSize, setFontSize] = useState<FontSize>("base");
   const [query, setQuery] = useState("");
   const [copied, setCopied] = useState<number | null>(null);
+
+  // Restore the saved font size (written by setFont; read after mount to avoid a
+  // server/client hydration mismatch).
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(FONT_KEY) as FontSize | null;
+      if (saved && ["sm", "base", "lg", "xl"].includes(saved)) setFontSize(saved);
+    } catch {}
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim();

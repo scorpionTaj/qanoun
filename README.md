@@ -83,23 +83,15 @@ follow-up.
 
 ## Architecture
 
-```
-data/catalog/laws.yaml        seed catalog: slugs, sha256, official source URLs
-pipeline/                     DE package (uv, src-layout)
-  sources/fetch.py            catalog-driven downloads with integrity checks
-  parse.py / ocr.py           PyMuPDF text layer; tesseract Arabic/French OCR fallback
-  structure.py                article segmentation (the citation unit)
-  chunk.py / embed.py         overlapping chunks; BGE-M3 with per-text cache
-  load_db.py / schema.py      Postgres/pgvector loader; DDL single source of truth
-backend/                      FastAPI
-  rag/retrieval.py            hybrid search: pgvector + FTS fused by RRF
-  rag/rewrite.py              Darija/Arabizi detection + LLM rewriting to MSA
-  rag/answer.py               grounded answering, citation parsing, abstention
-  routers/                    /api/laws, /api/search, /api/chat (SSE), /api/analytics
-  eval/run.py                 retrieval metrics + LLM-as-judge → docs/eval-report.md
-frontend/                     Next.js 15 + Tailwind + next-intl (ar RTL default, fr, en)
-notebooks/                    EDA, classification experiment, embedding map (percent-format)
-```
+![How Qanoun works: laws are prepared once into Postgres, then each question is searched and answered with citations](docs/figures/architecture.svg)
+
+| Folder | Role |
+|---|---|
+| `data/catalog/laws.yaml` | the list of laws: slugs, sha256, official source URLs |
+| `pipeline/` | fetch → parse (OCR fallback) → split into articles → chunk → embed → load |
+| `backend/` | FastAPI: `/api/laws`, `/api/search`, `/api/chat` (SSE), `/api/analytics`; RAG in `rag/` |
+| `frontend/` | Next.js 15 + Tailwind + next-intl (ar RTL default, fr, en) |
+| `notebooks/`, `backend/.../eval/` | EDA, classification, embedding map, retrieval + LLM-judge eval |
 
 More detail in [docs/architecture.md](docs/architecture.md).
 

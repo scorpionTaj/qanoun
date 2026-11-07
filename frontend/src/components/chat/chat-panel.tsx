@@ -81,15 +81,24 @@ export function ChatPanel({ locale, initialQuestion }: { locale: string; initial
         for await (const event of streamSse(response, controller.signal)) {
           const data = event.data ? JSON.parse(event.data) : {};
           if (event.event === "meta") {
-            setMessages((prev) => patchLast(prev, { rewritten: data.rewritten, disclaimer: data.disclaimer }));
+            // The server echoes the question when nothing was rewritten (MSA, French…).
+            const rewritten = data.rewritten && data.rewritten !== trimmed ? data.rewritten : undefined;
+            setMessages((prev) => patchLast(prev, { rewritten, disclaimer: data.disclaimer }));
           } else if (event.event === "sources") {
             // kept in state but NOT rendered until the answer completes
             setMessages((prev) => patchLast(prev, { sources: data.sources }));
           } else if (event.event === "token") {
             setMessages((prev) => patchLast(prev, (m) => ({ text: m.text + data.t })));
           } else if (event.event === "done") {
+            // The server's final text wins: it replaces a streamed "NO_ANSWER" with the
+            // abstention message and drops <think> blocks from reasoning models.
             setMessages((prev) =>
-              patchLast(prev, { abstained: data.abstained, cited: data.cited, streaming: false })
+              patchLast(prev, (m) => ({
+                text: data.text ?? m.text,
+                abstained: data.abstained,
+                cited: data.cited,
+                streaming: false,
+              }))
             );
           } else if (event.event === "error") {
             setMessages((prev) => patchLast(prev, { text: data.message, error: true, streaming: false }));
@@ -257,7 +266,7 @@ function MessageBubble({ message, locale }: { message: Message; locale: string }
         )}
       </div>
 
-      {message.rewritten && message.rewritten !== message.text && !message.error && (
+      {message.rewritten && !message.error && (
         <p className="flex items-center gap-1 text-xs text-zellige-400 dark:text-zellige-500" dir="auto">
           <Sparkles className="h-3 w-3" />
           {t("rewritten")}: {message.rewritten}
@@ -314,9 +323,11 @@ function MessageBubble({ message, locale }: { message: Message; locale: string }
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-center gap-1.5">
                         <FileText className="h-3 w-3 text-zellige-400" />
-                        <span className="font-bold text-zellige-800 dark:text-zellige-100">{hit.law_title}</span>
+                        <span className="font-bold text-zellige-800 dark:text-zellige-100">
+                          {locale !== "ar" && hit.law_title_fr ? hit.law_title_fr : hit.law_title}
+                        </span>
                         <Badge variant={cited ? "domain" : "outline"}>
-                          {locale === "fr" ? `Art. ${hit.article_number}` : `المادة ${hit.article_number}`}
+                          {locale === "ar" ? `المادة ${hit.article_number}` : `Art. ${hit.article_number}`}
                         </Badge>
                       </span>
                       <span className="mt-1 line-clamp-2 block text-zellige-500 dark:text-zellige-400">{hit.text}</span>

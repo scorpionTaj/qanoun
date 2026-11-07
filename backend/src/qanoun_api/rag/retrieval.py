@@ -104,6 +104,7 @@ lexical AS (
     WHERE to_tsvector('simple', a.normalized) @@ plainto_tsquery('simple', %(tsq)s)
       AND (%(domain)s::text IS NULL OR l.domain = %(domain)s)
       AND (%(law_slug)s::text IS NULL OR l.slug = %(law_slug)s)
+    ORDER BY rank  -- without this, LIMIT keeps an arbitrary 50 matches, not the best 50
     LIMIT %(n)s
 ),
 fused AS (

@@ -78,3 +78,17 @@ def test_chat_reports_llm_failure(monkeypatch):
 def test_chat_validates_input():
     client = TestClient(app)
     assert client.post("/api/chat", json={"question": ""}).status_code == 422
+
+
+def test_chat_reports_mid_stream_interruption(monkeypatch):
+    class FlakyLLM:
+        def chat_stream(self, messages, **kw):
+            yield "partial "
+            raise RuntimeError("connection reset")
+
+    monkeypatch.setattr(retrieval, "search", lambda *a, **kw: RetrievalResult("q", "q", [make_hit()]))
+    chat_router.set_llm(FlakyLLM(), None)
+    events = parse_sse(post_chat({"question": "سؤال"}))
+    assert events[-1][0] == "error"
+    assert "interrupted" in events[-1][1]["message"]
+    assert "done" not in [name for name, _ in events]

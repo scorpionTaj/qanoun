@@ -80,7 +80,9 @@ def _client_for(req: ChatRequest) -> LLMClient:
 
 def _rewriter_for(req: ChatRequest) -> QueryRewriter:
     if req.llm:
-        return QueryRewriter(_client_for(req), cache_path=SETTINGS.rewrite_cache)
+        # A browser-supplied endpoint must not write into the shared on-disk cache: its
+        # rewrites would then be served to every other user.
+        return QueryRewriter(_client_for(req), cache_path=None)
     return get_rewriter()
 
 
@@ -124,6 +126,9 @@ def _chat_stream(req: ChatRequest) -> Iterator[str]:
         if not chunks:
             yield _sse("error", {"message": f"LLM unavailable: {exc}"})
             return
+        # The stream broke mid-answer: never present a truncated legal answer as complete.
+        yield _sse("error", {"message": f"LLM stream interrupted: {exc}"})
+        return
     text = strip_reasoning("".join(chunks)).strip()
     if NO_ANSWER in text or not text:
         yield _sse("done", {"abstained": True, "cited": [], "text": ABSTENTION[variety]})

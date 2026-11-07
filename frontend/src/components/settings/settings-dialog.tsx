@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { Eye, EyeOff, Settings, X } from "lucide-react";
-import { PRESETS, loadSettings, saveSettings, type LlmSettings } from "@/lib/settings";
+import { PRESETS, loadSettings, presetFor, saveSettings, type LlmSettings } from "@/lib/settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -18,13 +18,15 @@ export function SettingsDialog({ locale, onChange }: { locale: string; onChange?
 
   // Load once on open so other tabs' writes don't clobber the form.
   useEffect(() => {
-    if (open) {
-      setDraft(loadSettings());
-      setSaved(false);
-    }
+    if (!open) return;
+    setDraft(loadSettings());
+    setSaved(false);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  const preset = PRESETS.find((p) => p.baseUrl === draft?.baseUrl) ?? PRESETS[0];
+  const preset = draft ? presetFor(draft) : PRESETS[0];
 
   const applyPreset = (id: string) => {
     const p = PRESETS.find((x) => x.id === id);
@@ -33,13 +35,16 @@ export function SettingsDialog({ locale, onChange }: { locale: string; onChange?
       ...draft,
       // choosing a cloud provider implies enabling it — no dead fields
       enabled: p.id !== "lmstudio",
-      baseUrl: p.baseUrl,
-      model: p.models[0] ?? "",
+      // custom keeps whatever the user typed; other presets set their own endpoint
+      baseUrl: p.id === "custom" ? (preset.id === "custom" ? draft.baseUrl : "") : p.baseUrl,
+      model: p.id === "custom" ? "" : (p.models[0] ?? ""),
     });
   };
 
+  const invalidUrl = Boolean(draft?.enabled) && !/^https?:\/\/\S+$/.test(draft?.baseUrl ?? "");
+
   const save = () => {
-    if (!draft) return;
+    if (!draft || invalidUrl) return;
     saveSettings(draft);
     onChange?.(draft);
     setSaved(true);
@@ -99,11 +104,6 @@ export function SettingsDialog({ locale, onChange }: { locale: string; onChange?
                     )}
                   >
                     {p.label[locale as "ar" | "fr" | "en"]}
-                    {p.id === "lmstudio" && (
-                      <span className={cn("ms-1 text-[10px]", active ? "text-zellige-100" : "text-zellige-400")}>
-                        ({t("local")})
-                      </span>
-                    )}
                   </button>
                 );
               })}
@@ -203,7 +203,7 @@ export function SettingsDialog({ locale, onChange }: { locale: string; onChange?
               <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
                 {t("cancel")}
               </Button>
-              <Button size="sm" onClick={save}>
+              <Button size="sm" onClick={save} disabled={invalidUrl}>
                 {saved ? t("saved") : t("save")}
               </Button>
             </div>

@@ -1,5 +1,7 @@
 # Qanoun architecture
 
+![Qanoun architecture overview](figures/architecture.svg)
+
 ## Design principles
 
 1. **The article is the citation unit.** Everything — search results, chat sources, reader

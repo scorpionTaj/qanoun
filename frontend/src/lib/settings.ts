@@ -55,7 +55,7 @@ export const PRESETS: ProviderPreset[] = [
     baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
     needsKey: true,
     keyUrl: "https://aistudio.google.com/apikey",
-    models: ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash"],
+    models: ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.1-pro-preview"],
     hint: {
       ar: "طبقة مجانية سخية — أنشئ مفتاح API مجاني من Google AI Studio",
       fr: "Palier gratuit généreux — créez une clé API gratuite dans Google AI Studio",
@@ -79,7 +79,29 @@ export const PRESETS: ProviderPreset[] = [
       en: "Free credits when you sign up at build.nvidia.com",
     },
   },
+  {
+    // Any other OpenAI-compatible endpoint (Ollama, vLLM, a remote LM Studio…).
+    // Must stay last: it is the fallback for URLs that match no preset.
+    id: "custom",
+    label: { ar: "مخصص", fr: "Personnalisé", en: "Custom" },
+    baseUrl: "",
+    needsKey: false,
+    models: [],
+    hint: {
+      ar: "أي واجهة متوافقة مع OpenAI — مثلا Ollama على http://localhost:11434/v1",
+      fr: "Tout endpoint compatible OpenAI — ex. Ollama sur http://localhost:11434/v1",
+      en: "Any OpenAI-compatible endpoint — e.g. Ollama at http://localhost:11434/v1",
+    },
+  },
 ];
+
+export const CUSTOM_PRESET = PRESETS[PRESETS.length - 1];
+
+/** The preset a stored URL belongs to; unknown URLs are "custom", not LM Studio. */
+export function presetFor(settings: LlmSettings): ProviderPreset {
+  if (!settings.enabled) return PRESETS[0];
+  return PRESETS.find((p) => p.id !== "custom" && p.baseUrl === settings.baseUrl) ?? CUSTOM_PRESET;
+}
 
 const STORAGE_KEY = "qanoun-llm-settings";
 
