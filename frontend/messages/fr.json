@@ -3,7 +3,12 @@
     "title": "Qanoun",
     "tagline": "Votre assistant juridique marocain",
     "description": "Explorez les lois marocaines et posez vos questions — réponses sourcées dans les textes officiels.",
-    "nav": { "home": "Accueil", "laws": "Lois", "chat": "Demander", "insights": "Analyses" },
+    "nav": {
+      "home": "Accueil",
+      "laws": "Lois",
+      "chat": "Demander",
+      "insights": "Analyses"
+    },
     "footer": "Projet open source mêlant data engineering, IA et droit marocain.",
     "language": "Langue"
   },
@@ -90,5 +95,12 @@
     "error": "Erreur de chargement. Vérifiez que l'API tourne (make api).",
     "retry": "Réessayer",
     "backHome": "Retour"
+  },
+  "reader": {
+    "jumpPlaceholder": "Aller à un article… (numéro ou mot)",
+    "copyCitation": "Copier la référence",
+    "share": "Copier le lien",
+    "copied": "Copié",
+    "noMatch": "Aucun article correspondant."
   }
 }

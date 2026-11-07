@@ -32,12 +32,12 @@ export function SearchResults({ response, locale }: { response: SearchResponse; 
                       ? `Article ${hit.article_number}`
                       : `المادة ${hit.article_number}`}
                 </Badge>
-                <span className="text-zellige-400">
+                <span className="text-zellige-400 dark:text-zellige-500">
                   {locale === "ar" ? "ص" : "p."}
                   {hit.page}
                 </span>
               </div>
-              <p className="mt-3 line-clamp-3 leading-7 text-zellige-800">{hit.text}</p>
+              <p className="mt-3 line-clamp-3 leading-7 text-zellige-800 dark:text-zellige-100">{hit.text}</p>
             </CardContent>
           </Card>
         </Link>

@@ -47,7 +47,7 @@ export function InsightsDashboard({ locale }: { locale: string }) {
   if (error) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-10">
-        <p className="rounded-xl border border-dashed border-red-200 bg-red-50 p-8 text-center text-red-700">
+        <p className="rounded-xl border border-dashed border-red-200 bg-red-50 p-8 text-center text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300">
           {tc("error")}
         </p>
       </div>
@@ -74,8 +74,8 @@ export function InsightsDashboard({ locale }: { locale: string }) {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
-      <h1 className="text-3xl font-bold text-zellige-900">{t("title")}</h1>
-      <p className="mt-1 text-zellige-500">{t("subtitle")}</p>
+      <h1 className="text-3xl font-bold text-zellige-900 dark:text-white">{t("title")}</h1>
+      <p className="mt-1 text-zellige-500 dark:text-zellige-400">{t("subtitle")}</p>
 
       {/* KPI row */}
       <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -188,7 +188,7 @@ export function InsightsDashboard({ locale }: { locale: string }) {
             <select
               value={keywordDomain ?? ""}
               onChange={(e) => loadKeywords(e.target.value || undefined)}
-              className="rounded-lg border border-zellige-200 bg-white px-2 py-1.5 text-xs text-zellige-700"
+              className="rounded-lg border border-zellige-200 bg-white px-2 py-1.5 text-xs text-zellige-700 dark:border-zellige-700 dark:bg-[#0f1b16] dark:text-zellige-200"
             >
               <option value="">—</option>
               {domains.map((d) => (
@@ -234,11 +234,11 @@ function Kpi({
   return (
     <Card>
       <CardContent className="p-5">
-        <div className="text-2xl font-bold text-zellige-800">
+        <div className="text-2xl font-bold text-zellige-800 dark:text-zellige-100">
           {formatNumber(value, locale)}
           {suffix && <span className="text-sm font-medium text-zellige-400"> {suffix}</span>}
         </div>
-        <div className="mt-1 text-sm text-zellige-500">{label}</div>
+        <div className="mt-1 text-sm text-zellige-500 dark:text-zellige-400">{label}</div>
       </CardContent>
     </Card>
   );

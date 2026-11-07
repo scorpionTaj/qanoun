@@ -6,6 +6,7 @@ import { getTranslations } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import { themeInitScript } from "@/components/layout/theme-toggle";
 import "../globals.css";
 
 const naskh = Noto_Naskh_Arabic({
@@ -45,7 +46,10 @@ export default async function LocaleLayout({
   if (!hasLocale(routing.locales, locale)) notFound();
 
   return (
-    <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"}>
+    <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body
         className={`${naskh.variable} ${inter.variable} min-h-screen font-latin [dir=rtl]:font-arabic`}
       >

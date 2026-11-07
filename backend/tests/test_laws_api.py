@@ -74,12 +74,22 @@ def test_analytics_summary_shape(fake_db):
 
 
 def test_analytics_keywords_filter_stopwords(fake_db):
-    fake_db({"GROUP BY word": [("في", 500), ("الزواج", 120), ("123", 90), ("صداق", 60)]})
+    # (word, total, df) — القانون/si/ال are boilerplate or too short; الزواج/صداق survive
+    fake_db({
+        "FROM laws WHERE": [(4,)],
+        "GROUP BY word": [
+            ("القانون", 3831, 4), ("si", 94, 2), ("ال", 90, 3), ("الزواج", 120, 2),
+            ("صداق", 60, 1), ("123", 90, 1),
+        ],
+    })
     tokens = client.get("/api/analytics/keywords").json()
     words = [t["token"] for t in tokens]
-    assert "في" not in words  # stopword
-    assert "123" not in words  # pure digits are excluded in SQL
+    assert "القانون" not in words  # boilerplate
+    assert "si" not in words  # French stopword
+    assert "ال" not in words  # OCR particle (also below min length)
+    assert "123" not in words  # pure digits
     assert words[0] == "الزواج"
+    assert "صداق" in words
 
 
 def test_health():

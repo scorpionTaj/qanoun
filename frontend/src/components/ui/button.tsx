@@ -7,11 +7,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-zellige-700 text-white shadow hover:bg-zellige-800",
-        secondary: "bg-zellige-100 text-zellige-900 hover:bg-zellige-200",
-        outline: "border border-zellige-200 bg-white hover:bg-zellige-50 text-zellige-900",
-        ghost: "hover:bg-zellige-100 text-zellige-900",
-        sand: "bg-sand-500 text-white hover:bg-sand-600",
+        default:
+          "bg-zellige-700 text-white shadow hover:bg-zellige-800 dark:bg-zellige-500 dark:hover:bg-zellige-400 dark:text-zellige-950",
+        secondary:
+          "bg-zellige-100 text-zellige-900 hover:bg-zellige-200 dark:bg-zellige-800 dark:text-zellige-100 dark:hover:bg-zellige-700",
+        outline:
+          "border border-zellige-200 bg-white hover:bg-zellige-50 text-zellige-900 dark:border-zellige-700 dark:bg-transparent dark:text-zellige-100 dark:hover:bg-zellige-800/60",
+        ghost:
+          "hover:bg-zellige-100 text-zellige-900 dark:text-zellige-100 dark:hover:bg-zellige-800/60",
+        sand: "bg-sand-500 text-white hover:bg-sand-600 dark:bg-sand-500 dark:hover:bg-sand-400 dark:text-zellige-950",
       },
       size: {
         default: "h-10 px-4 py-2",

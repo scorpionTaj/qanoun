@@ -105,23 +105,23 @@ export function ChatPanel({ locale, initialQuestion }: { locale: string; initial
   return (
     <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-4xl flex-col px-4 py-6">
       <div className="mb-4">
-        <h1 className="text-2xl font-bold text-zellige-900">{t("title")}</h1>
-        <p className="text-sm text-zellige-500">{t("subtitle")}</p>
+        <h1 className="text-2xl font-bold text-zellige-900 dark:text-white">{t("title")}</h1>
+        <p className="text-sm text-zellige-500 dark:text-zellige-400">{t("subtitle")}</p>
       </div>
 
-      <div className="thin-scroll flex-1 overflow-y-auto rounded-2xl border border-zellige-100 bg-white p-4">
+      <div className="thin-scroll flex-1 overflow-y-auto rounded-2xl border border-zellige-100 bg-white p-4 dark:border-zellige-800 dark:bg-[#0f1b16]">
         {messages.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center gap-6 text-center">
-            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zellige-100 text-zellige-700">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zellige-100 text-zellige-700 dark:bg-zellige-800/80 dark:text-zellige-200">
               <Scale className="h-7 w-7" />
             </span>
-            <p className="max-w-md text-zellige-600">{t("emptyState")}</p>
+            <p className="max-w-md text-zellige-600 dark:text-zellige-300">{t("emptyState")}</p>
             <div className="flex max-w-xl flex-wrap justify-center gap-2">
               {t.raw("suggestions").map((suggestion: string) => (
                 <button
                   key={suggestion}
                   onClick={() => void ask(suggestion)}
-                  className="rounded-full border border-zellige-200 bg-sand-50 px-3.5 py-1.5 text-sm text-zellige-700 transition-colors hover:bg-zellige-50"
+                  className="rounded-full border border-zellige-200 bg-sand-50 px-3.5 py-1.5 text-sm text-zellige-700 transition-colors hover:bg-zellige-50 dark:border-zellige-700 dark:bg-[#161a12] dark:text-zellige-200 dark:hover:bg-zellige-800/60"
                 >
                   {suggestion}
                 </button>
@@ -135,7 +135,7 @@ export function ChatPanel({ locale, initialQuestion }: { locale: string; initial
             <MessageBubble key={index} message={message} locale={locale} />
           ))}
           {busy && messages.at(-1)?.role === "user" && (
-            <div className="flex items-center gap-2 text-sm text-zellige-500">
+            <div className="flex items-center gap-2 text-sm text-zellige-500 dark:text-zellige-400">
               <span className="flex gap-1">
                 <i className="h-1.5 w-1.5 animate-blink rounded-full bg-zellige-500" />
                 <i className="h-1.5 w-1.5 animate-blink rounded-full bg-zellige-500 [animation-delay:200ms]" />
@@ -166,7 +166,7 @@ export function ChatPanel({ locale, initialQuestion }: { locale: string; initial
           <Send className="h-4 w-4 rtl:-scale-x-100" />
         </Button>
       </form>
-      <p className="mt-2 flex items-center gap-1.5 text-xs text-zellige-400">
+      <p className="mt-2 flex items-center gap-1.5 text-xs text-zellige-400 dark:text-zellige-500">
         <CircleAlert className="h-3.5 w-3.5" />
         {t("disclaimer")}
       </p>
@@ -207,7 +207,7 @@ function MessageBubble({ message, locale }: { message: Message; locale: string }
       <div
         className={cn(
           "max-w-[90%] rounded-2xl rounded-es-md px-4 py-3 leading-8",
-          message.error ? "bg-red-50 text-red-800" : "bg-sand-50 text-zellige-950"
+          message.error ? "bg-red-50 text-red-800 dark:bg-red-950/60 dark:text-red-300" : "bg-sand-50 text-zellige-950 dark:bg-[#161a12] dark:text-zellige-100"
         )}
         dir="auto"
       >
@@ -216,20 +216,20 @@ function MessageBubble({ message, locale }: { message: Message; locale: string }
       </div>
 
       {message.rewritten && message.rewritten !== message.text && !message.error && (
-        <p className="flex items-center gap-1 text-xs text-zellige-400" dir="auto">
+        <p className="flex items-center gap-1 text-xs text-zellige-400 dark:text-zellige-500" dir="auto">
           <Sparkles className="h-3 w-3" />
           {t("rewritten")}: {message.rewritten}
         </p>
       )}
 
       {message.abstained && (
-        <p className="text-xs font-medium text-sand-700">{t("abstained")}</p>
+        <p className="text-xs font-medium text-sand-700 dark:text-sand-300">{t("abstained")}</p>
       )}
 
       {/* Sources: all retrieved passages, with cited ones highlighted */}
       {message.sources && message.sources.length > 0 && (
         <div className="w-full">
-          <p className="mb-2 flex items-center gap-1.5 text-xs font-bold text-zellige-600">
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-bold text-zellige-600 dark:text-zellige-300">
             <BookOpenCheck className="h-3.5 w-3.5" />
             {t("sources")}
           </p>
@@ -245,7 +245,7 @@ function MessageBubble({ message, locale }: { message: Message; locale: string }
                   className={cn(
                     "group flex items-start gap-2.5 rounded-xl border p-2.5 text-xs transition-colors",
                     cited
-                      ? "border-zellige-300 bg-zellige-50 hover:bg-zellige-100"
+                      ? "border-zellige-300 bg-zellige-50 hover:bg-zellige-100 dark:border-zellige-600 dark:bg-zellige-800/60 dark:hover:bg-zellige-800"
                       : "border-zellige-100 bg-white hover:bg-zellige-50"
                   )}
                   dir="auto"
@@ -253,7 +253,7 @@ function MessageBubble({ message, locale }: { message: Message; locale: string }
                   <span
                     className={cn(
                       "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md font-bold",
-                      cited ? "bg-zellige-700 text-white" : "bg-zellige-100 text-zellige-600"
+                      cited ? "bg-zellige-700 text-white" : "bg-zellige-100 text-zellige-600 dark:bg-zellige-800 dark:text-zellige-200"
                     )}
                   >
                     {index + 1}
@@ -261,7 +261,7 @@ function MessageBubble({ message, locale }: { message: Message; locale: string }
                   <span className="min-w-0 flex-1">
                     <span className="flex flex-wrap items-center gap-1.5">
                       <FileText className="h-3 w-3 text-zellige-400" />
-                      <span className="font-bold text-zellige-800">{hit.law_title}</span>
+                      <span className="font-bold text-zellige-800 dark:text-zellige-100">{hit.law_title}</span>
                       <Badge variant={cited ? "domain" : "outline"}>
                         {locale === "fr" ? `Art. ${hit.article_number}` : `المادة ${hit.article_number}`}
                       </Badge>
@@ -276,7 +276,7 @@ function MessageBubble({ message, locale }: { message: Message; locale: string }
       )}
 
       {message.disclaimer && !message.error && (
-        <p className="text-[11px] text-zellige-400" dir="auto">
+        <p className="text-[11px] text-zellige-400 dark:text-zellige-500" dir="auto">
           {message.disclaimer}
         </p>
       )}

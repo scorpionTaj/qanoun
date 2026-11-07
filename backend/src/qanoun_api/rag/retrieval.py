@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 import numpy as np
 import psycopg
 
+from qanoun_api.config import SETTINGS
 from qanoun_api.db import db
 from qanoun_pipeline.embed import Embedder, EmbeddingSpec, MODELS, fake_embedder
 from qanoun_pipeline.normalize import normalize

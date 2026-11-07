@@ -3,7 +3,12 @@
     "title": "Qanoun",
     "tagline": "Your Moroccan legal assistant",
     "description": "Browse Moroccan law and ask questions — answers grounded in official texts.",
-    "nav": { "home": "Home", "laws": "Laws", "chat": "Ask", "insights": "Insights" },
+    "nav": {
+      "home": "Home",
+      "laws": "Laws",
+      "chat": "Ask",
+      "insights": "Insights"
+    },
     "footer": "An open-source project combining data engineering, AI and Moroccan law.",
     "language": "Language"
   },
@@ -90,5 +95,12 @@
     "error": "Failed to load data. Make sure the API is running (make api).",
     "retry": "Retry",
     "backHome": "Back"
+  },
+  "reader": {
+    "jumpPlaceholder": "Jump to article… (number or word)",
+    "copyCitation": "Copy citation",
+    "share": "Copy link",
+    "copied": "Copied",
+    "noMatch": "No matching articles."
   }
 }

@@ -34,8 +34,8 @@ export default async function LawsPage({
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-bold text-zellige-900">{t("title")}</h1>
-        <p className="text-zellige-500">{t("subtitle")}</p>
+        <h1 className="text-3xl font-bold text-zellige-900 dark:text-white">{t("title")}</h1>
+        <p className="text-zellige-500 dark:text-zellige-400">{t("subtitle")}</p>
       </div>
 
       <div className="mt-6">
@@ -46,7 +46,7 @@ export default async function LawsPage({
       <div className="mt-5 flex flex-wrap gap-2">
         <Link
           href={`/${locale}/laws${query ? `?q=${encodeURIComponent(query)}` : ""}`}
-          className={!domain ? "rounded-full bg-zellige-700 px-3.5 py-1.5 text-sm font-medium text-white" : "rounded-full border border-zellige-200 bg-white px-3.5 py-1.5 text-sm text-zellige-600 hover:bg-zellige-50"}
+          className={!domain ? "rounded-full bg-zellige-700 px-3.5 py-1.5 text-sm font-medium text-white" : "rounded-full border border-zellige-200 bg-white px-3.5 py-1.5 text-sm text-zellige-600 hover:bg-zellige-50 dark:border-zellige-700 dark:bg-transparent dark:text-zellige-300 dark:hover:bg-zellige-800/60"}
         >
           {t("allDomains")}
         </Link>
@@ -59,7 +59,7 @@ export default async function LawsPage({
             <Link
               key={d.domain}
               href={`/${locale}/laws?${qs}`}
-              className={active ? "rounded-full bg-zellige-700 px-3.5 py-1.5 text-sm font-medium text-white" : "rounded-full border border-zellige-200 bg-white px-3.5 py-1.5 text-sm text-zellige-600 hover:bg-zellige-50"}
+              className={active ? "rounded-full bg-zellige-700 px-3.5 py-1.5 text-sm font-medium text-white" : "rounded-full border border-zellige-200 bg-white px-3.5 py-1.5 text-sm text-zellige-600 hover:bg-zellige-50 dark:border-zellige-700 dark:bg-transparent dark:text-zellige-300 dark:hover:bg-zellige-800/60"}
             >
               {d.label[locale as Locale]}{" "}
               <span className={active ? "text-zellige-200" : "text-zellige-400"}>({d.laws})</span>
@@ -82,7 +82,7 @@ export default async function LawsPage({
       {!query && (
         <section className="mt-8">
           {laws.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-zellige-200 bg-white p-8 text-center text-zellige-500">
+            <p className="rounded-xl border border-dashed border-zellige-200 bg-white p-8 text-center text-zellige-500 dark:border-zellige-700 dark:bg-[#12201a] dark:text-zellige-400">
               {t("noResults")}
             </p>
           ) : (
@@ -93,7 +93,7 @@ export default async function LawsPage({
                     <CardContent className="p-5">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <h3 className="truncate font-bold text-zellige-900">
+                          <h3 className="truncate font-bold text-zellige-900 dark:text-white">
                             {lawTitle(law, locale)}
                           </h3>
                           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-zellige-500">
