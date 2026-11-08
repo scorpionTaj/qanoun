@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, HTTPException, Query
 
+from qanoun_api.amendments import summarize
 from qanoun_api.db import db
 
 router = APIRouter(prefix="/api", tags=["laws"])
@@ -101,6 +102,7 @@ def law_detail(slug: str):
         "law_number": row[4], "year": row[5], "domain": row[6], "language": row[7],
         "source_url": row[8], "page_count": row[9], "article_count": row[10],
         "preamble": row[11], "warnings": row[12],
+        "amendments": summarize([row[11] or "", *(a[3] for a in articles)]),
         "articles": [
             {
                 "id": a[0], "number": a[1], "ordinal": a[2], "text": a[3],

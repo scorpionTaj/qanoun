@@ -20,6 +20,7 @@ from qanoun_api.db import db
 
 RRF_K = 60
 CANDIDATES = 50  # per-channel candidate pool before fusion
+RERANK_POOL = 30  # fused candidates the cross-encoder re-scores (when enabled)
 
 
 @dataclass(frozen=True)
@@ -157,14 +158,42 @@ def search(
         "law_slug": law_slug,
         "group": group,
         "n": CANDIDATES,
-        "k": k,
+        "k": max(k, RERANK_POOL) if SETTINGS.reranker else k,
         "rrf_k": RRF_K,
     }
-    own_conn = conn is None
-    if own_conn:
+    if conn is None:
         with db() as c:
-            return _run(c, query, effective, params)
-    return _run(conn, query, effective, params)  # type: ignore[arg-type]
+            result = _run(c, query, effective, params)
+    else:
+        result = _run(conn, query, effective, params)
+    if SETTINGS.reranker and result.hits:
+        result.hits = rerank(effective, result.hits, k)
+    return result
+
+
+_reranker = None
+_reranker_lock = threading.Lock()
+
+
+def get_reranker():
+    """The cross-encoder from QANOUN_RERANKER, loaded once (a one-time model download)."""
+    global _reranker
+    with _reranker_lock:
+        if _reranker is None:
+            from qanoun_pipeline.embed import torch_device
+            from sentence_transformers import CrossEncoder
+
+            _reranker = CrossEncoder(SETTINGS.reranker, device=torch_device(), max_length=512)
+        return _reranker
+
+
+def rerank(query: str, hits: list[Hit], k: int) -> list[Hit]:
+    """Re-order fused candidates by a cross-encoder reading question and article together:
+    fusion ranks by overlap, the reranker by whether the passage actually answers."""
+    pairs = [(query, f"{hit.law_title} — {hit.article_number}: {hit.text}") for hit in hits]
+    scores = get_reranker().predict(pairs)
+    ranked = sorted(zip(scores, hits, strict=True), key=lambda pair: -float(pair[0]))
+    return [hit for _, hit in ranked[:k]]
 
 
 def _run(conn: psycopg.Connection, query: str, effective: str, params: dict) -> RetrievalResult:

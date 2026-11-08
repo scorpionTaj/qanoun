@@ -1,0 +1,36 @@
+{"id": "fam-age", "question": "ما هو سن الزواج في المغرب؟", "expected_articles": [["moudawana", "19"]]}
+{"id": "fam-underage", "question": "Peut-on se marier avant 18 ans au Maroc ?", "expected_articles": [["moudawana", "20"]]}
+{"id": "fam-definition", "question": "ما هو تعريف الزواج في مدونة الأسرة؟", "expected_articles": [["moudawana", "4"]]}
+{"id": "fam-gifts", "question": "هل يمكن استرداد هدايا الخطبة إذا عدل أحد الطرفين عن الخطبة؟", "expected_articles": [["moudawana", "8"]]}
+{"id": "fam-sadaq", "question": "ما هو الصداق؟", "expected_articles": [["moudawana", "26"]]}
+{"id": "fam-polygamy", "question": "متى يمنع التعدد؟", "expected_articles": [["moudawana", "40"]]}
+{"id": "fam-dues", "question": "ما هي مستحقات الزوجة عند الطلاق؟", "expected_articles": [["moudawana", "84"]]}
+{"id": "fam-shiqaq", "question": "ما هي مسطرة الشقاق بين الزوجين؟", "expected_articles": [["moudawana", "94"]]}
+{"id": "fam-harm", "question": "ما الذي يعتبر ضررا مبررا لطلب التطليق؟", "expected_articles": [["moudawana", "99"]]}
+{"id": "fam-consent-fr", "question": "Qu'est-ce que le divorce par consentement mutuel ?", "expected_articles": [["moudawana", "114"]]}
+{"id": "fam-khul", "question": "ما هو الطلاق بالخلع؟", "expected_articles": [["moudawana", "115"]]}
+{"id": "fam-idda-widow", "question": "ما هي عدة المتوفى عنها زوجها غير الحامل؟", "expected_articles": [["moudawana", "132"]]}
+{"id": "fam-idda-pregnant", "question": "متى تنتهي عدة المرأة الحامل؟", "expected_articles": [["moudawana", "133"]]}
+{"id": "fam-idda-divorced", "question": "ما هي عدة المطلقة غير الحامل؟", "expected_articles": [["moudawana", "136"]]}
+{"id": "fam-custody", "question": "لمن تخول الحضانة؟", "expected_articles": [["moudawana", "171"]]}
+{"id": "fam-support-age", "question": "إلى متى تستمر نفقة الأب على أولاده؟", "expected_articles": [["moudawana", "198"]]}
+{"id": "fam-sadaq-due", "question": "متى يجب أداء الصداق؟", "expected_articles": [["moudawana", "31"]]}
+{"id": "lab-probation", "question": "ما هي فترة الاختبار في عقد الشغل؟", "expected_articles": [["labour-code", "13"]]}
+{"id": "lab-probation-fr", "question": "Quelle est la durée de la période d'essai pour un ouvrier ?", "expected_articles": [["labour-code", "14"]]}
+{"id": "lab-cdd", "question": "متى يمكن إبرام عقد شغل محدد المدة؟", "expected_articles": [["labour-code", "16"]]}
+{"id": "lab-notice", "question": "هل يجب احترام أجل الإخطار عند إنهاء عقد الشغل غير محدد المدة؟", "expected_articles": [["labour-code", "43"]]}
+{"id": "lab-severance", "question": "متى يستحق الأجير التعويض عن الفصل؟", "expected_articles": [["labour-code", "52"]]}
+{"id": "lab-minors", "question": "ما هو السن الأدنى لتشغيل الأحداث؟", "expected_articles": [["labour-code", "143"]]}
+{"id": "lab-maternity-fr", "question": "Combien dure le congé de maternité ?", "expected_articles": [["labour-code", "152"]]}
+{"id": "lab-hours-darija", "question": "شحال من ساعة خاصني نخدم فالسيمانة؟", "expected_articles": [["labour-code", "184"]]}
+{"id": "lab-leave-fr", "question": "Combien de jours de congé annuel payé ?", "expected_articles": [["labour-code", "231"]]}
+{"id": "lab-seniority-darija", "question": "واش كيتزاد فالكونجي مع الأقدمية؟", "expected_articles": [["labour-code", "232"]]}
+{"id": "lab-wage", "question": "كيف يحدد الأجر؟", "expected_articles": [["labour-code", "345"]]}
+{"id": "rent-increase-darija", "question": "واش المكري يقدر يزيد فالكرا كل عام؟", "expected_articles": [["rental", "31"]]}
+{"id": "rent-written", "question": "هل يجب أن يكون عقد الكراء مكتوبا؟", "expected_articles": [["rental", "3"]]}
+{"id": "rent-sale", "question": "ماذا يقع لعقد الكراء إذا بيع المحل المكترى؟", "expected_articles": [["rental", "4"]]}
+{"id": "rent-payment", "question": "متى يجب على المكتري أداء الوجيبة الكرائية؟", "expected_articles": [["rental", "12"]]}
+{"id": "doc-conditions", "question": "ما هي الأركان اللازمة لصحة الالتزام؟", "expected_articles": [["doc", "2"]]}
+{"id": "doc-binding", "question": "هل الالتزامات التعاقدية ملزمة لأطرافها؟", "expected_articles": [["doc", "230"]]}
+{"id": "doc-liability-fr", "question": "Qui doit réparer un dommage causé par sa faute ?", "expected_articles": [["doc", "77"]]}
+{"id": "pen-theft", "question": "ما هي عقوبة السرقة؟", "expected_articles": [["penal-code", "505"]]}

@@ -169,3 +169,9 @@ def test_history_is_capped():
     client = TestClient(app)
     turns = [{"role": "user", "text": "q"}] * 7
     assert client.post("/api/chat", json={"question": "q", "history": turns}).status_code == 422
+
+
+def test_chat_rejects_unknown_style_or_language():
+    client = TestClient(app)
+    assert client.post("/api/chat", json={"question": "q", "style": "verbose"}).status_code == 422
+    assert client.post("/api/chat", json={"question": "q", "answer_language": "de"}).status_code == 422

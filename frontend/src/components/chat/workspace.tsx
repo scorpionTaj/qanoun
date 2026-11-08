@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -15,12 +15,14 @@ import {
   type Message,
 } from "@/lib/conversations";
 import type { SearchHit } from "@/lib/types";
+import { accountApi, mergeConversations } from "@/lib/account";
 import { cn } from "@/lib/utils";
 import { ChatPanel } from "./chat-panel";
 import { ArticlePlaceholder, ArticleView, type OpenedSource } from "./article-panel";
 import { loadScope, saveScope, type Scope } from "./scope-select";
 
 const DESKTOP = "(min-width: 1024px)";
+const PANELS_KEY = "qanoun-panels";
 
 /** True from the lg breakpoint, where history and article are columns instead of drawers. */
 function useIsDesktop(): boolean {
@@ -57,6 +59,24 @@ export function Workspace({
   const [loaded, setLoaded] = useState(false);
   const [source, setSource] = useState<OpenedSource | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const signedIn = useRef(false);
+  // Desktop side columns can be collapsed; remembered per browser.
+  const [panels, setPanels] = useState({ history: true, article: true });
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(PANELS_KEY) ?? "null");
+      if (saved && typeof saved.history === "boolean" && typeof saved.article === "boolean") setPanels(saved);
+    } catch {}
+  }, []);
+  const togglePanel = useCallback((name: "history" | "article", value?: boolean) => {
+    setPanels((prev) => {
+      const next = { ...prev, [name]: value ?? !prev[name] };
+      try {
+        localStorage.setItem(PANELS_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }, []);
   const [scope, setScope] = useState<Scope>({});
   const changeScope = useCallback((next: Scope) => {
     setScope(next);
@@ -68,6 +88,20 @@ export function Workspace({
   useEffect(() => {
     setConversations(loadConversations());
     setLoaded(true);
+    // Signed in: merge with the server copy (newest wins) and upload what it lacks.
+    accountApi
+      .me()
+      .then(async ({ user }) => {
+        if (!user) return;
+        signedIn.current = true;
+        const remote = await accountApi.conversations();
+        const merged = mergeConversations(loadConversations(), remote);
+        setConversations(merged);
+        saveConversations(merged);
+        const remoteAt = new Map(remote.map((c) => [c.id, c.updatedAt]));
+        for (const c of merged) if ((remoteAt.get(c.id) ?? -1) < c.updatedAt) void accountApi.put(c).catch(() => {});
+      })
+      .catch(() => {}); // API down or signed out: the browser copy keeps working
     // A link's scope wins over the remembered one (and becomes the remembered one).
     if (initialScope) changeScope(initialScope);
     else setScope(loadScope());
@@ -78,11 +112,13 @@ export function Workspace({
     (messages: Message[]) => {
       if (!messages.length) return;
       const updated: Conversation = { ...active, messages, title: titleFor(messages), updatedAt: Date.now() };
+      const finished = !messages.some((m) => m.streaming);
       setConversations((prev) => {
         const next = [updated, ...prev.filter((c) => c.id !== updated.id)];
-        if (!messages.some((m) => m.streaming)) saveConversations(next);
+        if (finished) saveConversations(next);
         return next;
       });
+      if (finished && signedIn.current) void accountApi.put(updated).catch(() => {});
     },
     [active.id] // eslint-disable-line react-hooks/exhaustive-deps
   );
@@ -99,10 +135,17 @@ export function Workspace({
       saveConversations(next);
       return next;
     });
+    if (signedIn.current) void accountApi.remove(id).catch(() => {});
     if (id === active.id) startNew();
   };
 
-  const openSource = useCallback((hit: SearchHit, n: number) => setSource({ hit, n }), []);
+  const openSource = useCallback(
+    (hit: SearchHit, n: number) => {
+      setSource({ hit, n });
+      togglePanel("article", true); // a citation click must show its article
+    },
+    [togglePanel]
+  );
   const closeSource = useCallback(() => setSource(null), []);
 
   // Reopening the first conversation from history passes its saved messages: never re-asks.
@@ -121,11 +164,24 @@ export function Workspace({
   );
 
   return (
-    <div className="grid h-[calc(100dvh-4rem)] grid-cols-1 max-md:h-[calc(100dvh-8rem)] lg:grid-cols-[17rem_minmax(0,1fr)_25rem] xl:grid-cols-[18rem_minmax(0,1fr)_28rem]">
+    <div
+      className="grid h-[calc(100dvh-4rem)] grid-cols-1 transition-[grid-template-columns] duration-200 max-md:h-[calc(100dvh-8rem)]"
+      style={
+        isDesktop
+          ? {
+              gridTemplateColumns: [panels.history && "17rem", "minmax(0,1fr)", panels.article && "26rem"]
+                .filter(Boolean)
+                .join(" "),
+            }
+          : undefined
+      }
+    >
       {isDesktop ? (
-        <aside aria-label={t("history")} className="min-h-0 border-e border-separator bg-surface/60">
-          {history}
-        </aside>
+        panels.history && (
+          <aside aria-label={t("history")} className="min-h-0 border-e border-separator bg-surface/60">
+            {history}
+          </aside>
+        )
       ) : (
         <Drawer>
           {/* HeroUI's side drawer positions with logical CSS but slides with a physical
@@ -152,15 +208,19 @@ export function Workspace({
         onChange={onChange}
         onOpenSource={openSource}
         activeArticleId={source?.hit.article_id ?? null}
-        onShowHistory={() => setHistoryOpen(true)}
+        onShowHistory={() => (isDesktop ? togglePanel("history") : setHistoryOpen(true))}
+        panels={isDesktop ? panels : null}
+        onToggleArticle={() => togglePanel("article")}
         scope={scope}
         onScopeChange={changeScope}
       />
 
       {isDesktop ? (
-        <aside aria-label={t("panelTitle")} className="min-h-0 border-s border-separator bg-surface">
-          {source ? <ArticleView source={source} locale={locale} onClose={closeSource} /> : <ArticlePlaceholder />}
-        </aside>
+        panels.article && (
+          <aside aria-label={t("panelTitle")} className="min-h-0 border-s border-separator bg-surface">
+            {source ? <ArticleView source={source} locale={locale} onClose={closeSource} /> : <ArticlePlaceholder />}
+          </aside>
+        )
       ) : (
         <Drawer>
           <Drawer.Backdrop isOpen={!!source} onOpenChange={(isOpen) => !isOpen && closeSource()}>

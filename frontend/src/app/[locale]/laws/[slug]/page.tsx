@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ExternalLink, MessagesSquare } from "lucide-react";
 import { Chip } from "@/components/ui/heroui";
 import { Preamble } from "@/components/laws/preamble";
+import { Amendments } from "@/components/laws/amendments";
 import { api } from "@/lib/api";
 import { formatNumber, lawTitle } from "@/lib/utils";
 import { ReaderClient } from "@/components/laws/reader-client";
@@ -104,9 +105,10 @@ export default async function LawReaderPage({
       </header>
 
       {law.preamble && <Preamble title={t("preamble")} text={law.preamble} isArabic={isArabic} />}
+      {law.amendments && <Amendments data={law.amendments} />}
 
       <div className="mt-8">
-        <ReaderClient articles={law.articles} lawTitle={title} isArabic={isArabic} />
+        <ReaderClient articles={law.articles} lawTitle={title} isArabic={isArabic} amended={law.amendments?.articles} />
       </div>
     </div>
   );

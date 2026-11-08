@@ -20,11 +20,11 @@ def test_explicit_preference_wins_and_unkeyed_preference_is_ignored():
     assert load_providers(env)[0].id == "local"
 
 
-def test_recommend_gemini_picks_newest_stable_flash():
+def test_recommend_gemini_picks_newest_stable_flash_lite():
     ids = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite",
            "gemini-3.0-flash-preview", "gemini-2.5-pro", "text-embedding-004",
            "gemini-2.5-flash-preview-tts"]
-    assert recommend_model("gemini", ids) == "gemini-2.5-flash"
+    assert recommend_model("gemini", ids) == "gemini-2.5-flash-lite"
 
 
 def test_recommend_openrouter_prefers_free_known_family():
@@ -165,13 +165,13 @@ def test_nvidia_prefers_fast_multilingual_chat_models_not_code_models():
     ]
 
 
-def test_gemini_interleaves_flash_and_lite_across_generations():
+def test_gemini_interleaves_lite_and_flash_across_generations():
     from qanoun_api.rag.providers import ranked_models
 
     ids = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.5-flash-lite",
            "gemini-3.1-flash-lite-preview", "gemini-3.8-flash-tts", "gemini-2.5-flash"]
     assert ranked_models("gemini", ids) == [
-        "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.7-flash", "gemini-2.5-flash",
+        "gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-3.7-flash", "gemini-2.5-flash",
     ]
 
 
@@ -207,3 +207,41 @@ def test_router_rebuilds_when_env_file_changes(tmp_path, monkeypatch):
     router = providers.get_router()
     assert router.default.id == "gemini" and router.get("gemini").api_key == "new-key"
     providers.set_router(None)
+
+
+def test_explicit_provider_never_falls_back_to_another_provider():
+    router = router_with({
+        "gemini": FakeClient(tokens=["from gemini"]),
+        "local": FakeClient(error=LLMError("refused", kind="unreachable")),
+    })
+    with pytest.raises(LLMError, match="refused"):
+        list(router.chat_stream([], provider_id="local"))
+
+
+def test_explicit_model_is_the_only_attempt():
+    router = LLMRouter(load_providers({"QANOUN_NVIDIA_KEY": "k"}))
+    router.models = lambda pid: ["google/gemma-4-31b-it", "deepseek-ai/deepseek-v4.1-flash"]
+    assert [m for _, m in router._chain("nvidia", "deepseek-ai/deepseek-v4.1-flash")] == [
+        "deepseek-ai/deepseek-v4.1-flash"
+    ]
+    assert [m for _, m in router._chain("nvidia", "")] == [
+        "google/gemma-4-31b-it", "deepseek-ai/deepseek-v4.1-flash"
+    ]
+
+
+def test_cloud_timeout_is_skipped_on_the_next_automatic_call():
+    router = LLMRouter(load_providers({"QANOUN_GEMINI_KEY": "k"}))
+    router.models = lambda pid: ["slow", "fast"]
+    calls = []
+    clients = {"slow": FakeClient(error=LLMError("ReadTimeout", kind="unreachable")),
+               "fast": FakeClient(tokens=["ok"])}
+
+    def client(provider, model):
+        calls.append(model)
+        return clients[model]
+
+    router._client = client
+    list(router.chat_stream([]))
+    calls.clear()
+    list(router.chat_stream([]))
+    assert calls[0] == "fast"

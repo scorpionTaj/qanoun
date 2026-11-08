@@ -39,9 +39,10 @@ export function AiSourceSelect() {
       className="min-w-0 max-w-[14rem]"
     >
       <Label className="sr-only">{t("aiLabel")}</Label>
-      <Select.Trigger className="h-8 min-h-8 gap-1.5 rounded-full border-0 bg-default px-3 text-xs shadow-none">
+      {/* pe-8: room for the indicator, which HeroUI positions over the trigger's end */}
+      <Select.Trigger className="h-8 min-h-8 gap-1.5 rounded-full border-0 bg-default ps-3 pe-8 text-xs shadow-none [&_[data-slot=select-value]]:text-xs">
         <Cpu className="size-3.5 shrink-0 text-accent" aria-hidden />
-        <Select.Value className="truncate">{label}</Select.Value>
+        <Select.Value className="min-w-0 flex-1 truncate">{label}</Select.Value>
         <Select.Indicator />
       </Select.Trigger>
       <Select.Popover className="min-w-64">

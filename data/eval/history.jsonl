@@ -1,0 +1,2 @@
+{"time": "2026-11-08T22:36:53+00:00", "commit": "fc819bd", "k": 10, "reranker": "off", "hit_rate": 0.923, "mrr": 0.759, "article_hit_rate": 0.833, "article_mrr": 0.668}
+{"time": "2026-11-08T22:44:13+00:00", "commit": "fc819bd", "k": 10, "reranker": "BAAI/bge-reranker-v2-m3", "hit_rate": 0.923, "mrr": 0.767, "article_hit_rate": 0.889, "article_mrr": 0.623}

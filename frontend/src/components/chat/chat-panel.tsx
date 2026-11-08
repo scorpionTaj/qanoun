@@ -3,11 +3,28 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Alert, Button, Chip, Disclosure, Spinner, TextArea, Tooltip } from "@heroui/react";
-import { ArrowUp, BookOpenCheck, Check, Copy, History, Library, Scale, Sparkles, Square } from "lucide-react";
+import {
+  ArrowUp,
+  BookOpenCheck,
+  Check,
+  Copy,
+  Printer,
+  History,
+  Library,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
+  Scale,
+  Sparkles,
+  Square,
+} from "lucide-react";
 import type { Message } from "@/lib/conversations";
 import { loadChoice } from "@/lib/settings";
+import { loadPreferences } from "@/lib/preferences";
 import { streamSse } from "@/lib/sse";
 import type { SearchHit } from "@/lib/types";
+import { printAnswer } from "@/lib/export-answer";
 import { cn } from "@/lib/utils";
 import { ScopeSelect, type Scope } from "./scope-select";
 import { AiSourceSelect } from "./ai-source-select";
@@ -29,9 +46,13 @@ export function ChatPanel({
   onOpenSource,
   activeArticleId,
   onShowHistory,
+  panels,
+  onToggleArticle,
   scope,
   onScopeChange,
 }: {
+  panels: { history: boolean; article: boolean } | null; // null below lg (drawers)
+  onToggleArticle: () => void;
   scope: Scope;
   onScopeChange: (scope: Scope) => void;
   locale: string;
@@ -50,6 +71,8 @@ export function ChatPanel({
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const startedRef = useRef(false);
+  const panelLabel = (open: boolean | undefined, which: "history" | "article") =>
+    open === undefined ? t("history") : t(open ? `hide_${which}` : `show_${which}`);
 
   // Latest messages for building the follow-up context inside ask().
   const messagesRef = useRef(messages);
@@ -58,7 +81,12 @@ export function ChatPanel({
   // Report every change up; the workspace persists finished turns.
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
-  useEffect(() => onChangeRef.current(messages), [messages]);
+  // Not on mount: reopening a saved conversation is not a change (it would bump its date and
+  // move it to the top of the history).
+  const initialRef = useRef(initialMessages);
+  useEffect(() => {
+    if (messages !== initialRef.current) onChangeRef.current(messages);
+  }, [messages]);
 
   // Follow the answer while it streams, only if the reader is already near the bottom.
   useEffect(() => {
@@ -87,6 +115,7 @@ export function ChatPanel({
       abortRef.current = controller;
       try {
         const { provider, model } = loadChoice();
+        const preferences = loadPreferences();
         const response = await fetch(`${API_URL}/api/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -97,6 +126,9 @@ export function ChatPanel({
             domain: scope.domain,
             group: scope.group,
             history,
+            k: preferences.sources,
+            style: preferences.style,
+            answer_language: preferences.answerLanguage,
           }),
           signal: controller.signal,
         });
@@ -133,8 +165,18 @@ export function ChatPanel({
           } else if (event.event === "error") {
             // Translated, actionable message; the raw provider error stays one click away.
             const code = ERROR_CODES.includes(data.code) ? data.code : "error";
+            // A provider the user picked is never swapped for another one, so when it is down
+            // say which one, and how to get an answer anyway.
+            const picked = provider && ["unreachable", "unavailable", "rate_limit"].includes(code);
+            const label = String(data.message ?? "").split(":")[0] || provider;
             setMessages((prev) =>
-              patchLast(prev, { text: t(`errors.${code}`), errorDetail: data.message, error: true, streaming: false, stage: undefined })
+              patchLast(prev, {
+                text: picked ? t("errors.providerDown", { provider: label }) : t(`errors.${code}`),
+                errorDetail: data.message,
+                error: true,
+                streaming: false,
+                stage: undefined,
+              })
             );
           }
         }
@@ -156,7 +198,13 @@ export function ChatPanel({
           );
         } else {
           setMessages((prev) =>
-            patchLast(prev, { text: t("errors.network"), errorDetail: String(error), error: true, streaming: false, stage: undefined })
+            patchLast(prev, {
+              text: String(error).includes("HTTP 429") ? t("errors.tooMany") : t("errors.network"),
+              errorDetail: String(error),
+              error: true,
+              streaming: false,
+              stage: undefined,
+            })
           );
         }
       } finally {
@@ -179,13 +227,37 @@ export function ChatPanel({
   return (
     <section className="flex h-full min-h-0 min-w-0 flex-col" aria-label={t("title")}>
       <div className="flex items-center gap-2 border-b border-separator px-4 py-3">
-        <Button isIconOnly size="sm" variant="ghost" aria-label={t("history")} onPress={onShowHistory} className="lg:hidden">
-          <History className="size-4" aria-hidden />
-        </Button>
-        <div className="min-w-0">
+        {/* Desktop: collapse/expand the history column; phones: open the history drawer. */}
+        <Tooltip delay={400}>
+          <Button isIconOnly size="sm" variant="ghost" aria-label={panelLabel(panels?.history, "history")} onPress={onShowHistory}>
+            {panels ? (
+              panels.history ? (
+                <PanelLeftClose className="size-4 rtl:-scale-x-100" aria-hidden />
+              ) : (
+                <PanelLeftOpen className="size-4 rtl:-scale-x-100" aria-hidden />
+              )
+            ) : (
+              <History className="size-4" aria-hidden />
+            )}
+          </Button>
+          <Tooltip.Content>{panelLabel(panels?.history, "history")}</Tooltip.Content>
+        </Tooltip>
+        <div className="min-w-0 flex-1">
           <h1 className="truncate text-base font-bold">{t("title")}</h1>
           <p className="truncate text-xs text-muted">{t("subtitle")}</p>
         </div>
+        {panels && (
+          <Tooltip delay={400}>
+            <Button isIconOnly size="sm" variant="ghost" aria-label={panelLabel(panels.article, "article")} onPress={onToggleArticle}>
+              {panels.article ? (
+                <PanelRightClose className="size-4 rtl:-scale-x-100" aria-hidden />
+              ) : (
+                <PanelRightOpen className="size-4 rtl:-scale-x-100" aria-hidden />
+              )}
+            </Button>
+            <Tooltip.Content>{panelLabel(panels.article, "article")}</Tooltip.Content>
+          </Tooltip>
+        )}
       </div>
 
       <div ref={scrollRef} className="thin-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain">
@@ -215,6 +287,7 @@ export function ChatPanel({
             <MessageBubble
               key={index}
               message={message}
+              question={messages[index - 1]?.role === "user" ? messages[index - 1].text : ""}
               locale={locale}
               onOpenSource={onOpenSource}
               activeArticleId={activeArticleId}
@@ -325,11 +398,13 @@ function AnswerText({ message, onOpenSource }: { message: Message; onOpenSource:
 
 function MessageBubble({
   message,
+  question,
   locale,
   onOpenSource,
   activeArticleId,
 }: {
   message: Message;
+  question: string;
   locale: string;
   onOpenSource: OpenSource;
   activeArticleId: number | null;
@@ -415,6 +490,33 @@ function MessageBubble({
             </Button>
             <Tooltip.Content>{t("copyAnswer")}</Tooltip.Content>
           </Tooltip>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 px-2"
+            onPress={() =>
+              printAnswer({
+                question,
+                answer: message.text,
+                sources: message.sources ?? [],
+                cited,
+                disclaimer: message.disclaimer,
+                locale,
+                labels: {
+                  title: t("exportTitle"),
+                  question: t("exportQuestion"),
+                  answer: t("exportAnswer"),
+                  sources: t("sources"),
+                  article: locale === "ar" ? "المادة" : "Art.",
+                  page: locale === "ar" ? "ص" : "p.",
+                  exported: t("exportedOn"),
+                },
+              })
+            }
+          >
+            <Printer className="size-3.5" aria-hidden />
+            {t("export")}
+          </Button>
           {message.answeredBy && (
             <span dir="ltr" translate="no" className="px-1">
               {message.answeredBy}

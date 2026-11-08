@@ -63,8 +63,8 @@ CANDIDATES = [
      "uploads/2025/12/18/ظهير شريف رقم 1.58.250 بسن قانون الجنسية المغربية صيغة مراجعة-1766047195269.pdf"),
     ("nationality-fr", "nationality", "قانون الجنسية المغربية", "Code de la nationalité marocaine", "1-58-250", 1958, "nationality", "fr",
      "uploads/2025/11/28/Dahir n° 1-58-250 portant code de la nationalité marocaine-1764341585221.pdf"),
-    ("kafala-ar", "kafala", "قانون كفالة الأطفال المهملين", None, "15-01", 2002, "family", "ar",
-     "uploads/2024/03/29/كفالة الأطفال المهملين-1711721650991.pdf"),
+    # Not kafala law 15.01 itself: the portal's only «كفالة الأطفال المهملين» PDFs are ministry
+    # circulars (this one: a 2002 letter to the courts), so OCR finds no articles. Kept out.
     ("family-solidarity-ar", "family-solidarity", "قانون صندوق التكافل العائلي", None, "41-10", 2010, "family", "ar",
      "uploads/2024/02/07/صندوق التكافل العائلي-1707305363226.pdf"),
     # ── labour & social ───────────────────────────────────────────────────
@@ -106,6 +106,13 @@ CANDIDATES = [
      "uploads/2024/02/20/مدونة الأوقاف-1708419195028.pdf"),
     ("foreigners-ar", "governance", "قانون دخول وإقامة الأجانب بالمملكة المغربية", None, "02-03", 2003, "governance", "ar",
      "uploads/2024/11/28/مرسوم رقم 2.09.607 بتطبيق القانون رقم 02.03 المتعلق بدخول وإقامة الأجانب.._-1732801280633.pdf"),
+    # ── added from the roadmap (2026-11) ──────────────────────────────────
+    ("private-education-ar", "private-education", "النظام الأساسي للتعليم المدرسي الخصوصي", None, "06-00", 2000, "education", "ar",
+     "uploads/2026/03/09/ظهير شريف رقم 1.00.202 بتنفيذ القانون رقم 06.00-1773067031215.pdf"),
+    ("investment-charter-ar", "investment-charter", "القانون الإطار بمثابة ميثاق الاستثمار", None, "03-22", 2022, "commercial", "ar",
+     "uploads/2026/02/12/ظـهـيـر شريف رقم 1.22.76 بتنفيذ القانون - الإطار رقم 03.22 بمثابة ميثاق الاستثمار-1770890118949.pdf"),
+    ("land-registration-ar", "land-registration", "ظهير التحفيظ العقاري", None, "1913", 1913, "property", "ar",
+     "uploads/2026/03/19/ظهير شريف  المتعلق بالتحفيظ العقاري-1773931844340.pdf"),
 ]
 
 
@@ -129,10 +136,13 @@ def download(url: str, dest: Path) -> bool:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--validate-only", action="store_true")
+    parser.add_argument("--slugs", nargs="*", help="only these candidates (default: all)")
     args = parser.parse_args()
 
     entries, failures = [], []
     for slug, group, title_ar, title_fr, number, year, domain, language, path in CANDIDATES:
+        if args.slugs and slug not in args.slugs:
+            continue
         dest = RAW / f"{slug}.pdf"
         print(f"· {slug}")
         if not args.validate_only:

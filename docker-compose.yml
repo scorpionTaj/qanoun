@@ -2,6 +2,8 @@
 #
 #   docker compose up -d db          # database only (recommended while developing)
 #   docker compose up --build        # full stack on :8000 (API) and :3000 (web)
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#                                    # public server — see "Deploy" in the README
 #
 # The LLM is NOT containerized: it runs on the host (LM Studio / Ollama), which also
 # keeps GPU/MLX access simple. Point the backend at it with QANOUN_LLM_URL.
@@ -40,8 +42,18 @@ services:
       QANOUN_EMBED_MODEL: ${QANOUN_EMBED_MODEL:-BAAI/bge-m3}
       QANOUN_DEVICE: ${QANOUN_DEVICE:-cpu}
       HF_TOKEN: ${HF_TOKEN:-}
+      QANOUN_RERANKER: ${QANOUN_RERANKER:-}
+      QANOUN_ALLOW_SIGNUP: ${QANOUN_ALLOW_SIGNUP:-true}
+      QANOUN_COOKIE_SECURE: ${QANOUN_COOKIE_SECURE:-false}
+      QANOUN_CORS_ORIGINS: ${QANOUN_CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
     ports:
       - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
     depends_on:
       db:
         condition: service_healthy
@@ -57,7 +69,13 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/en"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
 volumes:
   pgdata:

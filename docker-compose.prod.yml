@@ -1,0 +1,34 @@
+# Production overrides for a public server. Put a TLS reverse proxy (Caddy, nginx,
+# Traefik) in front: https://qanoun.example.com → web:3000, https://api.qanoun.example.com → api:8000.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Required in .env: POSTGRES_PASSWORD, QANOUN_PUBLIC_API_URL, QANOUN_CORS_ORIGINS, one LLM key.
+
+services:
+  db:
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    ports: !reset []  # never expose the database
+    restart: unless-stopped
+
+  api:
+    environment:
+      QANOUN_DB_URL: postgresql+psycopg://qanoun:${POSTGRES_PASSWORD}@db:5432/qanoun
+      QANOUN_ALLOW_SIGNUP: ${QANOUN_ALLOW_SIGNUP:-false}  # create users with `make user`
+      QANOUN_COOKIE_SECURE: "true"                       # HTTPS only
+      QANOUN_CORS_ORIGINS: ${QANOUN_CORS_ORIGINS:?set QANOUN_CORS_ORIGINS, e.g. https://qanoun.example.com}
+      # Trust X-Forwarded-For only from the reverse proxy, so rate limits see real client IPs.
+      FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-*}
+    ports: !reset ["127.0.0.1:8000:8000"]  # reachable only through the reverse proxy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${QANOUN_PUBLIC_API_URL:?set QANOUN_PUBLIC_API_URL, e.g. https://api.qanoun.example.com}
+    environment:
+      NEXT_PUBLIC_API_URL: ${QANOUN_PUBLIC_API_URL}
+    ports: !reset ["127.0.0.1:3000:3000"]
+    restart: unless-stopped

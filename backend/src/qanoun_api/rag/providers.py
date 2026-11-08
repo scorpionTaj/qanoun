@@ -104,9 +104,10 @@ _NOT_CHAT = re.compile(
 # (within a pattern, the highest version wins). Families that aren't listed only serve as
 # a last resort.
 _PREFERENCES: dict[str, list[str]] = {
-    # Free-tier quotas are per model, so siblings double as quota fallbacks:
-    # newest flash, newest flash-lite (fastest, largest free quota), then older ones.
-    "gemini": [r"^gemini-[\d.]+-flash$", r"^gemini-[\d.]+-flash-lite$"],
+    # flash-lite first: consistently fastest with the largest free quota, while the newest
+    # full "flash" on the free tier was seen returning 429 one day and hanging 45 s the
+    # next. Quotas are per model, so the alternating siblings double as quota fallbacks.
+    "gemini": [r"^gemini-[\d.]+-flash-lite$", r"^gemini-[\d.]+-flash$"],
     "openrouter": [
         r"deepseek.*:free$", r"gemma.*:free$", r"llama-3\.3-70b.*:free$", r"qwen.*:free$",
         r"mistral.*:free$", r":free$",
@@ -133,7 +134,7 @@ def ranked_models(provider_id: str, ids: list[str], n: int = 4) -> list[str]:
         regex = re.compile(pattern, re.IGNORECASE)
         tiers.append(sorted((i for i in chat if regex.search(i)), key=_version_key, reverse=True))
     if provider_id == "gemini":
-        # interleave flash / flash-lite by generation: 3.8-flash, 3.8-lite, 3.7-flash, …
+        # interleave by generation: newest lite, newest flash, next lite, next flash, …
         flat = [m for pair in zip(*tiers, strict=False) for m in pair]
         longest = max(tiers, key=len, default=[])
         flat += [m for m in longest if m not in flat]
@@ -227,13 +228,21 @@ class LLMRouter:
             return client
 
     def _chain(self, provider_id: str | None, model: str) -> list[tuple[Provider, str]]:
-        """Attempts in order: the requested provider and model first; if the model was left
-        to us, the provider's next-best models (a busy model often has an idle sibling);
-        then the other configured providers the same way."""
-        first = self.get(provider_id) if provider_id else self.default
-        rest = [p for p in self.configured() if p.id != first.id]
+        """Attempts in order. The user's choice is a contract:
+        - no provider ("Automatic"): the default provider, then every other configured one;
+        - a provider: only its models (a busy model often has an idle sibling), never
+          another provider's — an answer from someone else would misreport the choice;
+        - a provider and a model: exactly that model."""
+        if provider_id:
+            first = self.get(provider_id)
+            if model:
+                return [(first, model)]
+            plan = [(first, "")]
+        else:
+            first = self.default
+            plan = [(first, ""), *[(p, "") for p in self.configured() if p.id != first.id]]
         attempts: list[tuple[Provider, str]] = []
-        for provider, wanted in [(first, model), *[(p, "") for p in rest]]:
+        for provider, wanted in plan:
             if wanted or provider.local:
                 attempts.append((provider, wanted))
                 continue
@@ -251,7 +260,12 @@ class LLMRouter:
 
     def _mark(self, provider: Provider, model: str, exc: LLMError) -> None:
         """Remember a failing model so the next calls don't pay for it again."""
-        ttl = {"unavailable": BUSY_TTL, "rate_limit": BUSY_TTL, "model": BROKEN_TTL}.get(exc.kind)
+        # "unreachable" from a cloud provider means a timeout or dropped connection: treat it
+        # like busy, so Automatic doesn't wait on the same dead model request after request.
+        ttl = {
+            "unavailable": BUSY_TTL, "rate_limit": BUSY_TTL, "unreachable": BUSY_TTL,
+            "model": BROKEN_TTL,
+        }.get(exc.kind)
         if ttl and model and not provider.local:
             with self._lock:
                 self._busy[(provider.id, model)] = time.monotonic() + ttl

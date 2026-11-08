@@ -15,10 +15,12 @@ export function ReaderClient({
   articles,
   lawTitle,
   isArabic,
+  amended = {},
 }: {
   articles: Article[];
   lawTitle: string;
   isArabic: boolean;
+  amended?: Record<string, string[]>; // article number → amending texts
 }) {
   const t = useTranslations("reader");
   const [fontSize, setFontSize] = useState<FontSize>("base");
@@ -123,9 +125,16 @@ export function ReaderClient({
             className="article-card scroll-mt-36 rounded-[var(--radius)] border border-separator bg-surface p-5"
           >
             <div className="flex items-center justify-between gap-3">
-              <Chip color="accent" variant="primary" className="font-bold">
-                {articleLabel(article.number)}
-              </Chip>
+              <span className="flex items-center gap-2">
+                <Chip color="accent" variant="primary" className="font-bold">
+                  {articleLabel(article.number)}
+                </Chip>
+                {amended[article.number] && (
+                  <Chip size="sm" variant="soft" color="warning" title={amended[article.number].join(" · ")}>
+                    {t("amended", { refs: amended[article.number].join(", ") })}
+                  </Chip>
+                )}
+              </span>
               <div className="flex items-center gap-1">
                 <span className="text-xs tabular-nums text-muted">
                   {isArabic ? "ص" : "p."}

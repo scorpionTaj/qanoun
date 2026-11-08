@@ -33,9 +33,16 @@ export interface Article {
   page_end: number;
 }
 
+/** Amending texts named in the law's footnotes (not a point-in-time history). */
+export interface Amendments {
+  laws: { ref: string; mentions: number; articles: string[] }[];
+  articles: Record<string, string[]>; // article number → amending texts
+}
+
 export interface LawDetail extends LawSummary {
   preamble: string | null;
   warnings: string[];
+  amendments: Amendments;
   articles: Article[];
 }
 

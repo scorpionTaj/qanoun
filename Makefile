@@ -15,7 +15,7 @@ PYPIPE_MODELS := uv run --project pipeline --extra models
 PYAPI       := uv run --project backend
 PYAPI_MODELS := uv run --project backend --extra models
 
-.PHONY: help db db-stop api web dev ingest ingest-smoke eval test lint clean
+.PHONY: help db db-stop api web dev ingest ingest-smoke eval test lint clean user
 
 help:
 	@grep -E '^# ' $(MAKEFILE_LIST) | cut -c3-
@@ -53,12 +53,16 @@ web:
 dev:
 	@echo "Run in separate terminals:"; echo "  make db"; echo "  make api"; echo "  make web"
 
+# Create an account (for servers with QANOUN_ALLOW_SIGNUP=false): make user EMAIL=a@b.c [ADMIN=1]
+user:
+	$(PYAPI) python -m qanoun_api.users $(EMAIL) $(if $(ADMIN),--admin,)
+
 # ── Quality & evaluation ────────────────────────────────────────────────────────
 
 test:
 	$(PYPIPE) pytest pipeline/tests -q
 	$(PYAPI) pytest backend/tests -q
-	cd frontend && npx tsc --noEmit
+	cd frontend && npx tsc --noEmit && npm test
 
 lint:
 	$(PYPIPE) ruff check pipeline/src pipeline/tests backend/src backend/tests

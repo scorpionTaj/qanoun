@@ -21,7 +21,7 @@ from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from typing import Literal
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -32,6 +32,7 @@ from qanoun_api.rag.answer import ABSTENTION, DISCLAIMER, NO_ANSWER, build_messa
 from qanoun_api.rag.llm import LLMError, strip_reasoning
 from qanoun_api.rag.providers import ProviderUnavailable, get_router
 from qanoun_api.rag.rewrite import QueryRewriter, condense, detect_variety
+from qanoun_api.ratelimit import chat_limit
 
 router = APIRouter(prefix="/api", tags=["chat"])
 log = logging.getLogger("qanoun.chat")
@@ -79,6 +80,9 @@ class ChatRequest(BaseModel):
     # Recent turns of this conversation (oldest first) so follow-ups like «and for women?»
     # work. Capped: context, not a transcript.
     history: list[Turn] = Field(default_factory=list, max_length=6)
+    # Answer settings (⚙): length and language. "auto" = the question's own language.
+    style: Literal["concise", "detailed"] = "concise"
+    answer_language: Literal["auto", "ar", "fr", "en"] = "auto"
 
 
 def _sse(event: str, data: dict) -> str:
@@ -152,7 +156,7 @@ def _chat_stream(req: ChatRequest) -> Iterator[str]:
         return
 
     yield _sse("status", {"stage": "answering"})
-    messages = build_messages(question, result.hits, variety, history)
+    messages = build_messages(question, result.hits, variety, history, req.style, req.answer_language)
     answered_by: dict = {}
 
     def on_start(provider, model: str) -> None:
@@ -194,7 +198,7 @@ def _chat_stream(req: ChatRequest) -> Iterator[str]:
     )
 
 
-@router.post("/chat")
+@router.post("/chat", dependencies=[Depends(chat_limit)])
 def chat(req: ChatRequest):
     return StreamingResponse(
         _chat_stream(req),

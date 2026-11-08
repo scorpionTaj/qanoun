@@ -64,3 +64,22 @@ def test_write_report_produces_markdown(tmp_path: Path):
     assert "# Qanoun evaluation report" in text
     assert "| a | msa | family-code-ar | ✓ | 1.00 |" in text
     assert "Abstention probes" in text
+
+
+def test_article_level_metrics_and_history(tmp_path, monkeypatch):
+    from conftest import make_hit
+
+    from qanoun_api.eval import run as eval_run
+    from qanoun_api.rag.retrieval import RetrievalResult
+
+    hits = [make_hit(number="132", group_slug="moudawana"), make_hit(number="133", group_slug="moudawana")]
+    monkeypatch.setattr(eval_run, "search", lambda q, k: RetrievalResult(q, q, hits))
+    questions = [{"id": "idda", "question": "q", "expected_articles": [["moudawana", "133"]]}]
+    results = eval_run.evaluate_retrieval(questions, k=10, log=False)
+    assert results[0].article_hit and results[0].article_rr == 0.5
+    metrics = eval_run.retrieval_metrics(results)
+    assert metrics["article_hit_rate"] == 1.0 and metrics["article_mrr"] == 0.5
+
+    history = eval_run.record_history(tmp_path / "h.jsonl", metrics, 10)
+    history = eval_run.record_history(tmp_path / "h.jsonl", metrics, 10)
+    assert len(history) == 2 and history[-1]["article_mrr"] == 0.5

@@ -32,3 +32,18 @@ def test_hit_as_dict_is_json_ready():
     data = make_hit().as_dict()
     assert data["law_slug"] == "family-code-ar"
     assert isinstance(data["score"], float)
+
+
+def test_rerank_reorders_by_cross_encoder_score(monkeypatch):
+    from conftest import make_hit
+
+    from qanoun_api.rag import retrieval
+
+    class FakeCrossEncoder:
+        def predict(self, pairs):
+            return [1.0 if "133" in passage else 0.1 for _, passage in pairs]
+
+    monkeypatch.setattr(retrieval, "get_reranker", lambda: FakeCrossEncoder())
+    hits = [make_hit(number="132"), make_hit(number="136"), make_hit(number="133")]
+    out = retrieval.rerank("عدة الحامل", hits, k=2)
+    assert [h.article_number for h in out] == ["133", "132"]

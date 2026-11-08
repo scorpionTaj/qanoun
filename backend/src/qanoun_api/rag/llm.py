@@ -54,7 +54,9 @@ class LLMClient:
     base_url: str = DEFAULT_URL
     model: str = ""  # explicit override from env; empty = auto-detect
     api_key: str = ""
-    timeout: float = 120.0
+    # Max silence between bytes: answers start within seconds on a healthy provider, so a
+    # minute of nothing means it's down — fail and let the router/UI react, don't hang.
+    timeout: float = 45.0
     extra: dict = field(default_factory=dict)  # provider-specific body fields
     _http: httpx.Client | None = field(default=None, repr=False)
 
@@ -62,7 +64,11 @@ class LLMClient:
     def http(self) -> httpx.Client:
         if self._http is None:
             headers = {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
-            self._http = httpx.Client(base_url=self.base_url, headers=headers, timeout=self.timeout)
+            self._http = httpx.Client(
+                base_url=self.base_url,
+                headers=headers,
+                timeout=httpx.Timeout(self.timeout, connect=10.0),
+            )
         return self._http
 
     def _request(self, method: str, path: str, **kwargs) -> dict:

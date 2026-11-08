@@ -54,3 +54,15 @@ def test_answer_as_dict_shape():
     assert data["abstained"] is False
     assert data["sources"][0]["law_slug"] == "family-code-ar"
     assert data["disclaimer"]
+
+
+def test_style_and_fixed_language_reach_the_prompt():
+    from conftest import make_hit
+
+    from qanoun_api.rag.answer import build_messages
+
+    default = build_messages("q", [make_hit()], "darija")
+    assert "at most 4 sentences" in default[0]["content"] and "Darija" in default[1]["content"]
+    custom = build_messages("q", [make_hit()], "darija", style="detailed", language="fr")
+    assert "bullet points" in custom[0]["content"]
+    assert "Answer in French." in custom[1]["content"] and "Darija" not in custom[1]["content"]

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Button, ComboBox, Header, Input, ListBox } from "@heroui/react";
+import { Autocomplete, Button, Header, ListBox, SearchField, type Key } from "@heroui/react";
 import { Library, X } from "lucide-react";
 import { api } from "@/lib/api";
 import type { DomainInfo, LawSummary } from "@/lib/types";
@@ -102,68 +102,80 @@ export function ScopeSelect({
 
   const scoped = Boolean(scope.group || scope.domain);
 
-  // The box shows the chosen scope's name; typing filters. Re-sync the text whenever the
-  // scope changes (pick, clear, a link's scope getting its label).
-  const shown = scope.label ?? "";
-  const [input, setInput] = useState(shown);
-  useEffect(() => setInput(shown), [shown]);
-  // While the text is still the chosen name, list everything (reopening shows all options).
-  const filter = (text: string, query: string) => query === shown || matches(text, query);
+  // Name of the current scope in the CURRENT language (a saved label may be from another
+  // locale: «Logement & baux» on the English page).
+  const currentName = (() => {
+    if (scope.group) {
+      const law = groups.find((x) => x.group_slug === scope.group);
+      return law ? lawTitle(law, locale) : scope.label;
+    }
+    if (scope.domain) {
+      const d = domains.find((x) => x.domain === scope.domain);
+      return d ? domainLabel(d) : scope.label;
+    }
+    return t("scopeAll");
+  })();
   const count = (n: number | null) => (n == null ? "" : `${formatNumber(n, locale)} ${t("articlesShort")}`);
 
+  // HeroUI Autocomplete (Select trigger + search field in the popover). It replaced a
+  // ComboBox whose re-renders made React 19's dev prop-diff logger read React Aria's
+  // collection nodes and throw "childNodes is not supported".
   return (
     <div className="flex min-w-0 items-center gap-1">
-      <ComboBox
+      <Autocomplete
         aria-label={t("scopeLabel")}
-        selectedKey={scopeKey(scope)}
-        onSelectionChange={(key) => key != null && select(String(key))}
-        inputValue={input}
-        onInputChange={setInput}
-        onOpenChange={(isOpen) => !isOpen && setInput(shown)}
-        defaultFilter={filter}
-        menuTrigger="focus"
-        allowsEmptyCollection
+        value={scopeKey(scope)}
+        onChange={(key: Key | Key[] | null) => key != null && !Array.isArray(key) && select(String(key))}
         className="w-[min(18rem,60vw)]"
       >
-        <ComboBox.InputGroup className="h-8 min-h-8 rounded-full border-0 bg-default ps-3 text-xs shadow-none">
+        <Autocomplete.Trigger className="h-8 min-h-8 gap-1.5 rounded-full border-0 bg-default ps-3 pe-8 text-xs shadow-none [&_[data-slot=autocomplete-value]]:text-xs">
           <Library className="size-3.5 shrink-0 text-accent" aria-hidden />
-          <Input placeholder={t("scopeSearch")} className="h-8 truncate text-xs" />
-          <ComboBox.Trigger aria-label={t("scopeShowAll")} />
-        </ComboBox.InputGroup>
-        <ComboBox.Popover className="min-w-80">
-          <ListBox className="max-h-80" renderEmptyState={() => <p className="p-3 text-sm text-muted">{t("scopeNone")}</p>}>
-            <ListBox.Item id={ALL} textValue={t("scopeAll")}>
-              <Library className="size-4 text-muted" aria-hidden />
-              <span className="flex-1">{t("scopeAll")}</span>
-              <ListBox.ItemIndicator />
-            </ListBox.Item>
-            <ListBox.Section>
-              <Header>{t("scopeDomains")}</Header>
-              {domains.map((d) => (
-                <ListBox.Item key={d.domain} id={`domain:${d.domain}`} textValue={domainLabel(d)}>
-                  <DomainIcon domain={d.domain} className="size-4 text-accent" />
-                  <span className="flex-1 truncate">{domainLabel(d)}</span>
-                  <span className="text-[11px] tabular-nums text-muted">{count(d.articles)}</span>
-                  <ListBox.ItemIndicator />
-                </ListBox.Item>
-              ))}
-            </ListBox.Section>
-            <ListBox.Section>
-              <Header>{t("scopeLaws")}</Header>
-              {groups.map((law) => (
-                <ListBox.Item key={law.group_slug} id={`group:${law.group_slug}`} textValue={lawTitle(law, locale)}>
-                  <DomainIcon domain={law.domain} className="size-4 text-muted" />
-                  <span className="flex-1 truncate" dir="auto">
-                    {lawTitle(law, locale)}
-                  </span>
-                  <span className="text-[11px] tabular-nums text-muted">{count(law.article_count)}</span>
-                  <ListBox.ItemIndicator />
-                </ListBox.Item>
-              ))}
-            </ListBox.Section>
-          </ListBox>
-        </ComboBox.Popover>
-      </ComboBox>
+          <Autocomplete.Value className="min-w-0 flex-1 truncate">{currentName}</Autocomplete.Value>
+          <Autocomplete.Indicator />
+        </Autocomplete.Trigger>
+        <Autocomplete.Popover className="min-w-80">
+          <Autocomplete.Filter filter={matches}>
+            <SearchField autoFocus aria-label={t("scopeSearch")} name="scope-search" variant="secondary" className="p-2">
+              <SearchField.Group>
+                <SearchField.SearchIcon />
+                <SearchField.Input placeholder={t("scopeSearch")} />
+                <SearchField.ClearButton />
+              </SearchField.Group>
+            </SearchField>
+            <ListBox className="max-h-80" renderEmptyState={() => <p className="p-3 text-sm text-muted">{t("scopeNone")}</p>}>
+              <ListBox.Item id={ALL} textValue={t("scopeAll")}>
+                <Library className="size-4 text-muted" aria-hidden />
+                <span className="flex-1">{t("scopeAll")}</span>
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+              <ListBox.Section>
+                <Header>{t("scopeDomains")}</Header>
+                {domains.map((d) => (
+                  <ListBox.Item key={d.domain} id={`domain:${d.domain}`} textValue={domainLabel(d)}>
+                    <DomainIcon domain={d.domain} className="size-4 text-accent" />
+                    <span className="flex-1 truncate">{domainLabel(d)}</span>
+                    <span className="text-[11px] tabular-nums text-muted">{count(d.articles)}</span>
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                ))}
+              </ListBox.Section>
+              <ListBox.Section>
+                <Header>{t("scopeLaws")}</Header>
+                {groups.map((law) => (
+                  <ListBox.Item key={law.group_slug} id={`group:${law.group_slug}`} textValue={lawTitle(law, locale)}>
+                    <DomainIcon domain={law.domain} className="size-4 text-muted" />
+                    <span className="flex-1 truncate" dir="auto">
+                      {lawTitle(law, locale)}
+                    </span>
+                    <span className="text-[11px] tabular-nums text-muted">{count(law.article_count)}</span>
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                ))}
+              </ListBox.Section>
+            </ListBox>
+          </Autocomplete.Filter>
+        </Autocomplete.Popover>
+      </Autocomplete>
       {scoped && (
         <Button isIconOnly size="sm" variant="ghost" aria-label={t("scopeClear")} onPress={() => onChange({})} className="size-7 min-w-7 rounded-full">
           <X className="size-3.5" aria-hidden />

@@ -3,10 +3,9 @@
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { BarChart3, BookOpen, House, MessagesSquare } from "lucide-react";
+import { BarChart3, BookOpen, House, MessagesSquare, Settings } from "lucide-react";
 import { locales, type Locale } from "@/i18n/routing";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { SettingsDialog } from "@/components/settings/settings-dialog";
 import { cn } from "@/lib/utils";
 
 export function Header() {
@@ -60,7 +59,18 @@ export function Header() {
 
           <div className="flex items-center gap-1">
             <ThemeToggle />
-            <SettingsDialog />
+            <Link
+              href={`/${currentLocale}/settings`}
+              aria-label={t("settings")}
+              title={t("settings")}
+              aria-current={isActive("settings") ? "page" : undefined}
+              className={cn(
+                "flex size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-default hover:text-foreground",
+                isActive("settings") && "bg-default text-foreground"
+              )}
+            >
+              <Settings className="size-4" aria-hidden />
+            </Link>
             <div className="ms-1 flex items-center rounded-full bg-default p-0.5" role="group" aria-label={t("language")}>
               {locales.map((locale) => (
                 <Link

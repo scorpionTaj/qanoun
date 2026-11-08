@@ -43,12 +43,24 @@ DISCLAIMER = {
     "pas un avis juridique.",
 }
 
+# A fixed answer language (user setting) instead of following the question's variety.
+_FIXED_LANGUAGE = {
+    "ar": "Answer in Modern Standard Arabic.",
+    "fr": "Answer in French.",
+    "en": "Answer in English.",
+}
+_STYLE = {
+    "concise": "Be concise: at most 4 sentences.",
+    "detailed": (
+        "Be thorough but structured: state the rule, then its conditions, exceptions and "
+        "deadlines as short bullet points, each with its citation."
+    ),
+}
 _SYSTEM = (
     "You are a careful assistant for Moroccan law. Answer ONLY with facts stated in the "
     "numbered sources. After each fact, cite its source like [1] or [2][3]. Mention article "
-    "numbers when the source gives them. Be concise: at most 4 sentences. If the sources do "
-    "not contain the answer, reply with exactly "
-    f"{NO_ANSWER} and nothing else. Never use outside knowledge."
+    "numbers when the source gives them. {style} If the sources do not contain the answer, "
+    f"reply with exactly {NO_ANSWER} and nothing else. Never use outside knowledge."
 )
 
 
@@ -70,8 +82,14 @@ def format_history(history: list[dict] | None) -> str:
 
 
 def build_messages(
-    question: str, sources: list[Hit], variety: str, history: list[dict] | None = None
+    question: str,
+    sources: list[Hit],
+    variety: str,
+    history: list[dict] | None = None,
+    style: str = "concise",
+    language: str = "auto",
 ) -> list[dict]:
+    rule = _FIXED_LANGUAGE.get(language, _LANGUAGE_RULE[variety])
     blocks = [
         f"[{i}] ({source_label(hit, variety)})\n{hit.text}" for i, hit in enumerate(sources, start=1)
     ]
@@ -86,9 +104,9 @@ def build_messages(
     # and otherwise drift into the (MSA) language of the sources.
     user = (
         context + "Sources:\n\n" + "\n\n".join(blocks) + f"\n\nQuestion: {question}\n\n"
-        f"{_LANGUAGE_RULE[variety]} Cite sources as [n]."
+        f"{rule} Cite sources as [n]."
     )
-    system = f"{_SYSTEM} {_LANGUAGE_RULE[variety]}"
+    system = f"{_SYSTEM.format(style=_STYLE.get(style, _STYLE['concise']))} {rule}"
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
 
