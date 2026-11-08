@@ -14,6 +14,11 @@ French — answered only from the retrieved sources, with citations to the exact
 
 **Informational only — not legal advice.** The official Bulletin remains the reference.
 
+<p align="center">
+  <img src="docs/figures/demo.gif" alt="Qanoun demo: asking a question in English, the cited Labour Code article opening beside the answer, browsing laws, the amendments panel, a Darija question answered from the rental law in Arabic (RTL), and the settings page" width="800">
+</p>
+<p align="center"><sub>Ask in English, French, Arabic or Darija → answer with clickable citations → read the article, its amendments, and the whole law.</sub></p>
+
 ## The three layers
 
 | Layer | What it does | Where |
@@ -86,17 +91,53 @@ child *kafala* 15.01 (only a ministry circular), الحالة المدنية 37.
 
 ## Architecture
 
-![How Qanoun works: laws are prepared once into Postgres, then each question is searched and answered with citations](docs/figures/architecture.svg)
+![Qanoun architecture: an offline ingest pipeline (adala.justice.gov.ma PDFs → PyMuPDF / Tesseract OCR → articles → chunks → BGE-M3 embeddings) loads PostgreSQL + pgvector; per question, the Next.js app calls FastAPI, which detects Darija, rewrites to MSA, runs hybrid dense + full-text search with RRF (optional reranker), prompts an LLM through a provider router (Gemini, OpenRouter, NVIDIA NIM, Ollama, LM Studio) and streams a cited answer back over SSE](docs/figures/architecture.svg)
+
+### Two flows, one database
+
+1. **Ingest (offline, `make ingest`).** Each law in `data/catalog/laws.yaml` is downloaded from
+   [adala.justice.gov.ma](https://adala.justice.gov.ma) and checked against its sha256. Text comes from the PDF text
+   layer (PyMuPDF), falling back to Tesseract OCR (Arabic + French) for scanned pages. It is
+   then split into articles using each law's own heading word (المادة / Article / الفصل),
+   repaired (glued footnotes, sub-articles like `65-1` or `مكرر`), cut into 180-word passages
+   with 40 words of overlap, embedded with BGE-M3 (1024 dimensions, cached by sha256) and
+   loaded into Postgres. Every step re-derives from `data/raw/`, so re-running is always safe.
+2. **Ask (online, per question).** The browser posts the question to `/api/chat`. FastAPI
+   detects the variety (MSA, Darija, Arabizi, French) and, for dialect, rewrites it to MSA
+   while the first search is already running. It embeds the question with the same BGE-M3
+   model and runs **one SQL query with two channels**: cosine search over the HNSW vector
+   index and Arabic-normalized full-text search. The two are fused with reciprocal rank
+   fusion (and optionally reranked by a cross-encoder). The top articles go to the LLM as
+   numbered sources, and the answer streams back over SSE (`meta → sources → token* → done`)
+   with `[n]` citations — or an explicit «not found» when the sources don't answer.
+
+### Tech stack
+
+| Layer | Tools | What they do here |
+|---|---|---|
+| Data source | 🏛 [adala.justice.gov.ma](https://adala.justice.gov.ma) | Ministry of Justice portal: official consolidated texts (PDF) |
+| Pipeline | <img src="https://img.shields.io/badge/Python_3.13-3776AB?logo=python&logoColor=white&style=flat-square" alt="Python 3.13"> <img src="https://img.shields.io/badge/uv-DE5FE9?logo=uv&logoColor=white&style=flat-square" alt="uv"> <img src="https://img.shields.io/badge/PyMuPDF-C0392B?logo=python&logoColor=white&style=flat-square" alt="PyMuPDF"> <img src="https://img.shields.io/badge/Tesseract_OCR-1E7F4F?style=flat-square" alt="Tesseract OCR"> | fetch + sha256 check, PDF text, OCR fallback (ara + fra), article segmentation |
+| Embeddings | <img src="https://img.shields.io/badge/Hugging_Face-FFD21E?logo=huggingface&logoColor=black&style=flat-square" alt="Hugging Face"> <img src="https://img.shields.io/badge/BGE--M3-FF9D00?logo=huggingface&logoColor=black&style=flat-square" alt="BGE-M3"> <img src="https://img.shields.io/badge/PyTorch-EE4C2C?logo=pytorch&logoColor=white&style=flat-square" alt="PyTorch"> <img src="https://img.shields.io/badge/sentence--transformers-3776AB?logo=python&logoColor=white&style=flat-square" alt="sentence-transformers"> | 1024-dim multilingual vectors (strong on Arabic); optional `bge-reranker-v2-m3` cross-encoder |
+| Database | <img src="https://img.shields.io/badge/PostgreSQL_17-4169E1?logo=postgresql&logoColor=white&style=flat-square" alt="PostgreSQL 17"> <img src="https://img.shields.io/badge/pgvector-336791?logo=postgresql&logoColor=white&style=flat-square" alt="pgvector"> | laws / articles (`tsvector` GIN) / chunks (`vector(1024)` HNSW) + users, sessions, synced conversations |
+| API | <img src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white&style=flat-square" alt="FastAPI"> <img src="https://img.shields.io/badge/Uvicorn-499848?logo=python&logoColor=white&style=flat-square" alt="Uvicorn"> <img src="https://img.shields.io/badge/Pydantic-E92063?logo=pydantic&logoColor=white&style=flat-square" alt="Pydantic"> <img src="https://img.shields.io/badge/psycopg_3-336791?logo=postgresql&logoColor=white&style=flat-square" alt="psycopg 3"> <img src="https://img.shields.io/badge/httpx-3776AB?logo=python&logoColor=white&style=flat-square" alt="httpx"> | REST + SSE streaming, RAG, auth, rate limits, security headers |
+| LLMs | <img src="https://img.shields.io/badge/Google_Gemini-8E75B2?logo=googlegemini&logoColor=white&style=flat-square" alt="Google Gemini"> <img src="https://img.shields.io/badge/OpenRouter-6467F2?logo=openrouter&logoColor=white&style=flat-square" alt="OpenRouter"> <img src="https://img.shields.io/badge/NVIDIA_NIM-76B900?logo=nvidia&logoColor=white&style=flat-square" alt="NVIDIA NIM"> <img src="https://img.shields.io/badge/Ollama-000000?logo=ollama&logoColor=white&style=flat-square" alt="Ollama"> <img src="https://img.shields.io/badge/LM_Studio-4338CA?logo=lmstudio&logoColor=white&style=flat-square" alt="LM Studio"> | any OpenAI-compatible provider; keys only in `.env`; automatic fallback across models and providers |
+| Web app | <img src="https://img.shields.io/badge/Next.js_16-000000?logo=nextdotjs&logoColor=white&style=flat-square" alt="Next.js 16"> <img src="https://img.shields.io/badge/React_19-149ECA?logo=react&logoColor=white&style=flat-square" alt="React 19"> <img src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white&style=flat-square" alt="TypeScript"> <img src="https://img.shields.io/badge/HeroUI_v3-000000?logo=heroui&logoColor=white&style=flat-square" alt="HeroUI v3"> <img src="https://img.shields.io/badge/Tailwind_CSS_4-06B6D4?logo=tailwindcss&logoColor=white&style=flat-square" alt="Tailwind CSS 4"> <img src="https://img.shields.io/badge/next--intl-26A69A?logo=i18next&logoColor=white&style=flat-square" alt="next-intl"> <img src="https://img.shields.io/badge/Recharts-22B5BF?logo=chartdotjs&logoColor=white&style=flat-square" alt="Recharts"> | trilingual UI (Arabic RTL, French, English), Ask workspace, law reader, insights, settings |
+| Quality | <img src="https://img.shields.io/badge/pytest-0A9EDC?logo=pytest&logoColor=white&style=flat-square" alt="pytest"> <img src="https://img.shields.io/badge/Ruff-D7FF64?logo=ruff&logoColor=black&style=flat-square" alt="Ruff"> <img src="https://img.shields.io/badge/node:test-5FA04E?logo=nodedotjs&logoColor=white&style=flat-square" alt="node:test"> <img src="https://img.shields.io/badge/GitHub_Actions-2088FF?logo=githubactions&logoColor=white&style=flat-square" alt="GitHub Actions"> | offline tests (models faked), lint, strict typecheck, build on every push; retrieval + LLM-judge eval |
+| Deploy | <img src="https://img.shields.io/badge/Docker_Compose-2496ED?logo=docker&logoColor=white&style=flat-square" alt="Docker Compose"> <img src="https://img.shields.io/badge/Caddy-1F88C0?logo=caddy&logoColor=white&style=flat-square" alt="Caddy"> | db · api · web containers with healthchecks; production override behind a TLS proxy |
+
+### Repository layout
 
 | Folder | Role |
 |---|---|
-| `data/catalog/laws.yaml` | the list of laws: slugs, sha256, official source URLs |
-| `pipeline/` | fetch → parse (OCR fallback) → split into articles → chunk → embed → load |
-| `backend/` | FastAPI: `/api/laws`, `/api/search`, `/api/chat` (SSE), `/api/analytics`; RAG in `rag/` |
+| `data/catalog/laws.yaml` | the list of laws: slugs, sha256, official source URLs, per-law article words |
+| `pipeline/` | fetch → parse (OCR fallback) → split into articles → chunk → embed → load; owns the DB schema |
+| `backend/` | FastAPI: `/api/laws` (+ amendments), `/api/search`, `/api/chat` (SSE), `/api/auth`, `/api/conversations`, `/api/analytics`; RAG in `rag/`, eval in `eval/` |
 | `frontend/` | Next.js 16 + HeroUI v3 + Tailwind 4 + next-intl (ar RTL default, fr, en) |
-| `notebooks/`, `backend/.../eval/` | EDA, classification, embedding map, retrieval + LLM-judge eval |
+| `data/eval/`, `docs/eval-report.md` | question sets (law- and article-level), run history, latest report |
+| `notebooks/` | EDA, classification, embedding map |
+| `docker-compose*.yml` | local stack and production override |
 
-More detail in [docs/architecture.md](docs/architecture.md).
+More detail (design principles, retrieval SQL, prompt contract) in [docs/architecture.md](docs/architecture.md).
 
 ## Testing & evaluation
 

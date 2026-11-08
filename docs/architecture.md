@@ -72,8 +72,9 @@ retrieved passages the model actually used, and deep-link each one to
   relational (laws → articles → chunks), filtering by domain/law happens in SQL anyway,
   and one database keeps the Docker story simple. FAISS/Chroma would be a second system
   to operate for no gain at this scale (~5k chunks; pgvector handles millions).
-- **No reranker (yet).** darija-rag measured rerank gains on the same corpus with a
-  cross-encoder; the hook is `Hit.rrf` — a reranker slots in between fusion and the LLM.
+- **Reranker is opt-in.** `QANOUN_RERANKER=BAAI/bge-reranker-v2-m3` rescores the top 30
+  fused hits with a cross-encoder. On `data/eval` it raises article-level hit@10 (0.833 →
+  0.889) but lowers MRR (0.668 → 0.623) and adds latency, so it is off by default.
 - **Article headers are per-law vocabulary.** The D.O.C. says "الفصل", everything else
   says "المادة". Hard-coding either breaks a law; the catalog carries `article_words`.
 - **Percent-format notebooks** (`.py` with `# %%` cells): diffable in git, runnable as
