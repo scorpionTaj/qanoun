@@ -5,6 +5,7 @@ import pytest
 from qanoun_pipeline import catalog
 
 CATALOG_PATH = Path("data/catalog/laws.yaml")
+RAW_DIR = CATALOG_PATH.parents[1] / "raw"
 
 
 def test_seed_catalog_loads_and_validates():
@@ -21,11 +22,18 @@ def test_bilingual_laws_share_group():
     assert all(law.law_number == "70-03" for law in moudawana)
 
 
-def test_every_entry_has_sha256_and_existing_file():
-    laws = catalog.load(CATALOG_PATH)
-    for law in laws:
+def test_every_entry_has_sha256():
+    for law in catalog.load(CATALOG_PATH):
         assert law.sha256, f"{law.slug} missing sha256"
-        assert (CATALOG_PATH.parents[1] / "raw" / law.file).exists(), f"{law.slug}: file missing"
+
+
+@pytest.mark.skipif(
+    not any(RAW_DIR.glob("*.pdf")),
+    reason="corpus not fetched: data/raw/*.pdf is not in git (run `make ingest`)",
+)
+def test_every_catalog_file_was_fetched():
+    for law in catalog.load(CATALOG_PATH):
+        assert (RAW_DIR / law.file).exists(), f"{law.slug}: file missing"
 
 
 def test_rejects_unknown_domain(tmp_path: Path):

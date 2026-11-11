@@ -55,10 +55,14 @@ def get_rewriter() -> QueryRewriter:
 
 
 def set_llm(llm, rewriter: QueryRewriter | None = None) -> None:
-    """Test seam: replace the provider router with a fake LLM."""
+    """Test seam: replace the provider router with a fake LLM.
+
+    Without an explicit rewriter the fake gets its own, with no cache file: a test must
+    neither read the real rewrite cache nor write a fake reply into it.
+    """
     global _llm_override, _rewriter
     _llm_override = llm
-    _rewriter = rewriter
+    _rewriter = rewriter or QueryRewriter(llm)
 
 
 class Turn(BaseModel):

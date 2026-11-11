@@ -43,8 +43,9 @@ def test_chat_abstains_without_sources(monkeypatch, fake_llm):
     done = events[-1][1]
     assert done["abstained"] is True
     assert done["text"]
-    # no LLM call happened
-    assert fake_llm.calls == []
+    # the Darija question is rewritten for search, but nothing is generated without sources
+    assert len(fake_llm.calls) == 1
+    assert fake_llm.calls[0][0]["content"].startswith("You rewrite Moroccan questions")
 
 
 def test_chat_abstains_on_no_answer_sentinel(monkeypatch):
