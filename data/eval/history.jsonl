@@ -1,2 +1,4 @@
 {"time": "2026-11-08T22:36:53+00:00", "commit": "fc819bd", "k": 10, "reranker": "off", "hit_rate": 0.923, "mrr": 0.759, "article_hit_rate": 0.833, "article_mrr": 0.668}
 {"time": "2026-11-08T22:44:13+00:00", "commit": "fc819bd", "k": 10, "reranker": "BAAI/bge-reranker-v2-m3", "hit_rate": 0.923, "mrr": 0.767, "article_hit_rate": 0.889, "article_mrr": 0.623}
+{"time": "2026-11-10T22:43:39+00:00", "commit": "d9b4d09", "k": 10, "reranker": "off", "rewrite": "off", "hit_rate": 0.962, "mrr": 0.798, "article_hit_rate": 0.833, "article_mrr": 0.668, "page_hit_rate": 0.727, "page_mrr": 0.607, "cited_hit_rate": 0.704, "cited_mrr": 0.575}
+{"time": "2026-11-10T22:44:44+00:00", "commit": "d9b4d09", "k": 10, "reranker": "off", "rewrite": "on", "hit_rate": 1.0, "mrr": 0.869, "article_hit_rate": 0.917, "article_mrr": 0.689, "page_hit_rate": 0.879, "page_mrr": 0.689, "cited_hit_rate": 0.85, "cited_mrr": 0.65}

@@ -15,7 +15,7 @@ PYPIPE_MODELS := uv run --project pipeline --extra models
 PYAPI       := uv run --project backend
 PYAPI_MODELS := uv run --project backend --extra models
 
-.PHONY: help db db-stop api web dev ingest ingest-smoke eval test lint clean user
+.PHONY: help db db-stop api web dev ingest ingest-smoke eval eval-retrieval eval-rewrite test lint clean user
 
 help:
 	@grep -E '^# ' $(MAKEFILE_LIST) | cut -c3-
@@ -71,8 +71,13 @@ lint:
 eval:
 	$(PYAPI_MODELS) python -m qanoun_api.eval.run --report docs/eval-report.md
 
+# Raw questions only: no LLM, so Darija and Arabizi are searched as typed.
 eval-retrieval:
 	$(PYAPI_MODELS) python -m qanoun_api.eval.run --retrieval-only --report docs/eval-report.md
+
+# Retrieval as /chat does it (Darija/Arabizi rewritten by the LLM), without answers.
+eval-rewrite:
+	$(PYAPI_MODELS) python -m qanoun_api.eval.run --retrieval-only --rewrite --report docs/eval-report.md
 
 # ── Cleanup ─────────────────────────────────────────────────────────────────────
 
