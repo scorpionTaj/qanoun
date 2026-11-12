@@ -94,3 +94,13 @@ def test_analytics_keywords_filter_stopwords(fake_db):
 
 def test_health():
     assert client.get("/api/health").json()["status"] == "ok"
+
+
+def test_root_serves_swagger_ui_and_docs_redirects_there():
+    page = client.get("/")
+    assert page.status_code == 200 and "swagger-ui" in page.text
+    assert "/openapi.json" in page.text
+    moved = client.get("/docs", follow_redirects=False)
+    assert moved.status_code == 307 and moved.headers["location"] == "/"
+    schema = client.get("/openapi.json").json()
+    assert "/api/chat" in schema["paths"] and "/" not in schema["paths"]
