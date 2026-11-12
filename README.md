@@ -17,6 +17,8 @@ French — answered only from the retrieved sources, with citations to the exact
 **Live demo: [qanoun-ma.vercel.app](https://qanoun-ma.vercel.app)**, on free tiers only: the web
 app and the API on Vercel, the database on Supabase. To fit a serverless function, the demo
 embeds with Jina's API instead of running BGE-M3; its retrieval scores are measured below.
+The API's interactive documentation (Swagger UI) is at
+[qanoun-api.vercel.app](https://qanoun-api.vercel.app).
 
 <p align="center">
   <img src="docs/figures/demo.gif" alt="Qanoun demo: asking a question in English, the cited Labour Code article opening beside the answer, browsing laws, the amendments panel, a Darija question answered from the rental law in Arabic (RTL), and the settings page" width="800">

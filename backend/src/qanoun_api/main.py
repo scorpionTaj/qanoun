@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from qanoun_pipeline.load_db import ensure_schema
 
 from qanoun_api import __version__
@@ -44,6 +45,7 @@ app = FastAPI(
     description="Moroccan legal texts: explore, search and ask — grounded in the sources.",
     version=__version__,
     lifespan=lifespan,
+    docs_url="/",  # the API's home page is its interactive documentation (Swagger UI)
 )
 
 app.add_middleware(
@@ -74,6 +76,12 @@ app.include_router(analytics.router)
 app.include_router(llm.router)
 app.include_router(auth.router)
 app.include_router(conversations.router)
+
+
+@app.get("/docs", include_in_schema=False)
+def docs_redirect():
+    """The docs moved to `/`; keep the conventional path working."""
+    return RedirectResponse("/")
 
 
 @app.get("/api/health")
