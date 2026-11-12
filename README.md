@@ -14,6 +14,10 @@ French — answered only from the retrieved sources, with citations to the exact
 
 **Informational only — not legal advice.** The official Bulletin remains the reference.
 
+**Live demo: [qanoun-ma.vercel.app](https://qanoun-ma.vercel.app)**, on free tiers only: the web
+app and the API on Vercel, the database on Supabase. To fit a serverless function, the demo
+embeds with Gemini's API instead of running BGE-M3; its retrieval scores are measured below.
+
 <p align="center">
   <img src="docs/figures/demo.gif" alt="Qanoun demo: asking a question in English, the cited Labour Code article opening beside the answer, browsing laws, the amendments panel, a Darija question answered from the rental law in Arabic (RTL), and the settings page" width="800">
 </p>
@@ -194,6 +198,30 @@ make user EMAIL=you@example.com        # create an account (asks for the passwor
 
 ## Deploy
 
+### Free demo: Vercel + Supabase
+
+This is how [qanoun-ma.vercel.app](https://qanoun-ma.vercel.app) runs, at no cost:
+
+- **Embeddings:** BGE-M3 is a 2 GB model, too large for a serverless function, so the demo
+  uses Gemini's `gemini-embedding-001` at 1024 dimensions (`QANOUN_EMBED_MODEL`), for both the
+  passages and each question. The corpus was re-embedded once with
+  [`scripts/reembed.py`](scripts/reembed.py).
+- **Database:** a free Supabase project. The tables live in a `qanoun` schema, which
+  Supabase's public Data API does not expose, owned by a dedicated `qanoun_api` role. The API
+  connects through the IPv4 session pooler.
+- **API:** a Vercel Python function in Paris (`cdg1`), built from
+  [`deploy/vercel-api/`](deploy/vercel-api) with `QANOUN_DB_URL`, `QANOUN_GEMINI_KEY`,
+  `QANOUN_EMBED_MODEL`, `QANOUN_CORS_ORIGINS`, `QANOUN_ALLOW_SIGNUP=false` and
+  `QANOUN_REWRITE_CACHE=/tmp/rewrites.json`.
+- **Web app:** a second Vercel project with `frontend/` as its root and `NEXT_PUBLIC_API_URL`
+  pointing at the API.
+
+Free-tier limits apply: Supabase pauses a project after a week without traffic (restore it
+from the dashboard), and Gemini's free tier allows about 100 embeddings and a limited number
+of answers per minute.
+
+### Your own server
+
 Accounts are optional: without one, everything works and conversations stay in the browser.
 Signed in, conversations sync to the server (newest copy wins).
 
@@ -296,3 +324,8 @@ container healthchecks.
 
 Built by [scorpiontaj](https://github.com/scorpiontaj) — retrieval/eval patterns inherited
 from [darija-rag](https://github.com/scorpiontaj/darija-rag).
+
+## License
+
+[AGPL-3.0](LICENSE), matching PyMuPDF, which the ingestion pipeline uses to read the PDFs.
+The law texts are the Kingdom of Morocco's official publications.
