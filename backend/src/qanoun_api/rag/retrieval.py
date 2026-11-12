@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 import psycopg
-from qanoun_pipeline.embed import MODELS, Embedder, fake_embedder
+from qanoun_pipeline.embed import Embedder, fake_embedder, spec_for
 from qanoun_pipeline.normalize import normalize
 
 from qanoun_api.config import SETTINGS
@@ -67,18 +67,15 @@ _embedder_lock = threading.Lock()
 
 
 def get_embedder() -> Embedder:
-    """Load the embedding model once (a ~2 GB download on cold start). Locked: the start-up
-    warm-up thread and an early request must not load it twice."""
+    """Load the embedding model once (BGE-M3: a ~2 GB download on cold start; Gemini: an API
+    client). Locked: the start-up warm-up thread and an early request must not load it twice."""
     global _embedder
     with _embedder_lock:
         if _embedder is None:
             if os.environ.get("QANOUN_FAKE_EMBED") == "1":
                 _embedder = fake_embedder(dim=1024, cache_dir=None)
             else:
-                spec = next(
-                    (s for s in MODELS.values() if s.name == SETTINGS.embed_model), MODELS["m3"]
-                )
-                _embedder = Embedder(spec, cache_dir=None)
+                _embedder = Embedder(spec_for(SETTINGS.embed_model), cache_dir=None)
         return _embedder
 
 

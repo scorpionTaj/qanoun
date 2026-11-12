@@ -49,7 +49,8 @@ def ingest_all(args: argparse.Namespace) -> int:
         embedder = embed_mod.fake_embedder(dim=1024, cache_dir=PROCESSED / "embeddings")
         print("embeddings: FAKE (smoke test — do not ship)")
     else:
-        embedder = embed_mod.Embedder(cache_dir=PROCESSED / "embeddings")
+        spec = embed_mod.spec_for(os.environ.get("QANOUN_EMBED_MODEL"))
+        embedder = embed_mod.Embedder(spec, cache_dir=PROCESSED / "embeddings")
     print(f"embeddings: {embedder.spec.name} (dim {embedder.spec.dim})")
 
     article_rows: list[dict] = []

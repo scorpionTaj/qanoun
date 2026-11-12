@@ -52,3 +52,61 @@ def test_real_model_spec_has_expected_dim():
 def test_fake_embedder_dims(dim):
     vectors = fake_embedder(dim).encode_passages(["x"])
     assert vectors.shape == (1, dim)
+
+
+def _gemini(responses, dim=4):
+    """GeminiEncoder over a fake HTTP transport replaying `responses` in order."""
+    import json
+
+    import httpx
+
+    from qanoun_pipeline.embed import GeminiEncoder
+
+    sent, slept = [], []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        sent.append(json.loads(request.content))
+        status, body = responses[len(sent) - 1]
+        return httpx.Response(status, json=body)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    encoder = GeminiEncoder("gemini-embedding-001", dim, key="test", client=client, sleep=slept.append)
+    return encoder, sent, slept
+
+
+def test_gemini_batches_normalizes_and_uses_task_types():
+    rows = [{"values": [3.0, 4.0, 0.0, 0.0]}] * 100
+    encoder, sent, _ = _gemini([(200, {"embeddings": rows}), (200, {"embeddings": rows[:20]})])
+    vectors = encoder.encode([f"t{i}" for i in range(120)])
+    assert vectors.shape == (120, 4)
+    np.testing.assert_allclose(vectors[0], [0.6, 0.8, 0.0, 0.0])  # truncated → re-normalized
+    assert [len(body["requests"]) for body in sent] == [100, 20]  # the API's batch limit
+    assert sent[0]["requests"][0]["taskType"] == "RETRIEVAL_DOCUMENT"
+    assert sent[0]["requests"][0]["outputDimensionality"] == 4
+
+    encoder, sent, _ = _gemini([(200, {"embeddings": rows[:1]})])
+    encoder.encode_queries(["q"])
+    assert sent[0]["requests"][0]["taskType"] == "RETRIEVAL_QUERY"
+
+
+def test_gemini_waits_out_the_rate_limit():
+    limited = {"error": {"code": 429, "details": [{"retryDelay": "12s"}]}}
+    encoder, sent, slept = _gemini([(429, limited), (200, {"embeddings": [{"values": [1, 0, 0, 0]}]})])
+    encoder.encode(["t"])
+    assert len(sent) == 2 and slept == [12.0]
+
+
+def test_embedder_routes_queries_to_the_query_task(tmp_path: Path):
+    from qanoun_pipeline.embed import MODELS
+
+    encoder, sent, _ = _gemini([(200, {"embeddings": [{"values": [0.0, 1.0, 0.0, 0.0]}]})])
+    embedder = Embedder(MODELS["gemini"], encoder=encoder, cache_dir=None)
+    vector = embedder.encode_query("ما هي شروط الزواج؟")
+    assert vector.dtype == np.float32 and sent[0]["requests"][0]["taskType"] == "RETRIEVAL_QUERY"
+
+
+def test_spec_for_picks_the_model_by_name_and_defaults_to_bge_m3():
+    from qanoun_pipeline.embed import MODELS, spec_for
+
+    assert spec_for("gemini-embedding-001") is MODELS["gemini"]
+    assert spec_for(None) is MODELS["m3"] and spec_for("unknown") is MODELS["m3"]
