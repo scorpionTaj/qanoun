@@ -1,0 +1,4 @@
+# The API and the pipeline package it imports, installed from this repository.
+# Paths are relative to this directory, the Vercel project's root.
+../../pipeline
+../../backend
