@@ -169,6 +169,7 @@ def record_history(
         "time": datetime.now(UTC).isoformat(timespec="seconds"),
         "commit": commit,
         "k": k,
+        "embedder": SETTINGS.embed_model,
         "reranker": os.environ.get("QANOUN_RERANKER", "") or "off",
         "rewrite": "on" if rewrite else "off",
         **{key: metrics[key] for key in ("hit_rate", "mrr", "article_hit_rate", "article_mrr")},
@@ -352,14 +353,15 @@ def write_report(
         lines += _answer_summary(results, judge_label)
     if history:
         lines += ["", "## History (last 10 runs)", "",
-                  ("| when (UTC) | commit | reranker | rewrite | law hit / MRR | article hit / MRR "
+                  ("| when (UTC) | commit | embedder | reranker | rewrite | law hit / MRR | article hit / MRR "
                    "| page hit / MRR | cited hit / MRR |"),
-                  "|---|---|---|---|---|---|---|---|"]
+                  "|---|---|---|---|---|---|---|---|---|"]
         for run in history[-10:]:
             page = f"{run['page_hit_rate']} / {run['page_mrr']}" if "page_mrr" in run else "–"
             cited = f"{run['cited_hit_rate']} / {run['cited_mrr']}" if "cited_mrr" in run else "–"
             lines.append(
-                f"| {run['time']} | {run['commit']} | {run['reranker']} | {run.get('rewrite', 'off')} | "
+                f"| {run['time']} | {run['commit']} | {run.get('embedder', 'BAAI/bge-m3')} | "
+                f"{run['reranker']} | {run.get('rewrite', 'off')} | "
                 f"{run['hit_rate']} / {run['mrr']} | {run['article_hit_rate']} / {run['article_mrr']} | "
                 f"{page} | {cited} |"
             )

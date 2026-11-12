@@ -185,8 +185,8 @@ def test_report_shows_raw_and_rewritten_rows_per_variety(tmp_path: Path):
     text = report.read_text(encoding="utf-8")
     assert "## darija-rag question set (1 questions)" in text
     assert "| arabizi | 1 | 0.0 / 0.0 | 1.0 / 1.0 |" in text
-    assert "| off | 0.0 / 0.0 | 0.0 / 0.0 | – | – |" in text  # a run without the page set
-    assert "| on | 0.0 / 0.0 | 0.0 / 0.0 | 1.0 / 1.0 |" in text
+    assert "| BAAI/bge-m3 | off | off | 0.0 / 0.0 | 0.0 / 0.0 | – | – |" in text  # no page set
+    assert "| off | on | 0.0 / 0.0 | 0.0 / 0.0 | 1.0 / 1.0 |" in text
 
 
 def test_retrieval_only_run_never_touches_an_llm(tmp_path: Path, monkeypatch):
