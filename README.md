@@ -14,6 +14,10 @@ French — answered only from the retrieved sources, with citations to the exact
 
 **Informational only — not legal advice.** The official Bulletin remains the reference.
 
+**Live demo: [qanoun-ma.vercel.app](https://qanoun-ma.vercel.app)**, on free tiers only: the web
+app and the API on Vercel, the database on Supabase. To fit a serverless function, the demo
+embeds with Jina's API instead of running BGE-M3; its retrieval scores are measured below.
+
 <p align="center">
   <img src="docs/figures/demo.gif" alt="Qanoun demo: asking a question in English, the cited Labour Code article opening beside the answer, browsing laws, the amendments panel, a Darija question answered from the rental law in Arabic (RTL), and the settings page" width="800">
 </p>
@@ -166,6 +170,11 @@ what users get. The darija-rag set by language, page-level hit@10:
 | as typed | 0.966 | 0.492 | 0.097 | 0.825 |
 | as /chat retrieves | 0.966 | **0.831** | **0.742** | 0.825 |
 
+**The live demo** embeds with `jina-embeddings-v3` instead of BGE-M3 (see Deploy). Measured
+the same way ([report](docs/eval-report-demo.md)), it is close: page-level hit@10 0.894 as
+/chat retrieves (Darija 0.864, Arabizi 0.774, MSA 0.940, French 0.895), cited article 0.869,
+and on the seed sets 1.000 for the right law and 0.833 for the exact article.
+
 The same questions scored 0.93 in [darija-rag](https://github.com/scorpionTaj/darija-rag)
 (Darija 0.95, Arabizi 0.90), on 8 documents and with a reranker. Here they compete with 45
 documents and no reranker; `scripts/port_darija_rag_eval.py` explains the port.
@@ -193,6 +202,32 @@ make user EMAIL=you@example.com        # create an account (asks for the passwor
 ```
 
 ## Deploy
+
+### Free demo: Vercel + Supabase
+
+This is how [qanoun-ma.vercel.app](https://qanoun-ma.vercel.app) runs, at no cost:
+
+- **Embeddings:** BGE-M3 is a 2 GB model, too large for a serverless function, so the demo
+  uses Jina's `jina-embeddings-v3` API at 1024 dimensions (`QANOUN_EMBED_MODEL`), for both the
+  passages and each question. The corpus was re-embedded once with
+  [`scripts/reembed.py`](scripts/reembed.py) in about 12 minutes. (Gemini's free embedding
+  tier was tried first; it allows 1,000 embeddings a day, two weeks for this corpus.)
+- **Database:** a free Supabase project. The tables live in a `qanoun` schema, which
+  Supabase's public Data API does not expose, owned by a dedicated `qanoun_api` role. The API
+  connects through the IPv4 session pooler.
+- **API:** a Vercel Python function in Paris (`cdg1`), built from
+  [`deploy/vercel-api/`](deploy/vercel-api) with `QANOUN_DB_URL`, `QANOUN_JINA_KEY`, an LLM key
+  (`QANOUN_GEMINI_KEY`), `QANOUN_EMBED_MODEL`, `QANOUN_CORS_ORIGINS`,
+  `QANOUN_ALLOW_SIGNUP=false`, `QANOUN_REWRITE_CACHE=/tmp/rewrites.json` and, for the build,
+  `UV_NO_EDITABLE=1`. PyMuPDF is left out of the function: only ingestion reads PDFs.
+- **Web app:** a second Vercel project with `frontend/` as its root and `NEXT_PUBLIC_API_URL`
+  pointing at the API.
+
+Free-tier limits apply: Supabase pauses a project after a week without traffic (restore it
+from the dashboard), Jina's free key covers a fixed number of tokens (each question uses a
+few dozen), and Gemini's free tier limits answers per minute and per day.
+
+### Your own server
 
 Accounts are optional: without one, everything works and conversations stay in the browser.
 Signed in, conversations sync to the server (newest copy wins).
@@ -296,3 +331,8 @@ container healthchecks.
 
 Built by [scorpiontaj](https://github.com/scorpiontaj) — retrieval/eval patterns inherited
 from [darija-rag](https://github.com/scorpiontaj/darija-rag).
+
+## License
+
+[AGPL-3.0](LICENSE), matching PyMuPDF, which the ingestion pipeline uses to read the PDFs.
+The law texts are the Kingdom of Morocco's official publications.

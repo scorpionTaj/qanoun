@@ -32,6 +32,8 @@ class Settings:
             embed_model=os.environ.get("QANOUN_EMBED_MODEL", DEFAULT_EMBED_MODEL),
             device=os.environ.get("QANOUN_DEVICE", "cpu"),
             reranker=os.environ.get("QANOUN_RERANKER", "").strip(),
+            # Serverless hosts allow writes only under /tmp.
+            rewrite_cache=Path(os.environ.get("QANOUN_REWRITE_CACHE", "data/processed/rewrites.json")),
             allow_signup=_flag("QANOUN_ALLOW_SIGNUP", True),
             cookie_secure=_flag("QANOUN_COOKIE_SECURE", False),
             cors_origins=tuple(

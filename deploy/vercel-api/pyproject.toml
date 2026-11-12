@@ -1,0 +1,17 @@
+# The Vercel function's environment: the API and the pipeline package it imports, installed
+# from this repository. No sentence-transformers: the demo embeds through Gemini's API.
+[project]
+name = "qanoun-vercel-api"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = ["qanoun-api", "qanoun-pipeline"]
+
+[tool.uv]
+package = false
+# PyMuPDF (and the ONNX runtime it pulls in) only reads PDFs during ingestion; the API never
+# imports it, and leaving it out keeps the function well under Vercel's size limit.
+exclude-dependencies = ["pymupdf"]
+
+[tool.uv.sources]
+qanoun-api = { path = "../../backend", editable = true }
+qanoun-pipeline = { path = "../../pipeline", editable = true }
