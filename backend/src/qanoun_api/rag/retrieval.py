@@ -67,7 +67,7 @@ _embedder_lock = threading.Lock()
 
 
 def get_embedder() -> Embedder:
-    """Load the embedding model once (BGE-M3: a ~2 GB download on cold start; Gemini: an API
+    """Load the embedding model once (BGE-M3: a ~2 GB download on cold start; Jina: an API
     client). Locked: the start-up warm-up thread and an early request must not load it twice."""
     global _embedder
     with _embedder_lock:

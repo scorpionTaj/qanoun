@@ -54,59 +54,63 @@ def test_fake_embedder_dims(dim):
     assert vectors.shape == (1, dim)
 
 
-def _gemini(responses, dim=4):
-    """GeminiEncoder over a fake HTTP transport replaying `responses` in order."""
+def _jina(responses, dim=4):
+    """JinaEncoder over a fake HTTP transport replaying `responses` (status, body, headers)."""
     import json
 
     import httpx
 
-    from qanoun_pipeline.embed import GeminiEncoder
+    from qanoun_pipeline.embed import JinaEncoder
 
     sent, slept = [], []
 
     def handler(request: httpx.Request) -> httpx.Response:
         sent.append(json.loads(request.content))
-        status, body = responses[len(sent) - 1]
-        return httpx.Response(status, json=body)
+        status, body, headers = responses[len(sent) - 1]
+        return httpx.Response(status, json=body, headers=headers)
 
     client = httpx.Client(transport=httpx.MockTransport(handler))
-    encoder = GeminiEncoder("gemini-embedding-001", dim, key="test", client=client, sleep=slept.append)
+    encoder = JinaEncoder("jina-embeddings-v3", dim, key="test", client=client, sleep=slept.append)
     return encoder, sent, slept
 
 
-def test_gemini_batches_normalizes_and_uses_task_types():
-    rows = [{"values": [3.0, 4.0, 0.0, 0.0]}] * 100
-    encoder, sent, _ = _gemini([(200, {"embeddings": rows}), (200, {"embeddings": rows[:20]})])
-    vectors = encoder.encode([f"t{i}" for i in range(120)])
-    assert vectors.shape == (120, 4)
-    np.testing.assert_allclose(vectors[0], [0.6, 0.8, 0.0, 0.0])  # truncated → re-normalized
-    assert [len(body["requests"]) for body in sent] == [100, 20]  # the API's batch limit
-    assert sent[0]["requests"][0]["taskType"] == "RETRIEVAL_DOCUMENT"
-    assert sent[0]["requests"][0]["outputDimensionality"] == 4
+def _data(vectors):
+    # The API may return items out of order; `index` says where each belongs.
+    return {"data": [{"index": i, "embedding": v} for i, v in reversed(list(enumerate(vectors)))]}
 
-    encoder, sent, _ = _gemini([(200, {"embeddings": rows[:1]})])
+
+def test_jina_batches_orders_normalizes_and_uses_task_adapters():
+    first = [[3.0, 4.0, 0.0, 0.0]] + [[1.0, 0.0, 0.0, 0.0]] * 63
+    encoder, sent, _ = _jina([(200, _data(first), {}), (200, _data([[0, 0, 2.0, 0]] * 6), {})])
+    vectors = encoder.encode([f"t{i}" for i in range(70)])
+    assert vectors.shape == (70, 4)
+    np.testing.assert_allclose(vectors[0], [0.6, 0.8, 0.0, 0.0])  # kept in input order, unit length
+    assert [len(body["input"]) for body in sent] == [64, 6]
+    assert sent[0]["task"] == "retrieval.passage" and sent[0]["dimensions"] == 4
+
+    encoder, sent, _ = _jina([(200, _data([[1.0, 0, 0, 0]]), {})])
     encoder.encode_queries(["q"])
-    assert sent[0]["requests"][0]["taskType"] == "RETRIEVAL_QUERY"
+    assert sent[0]["task"] == "retrieval.query"
 
 
-def test_gemini_waits_out_the_rate_limit():
-    limited = {"error": {"code": 429, "details": [{"retryDelay": "12s"}]}}
-    encoder, sent, slept = _gemini([(429, limited), (200, {"embeddings": [{"values": [1, 0, 0, 0]}]})])
+def test_jina_waits_out_the_rate_limit():
+    ok = (200, _data([[1.0, 0, 0, 0]]), {})
+    encoder, sent, slept = _jina([(429, {}, {"retry-after": "7"}), (429, {}, {}), ok])
     encoder.encode(["t"])
-    assert len(sent) == 2 and slept == [12.0]
+    assert len(sent) == 3 and slept == [7.0, 2.0]  # the server's delay, then backoff
 
 
-def test_embedder_routes_queries_to_the_query_task(tmp_path: Path):
+def test_embedder_routes_queries_to_the_query_task():
     from qanoun_pipeline.embed import MODELS
 
-    encoder, sent, _ = _gemini([(200, {"embeddings": [{"values": [0.0, 1.0, 0.0, 0.0]}]})])
-    embedder = Embedder(MODELS["gemini"], encoder=encoder, cache_dir=None)
+    encoder, sent, _ = _jina([(200, _data([[0.0, 1.0, 0.0, 0.0]]), {})])
+    embedder = Embedder(MODELS["jina"], encoder=encoder, cache_dir=None)
     vector = embedder.encode_query("ما هي شروط الزواج؟")
-    assert vector.dtype == np.float32 and sent[0]["requests"][0]["taskType"] == "RETRIEVAL_QUERY"
+    assert vector.dtype == np.float32 and sent[0]["task"] == "retrieval.query"
 
 
 def test_spec_for_picks_the_model_by_name_and_defaults_to_bge_m3():
     from qanoun_pipeline.embed import MODELS, spec_for
 
-    assert spec_for("gemini-embedding-001") is MODELS["gemini"]
+    assert spec_for("jina-embeddings-v3") is MODELS["jina"]
     assert spec_for(None) is MODELS["m3"] and spec_for("unknown") is MODELS["m3"]

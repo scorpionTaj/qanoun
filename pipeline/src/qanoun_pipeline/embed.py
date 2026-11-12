@@ -1,15 +1,15 @@
 """Embedding models with a per-text on-disk cache (ported from darija-rag's dense.py).
 
 Two real encoders: BGE-M3 run locally (sentence-transformers, an optional extra) and
-Gemini's embedding API, which needs no model on the server, so the API fits a small
-serverless function. QANOUN_EMBED_MODEL picks one; passages and queries must use the same.
+Jina's embedding API (jina-embeddings-v3), which needs no model on the server, so the API
+fits a small serverless function. QANOUN_EMBED_MODEL picks one; passages and queries must
+use the same.
 Tests and smoke runs inject a `FakeEncoder`. Cache keys are sha256 of the exact passage
 string, so adding a document embeds only its new chunks.
 """
 
 import hashlib
 import os
-import re
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -32,8 +32,8 @@ class EmbeddingSpec:
 MODELS = {
     # BGE-M3: multilingual, strong on Arabic legal text, 1024-dim — matches the pgvector column.
     "m3": EmbeddingSpec("m3", "BAAI/bge-m3", dim=1024),
-    # Gemini's API model, truncated to 1024 dimensions to fit the same pgvector column.
-    "gemini": EmbeddingSpec("gemini", "gemini-embedding-001", dim=1024),
+    # Jina's API model: multilingual (Arabic included), 1024-dim like the pgvector column.
+    "jina": EmbeddingSpec("jina", "jina-embeddings-v3", dim=1024),
     # E5 models are trained with these prefixes; leaving them out costs recall.
     "e5": EmbeddingSpec("e5", "intfloat/multilingual-e5-small", dim=384, query_prefix="query: ", passage_prefix="passage: "),
 }
@@ -70,8 +70,8 @@ class Embedder:
         cache_dir: Path | None = Path("data/processed/embeddings"),
     ):
         self.spec = spec
-        if encoder is None and spec.key == "gemini":
-            encoder = GeminiEncoder(spec.name, spec.dim)
+        if encoder is None and spec.key == "jina":
+            encoder = JinaEncoder(spec.name, spec.dim)
         elif encoder is None:
             from sentence_transformers import SentenceTransformer
 
@@ -115,31 +115,30 @@ class Embedder:
         return np.asarray(vectors, dtype=np.float32)
 
 
-class GeminiEncoder:
-    """Gemini's embedding API (key in QANOUN_GEMINI_KEY), shaped like SentenceTransformer.
+class JinaEncoder:
+    """Jina's embedding API (key in QANOUN_JINA_KEY), shaped like SentenceTransformer.
 
-    Vectors are truncated to `dim` by the API and re-normalized here, since a truncated
-    vector is no longer unit length. Passages and queries use their own task types. The
-    free tier allows about 100 texts a minute, so batches wait out 429 responses.
+    Passages and queries use their own task adapters. A 429 waits for the time the API
+    asks (Retry-After) or backs off exponentially, then retries.
     """
 
-    URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:batchEmbedContents"
-    BATCH = 100  # the API's maximum per request
+    URL = "https://api.jina.ai/v1/embeddings"
+    BATCH = 64  # texts per request: well inside the API's limits for ~500-word passages
 
     def __init__(self, model: str, dim: int, key: str | None = None, client: httpx.Client | None = None,
                  sleep=time.sleep):  # fmt: skip
         self.model, self.dim = model, dim
-        self.key = key or os.environ.get("QANOUN_GEMINI_KEY", "")
+        self.key = key or os.environ.get("QANOUN_JINA_KEY", "")
         if not self.key:
-            raise RuntimeError("QANOUN_GEMINI_KEY is not set (needed for Gemini embeddings)")
+            raise RuntimeError("QANOUN_JINA_KEY is not set (needed for Jina embeddings)")
         self.client = client or httpx.Client(timeout=120)
         self.sleep = sleep
 
     def encode(self, texts: list[str], **_kwargs) -> np.ndarray:
-        return self._embed(texts, "RETRIEVAL_DOCUMENT")
+        return self._embed(texts, "retrieval.passage")
 
     def encode_queries(self, texts: list[str]) -> np.ndarray:
-        return self._embed(texts, "RETRIEVAL_QUERY")
+        return self._embed(texts, "retrieval.query")
 
     def _embed(self, texts: list[str], task: str) -> np.ndarray:
         rows = []
@@ -149,27 +148,20 @@ class GeminiEncoder:
         norms = np.linalg.norm(vectors, axis=1, keepdims=True)
         return vectors / np.where(norms == 0, 1.0, norms)
 
-    def _request(self, batch: list[str], task: str, attempts: int = 30) -> list[list[float]]:
-        body = {"requests": [
-            {"model": f"models/{self.model}", "content": {"parts": [{"text": text}]},
-             "taskType": task, "outputDimensionality": self.dim}
-            for text in batch
-        ]}  # fmt: skip
+    def _request(self, batch: list[str], task: str, attempts: int = 8) -> list[list[float]]:
+        body = {"model": self.model, "task": task, "dimensions": self.dim, "normalized": True,
+                "input": batch}  # fmt: skip
         for attempt in range(attempts):
-            response = self.client.post(self.URL.format(model=self.model), json=body,
-                                        headers={"x-goog-api-key": self.key})  # fmt: skip
+            response = self.client.post(self.URL, json=body,
+                                        headers={"Authorization": f"Bearer {self.key}"})  # fmt: skip
             if response.status_code == 429 and attempt < attempts - 1:
-                self.sleep(_retry_delay(response.text))
+                retry_after = response.headers.get("retry-after", "")
+                self.sleep(float(retry_after) if retry_after.isdigit() else min(2.0**attempt, 60.0))
                 continue
             response.raise_for_status()
-            return [item["values"] for item in response.json()["embeddings"]]
+            data = sorted(response.json()["data"], key=lambda item: item["index"])
+            return [item["embedding"] for item in data]
         raise RuntimeError("unreachable")
-
-
-def _retry_delay(body: str, default: float = 60.0) -> float:
-    """Seconds the API asks to wait ("retryDelay": "4s"), at least a few seconds."""
-    match = re.search(r'"retryDelay":\s*"(\d+(?:\.\d+)?)s"', body)
-    return max(float(match.group(1)), 5.0) if match else default
 
 
 class FakeEncoder:

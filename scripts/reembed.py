@@ -1,10 +1,10 @@
 """Re-embed every passage in a database with another embedding model, in place.
 
-    QANOUN_EMBED_MODEL=gemini-embedding-001 uv run --project pipeline python scripts/reembed.py \\
-        --db-url postgresql://qanoun:qanoun@localhost:5433/qanoun_gemini
+    QANOUN_EMBED_MODEL=jina-embeddings-v3 uv run --project pipeline python scripts/reembed.py \\
+        --db-url postgresql://qanoun:qanoun@localhost:5433/qanoun_jina
 
-Used to build the database behind the live demo, whose API embeds questions with Gemini's API
-instead of loading BGE-M3. Point it at a copy (`createdb -T qanoun qanoun_gemini`), not at the
+Used to build the database behind the live demo, whose API embeds questions with Jina's API
+instead of loading BGE-M3. Point it at a copy (`createdb -T qanoun qanoun_jina`), not at the
 database your local API uses. Vectors are cached in data/processed/embeddings as they arrive,
 so an interrupted run resumes where it stopped. The model must have the column's dimension.
 """
