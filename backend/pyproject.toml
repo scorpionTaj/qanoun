@@ -1,27 +1,35 @@
 [project]
 name = "qanoun-api"
-version = "0.1.0"
+version = "0.2.0"
 description = "FastAPI backend for Qanoun: law explorer, hybrid search, grounded chat with citations"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
     "qanoun-pipeline",
-    "fastapi>=0.115",
-    "uvicorn[standard]>=0.30",
-    "httpx>=0.27",
-    "psycopg[binary,pool]>=3.2",
-    "pyyaml>=6.0",
+    "fastapi>=0.165.0",
+    "uvicorn[standard]>=0.54.0",
+    "httpx>=0.28.1",
+    "psycopg[binary,pool]>=3.3.9",
+    "pyyaml>=6.0.4",
 ]
 
 [project.optional-dependencies]
 # Needed at query time: the API embeds the user's question with the same model
 # the pipeline used for passages (BGE-M3).
-models = ["sentence-transformers>=3.0"]
+models = ["sentence-transformers>=6.3.0", "torch>=2.15.0"]
 
 [dependency-groups]
 dev = ["pytest>=8.0", "ruff>=0.5"]
 
 [tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
 qanoun-pipeline = { path = "../pipeline", editable = true }
+
+# On Linux, torch from PyTorch's CPU-only index: PyPI's Linux wheel bundles CUDA (a 20 GB
+# Docker image). macOS and Windows keep PyPI's wheels. For a CUDA GPU server, drop the marker.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [build-system]
 requires = ["setuptools>=68"]
@@ -35,7 +43,7 @@ qanoun_api = ["data/*.tsv"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py312"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
