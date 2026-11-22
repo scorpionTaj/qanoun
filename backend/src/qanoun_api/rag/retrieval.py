@@ -21,9 +21,11 @@ from qanoun_api.db import db
 RRF_K = 60
 CANDIDATES = 50  # per-channel candidate pool before fusion
 # HNSW returns at most ef_search rows (pgvector's default is 40, i.e. fewer than CANDIDATES)
-# and its recall grows with it. Measured on the demo corpus: recall@10 against an exact scan
-# 0.53 at 40, 0.91 at 200. At ~14k chunks the extra cost is a few milliseconds.
-HNSW_EF_SEARCH = 200
+# and its recall grows with it. Legal passages embed close together, so the default misses
+# true neighbours. Measured on the demo (Jina, 13.9k chunks, freshly built index), recall@10
+# against an exact scan / median query time: 0.63 / 1 ms at 40, 0.91 / 3 ms at 200,
+# 1.00 / 5 ms at 400, and the exact scan itself takes 93 ms.
+HNSW_EF_SEARCH = 400
 RERANK_POOL = 30  # fused candidates the cross-encoder re-scores (when enabled)
 
 
