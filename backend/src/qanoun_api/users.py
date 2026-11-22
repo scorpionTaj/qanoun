@@ -8,8 +8,10 @@ import argparse
 import getpass
 import sys
 
+from qanoun_pipeline.load_db import ensure_schema
+
 from qanoun_api import accounts
-from qanoun_api.db import db
+from qanoun_api.db import close_pool, db
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -24,9 +26,12 @@ def main(argv: list[str] | None = None) -> int:
     if password != getpass.getpass("Repeat: "):
         print("passwords differ", file=sys.stderr)
         return 1
-    with db() as conn:
-        accounts.ensure_app_schema(conn)
-        user_id = accounts.create_user(conn, args.email, password, admin=args.admin or None)
+    try:
+        with db() as conn:
+            ensure_schema(conn)
+            user_id = accounts.create_user(conn, args.email, password, admin=args.admin or None)
+    finally:
+        close_pool()  # else the pool's worker threads hold the process open on exit
     print(f"created user {user_id} ({accounts.normalize_email(args.email)})")
     return 0
 

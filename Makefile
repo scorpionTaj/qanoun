@@ -15,7 +15,7 @@ PYPIPE_MODELS := uv run --project pipeline --extra models
 PYAPI       := uv run --project backend
 PYAPI_MODELS := uv run --project backend --extra models
 
-.PHONY: help db db-stop api web dev ingest ingest-smoke eval eval-retrieval eval-rewrite test lint clean user
+.PHONY: help db db-stop migrate api web dev ingest ingest-smoke eval eval-retrieval eval-rewrite test lint clean user
 
 help:
 	@grep -E '^# ' $(MAKEFILE_LIST) | cut -c3-
@@ -28,6 +28,11 @@ db:
 
 db-stop:
 	docker compose down
+
+# Apply pending schema migrations (the API and ingest also do it; this is for a DB the API
+# role may not alter, e.g. run once with an owner's QANOUN_DB_URL).
+migrate:
+	$(PYPIPE) python -m qanoun_pipeline.cli migrate
 
 # ── Data engineering pipeline ───────────────────────────────────────────────────
 

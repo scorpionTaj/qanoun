@@ -220,6 +220,13 @@ def show_summary(args: argparse.Namespace) -> int:
     return 0
 
 
+def run_migrations(args: argparse.Namespace) -> int:
+    with load_db.connect(args.db_url) as conn:
+        applied = load_db.ensure_schema(conn)
+    print(f"applied migrations {applied}" if applied else "schema up to date")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="qanoun_pipeline", description=__doc__)
     parser.add_argument("--db-url", default=DEFAULT_DB, help="Postgres URL (or set QANOUN_DB_URL)")
@@ -238,6 +245,9 @@ def main(argv: list[str] | None = None) -> int:
 
     p_sum = sub.add_parser("summary", help="what is currently in the database")
     p_sum.set_defaults(func=show_summary)
+
+    p_mig = sub.add_parser("migrate", help="apply pending schema migrations")
+    p_mig.set_defaults(func=run_migrations)
 
     args = parser.parse_args(argv)
     if os.environ.get("QANOUN_DB_URL") and not any(a.startswith("--db-url") for a in (argv or [])):
