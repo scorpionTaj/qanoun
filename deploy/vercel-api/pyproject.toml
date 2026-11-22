@@ -2,7 +2,7 @@
 # from this repository. No sentence-transformers: the demo embeds through Gemini's API.
 [project]
 name = "qanoun-vercel-api"
-version = "0.1.0"
+version = "0.2.0"
 requires-python = ">=3.12"
 dependencies = ["qanoun-api", "qanoun-pipeline"]
 

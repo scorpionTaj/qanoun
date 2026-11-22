@@ -245,7 +245,9 @@ Each release tag publishes two images to GitHub Container Registry, for amd64 an
 - `ghcr.io/scorpiontaj/qanoun-api`: the API, slim (no PyTorch), so it embeds questions through
   Jina's API: set `QANOUN_EMBED_MODEL=jina-embeddings-v3` and `QANOUN_JINA_KEY`, plus
   `QANOUN_DB_URL` and an LLM key. For the local BGE-M3 model, build it yourself with
-  `--build-arg EXTRAS=models` (the compose file does).
+  `--build-arg EXTRAS=models` (the compose file does). On Linux, PyTorch comes from its
+  CPU-only index (a ~4 GB image instead of 20 GB with CUDA); for a GPU server, remove the
+  `sys_platform == 'linux'` source in `backend/pyproject.toml` and re-lock.
 - `ghcr.io/scorpiontaj/qanoun-web`: the web app. The API's address is read at runtime:
   `QANOUN_PUBLIC_API_URL` (what browsers call) and, if server rendering should use another
   route, `QANOUN_API_URL` (e.g. `http://api:8000` on a Docker network).
