@@ -122,3 +122,13 @@ def _no_rate_limits(monkeypatch):
 
     for limiter in (ratelimit.chat_limit, ratelimit.auth_limit):
         monkeypatch.setattr(limiter, "check", lambda key: None)
+
+
+@pytest.fixture(autouse=True)
+def query_log(monkeypatch):
+    """Capture chat query-log records instead of writing them to Postgres."""
+    from qanoun_api import querylog
+
+    records: list = []
+    monkeypatch.setattr(querylog, "write", lambda record: records.append(record))
+    return records

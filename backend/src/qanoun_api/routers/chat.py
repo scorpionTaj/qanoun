@@ -17,14 +17,17 @@ not contain the answer the model replies NO_ANSWER and the UI shows the abstenti
 import json
 import logging
 import time
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from concurrent.futures import ThreadPoolExecutor
 from typing import Literal
 
+import anyio
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
+from starlette.concurrency import iterate_in_threadpool
 
+from qanoun_api import querylog
 from qanoun_api.config import SETTINGS
 from qanoun_api.rag import answer as answer_mod
 from qanoun_api.rag import retrieval
@@ -93,7 +96,7 @@ def _sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
 
-def _chat_stream(req: ChatRequest) -> Iterator[str]:
+def _chat_events(req: ChatRequest) -> Iterator[tuple[str, dict]]:
     question = req.question.strip()
     variety = detect_variety(question)
     if _llm_override is not None:
@@ -104,7 +107,7 @@ def _chat_stream(req: ChatRequest) -> Iterator[str]:
                 get_router().get(req.provider)  # unknown or key-less provider → clear error now
             llm = get_router().bind(req.provider, req.model)
         except ProviderUnavailable as exc:
-            yield _sse("error", {"code": exc.kind, "message": str(exc)})
+            yield ("error", {"code": exc.kind, "message": str(exc)})
             return
     timings: dict[str, int] = {}
     clock = time.perf_counter()
@@ -118,13 +121,13 @@ def _chat_stream(req: ChatRequest) -> Iterator[str]:
     # The rewrite (an LLM call, Darija/Arabizi only) and the search for the original question
     # don't depend on each other: run them at the same time.
     needs_rewrite = variety in ("darija", "arabizi")
-    yield _sse("status", {"stage": "rewriting" if needs_rewrite else "searching"})
+    yield ("status", {"stage": "rewriting" if needs_rewrite else "searching"})
     rewriter = _rewriter or get_rewriter()
     history = [turn.model_dump() for turn in req.history]
     if history:
         # A follow-up is searched as a standalone question; the user's own wording still
         # drives the answer's language.
-        yield _sse("status", {"stage": "rewriting"})
+        yield ("status", {"stage": "rewriting"})
         try:
             standalone = condense(question, history, llm)
         except Exception:  # noqa: BLE001 — fall back to the literal follow-up
@@ -140,9 +143,9 @@ def _chat_stream(req: ChatRequest) -> Iterator[str]:
         except Exception:  # noqa: BLE001 — rewriting is an optimization; never block answering
             rewritten = standalone
         lap("rewrite")
-        yield _sse("meta", {"variety": variety, "rewritten": rewritten, "disclaimer": DISCLAIMER[variety]})
+        yield ("meta", {"variety": variety, "rewritten": rewritten, "disclaimer": DISCLAIMER[variety]})
         if needs_rewrite:
-            yield _sse("status", {"stage": "searching"})
+            yield ("status", {"stage": "searching"})
         try:
             result = original_future.result()
             if rewritten != standalone:
@@ -150,16 +153,16 @@ def _chat_stream(req: ChatRequest) -> Iterator[str]:
                 rewritten_result = retrieval.search(standalone, k=req.k, search_query=rewritten, **scope)
                 result = answer_mod.merge(result, rewritten_result, req.k)
         except Exception as exc:  # noqa: BLE001 — surfaced to the client as an SSE error event
-            yield _sse("error", {"code": "retrieval", "message": f"retrieval failed: {exc}"})
+            yield ("error", {"code": "retrieval", "message": f"retrieval failed: {exc}"})
             return
     lap("search")
 
-    yield _sse("sources", {"sources": [hit.as_dict() for hit in result.hits]})
+    yield ("sources", {"sources": [hit.as_dict() for hit in result.hits]})
     if not result.hits:
-        yield _sse("done", {"abstained": True, "cited": [], "text": ABSTENTION[variety]})
+        yield ("done", {"abstained": True, "cited": [], "text": ABSTENTION[variety]})
         return
 
-    yield _sse("status", {"stage": "answering"})
+    yield ("status", {"stage": "answering"})
     messages = build_messages(question, result.hits, variety, history, req.style, req.answer_language)
     answered_by: dict = {}
 
@@ -175,37 +178,73 @@ def _chat_stream(req: ChatRequest) -> Iterator[str]:
     try:
         for token in stream:
             if not chunks and answered_by:
-                yield _sse("model", answered_by)
+                yield ("model", answered_by)
             chunks.append(token)
-            yield _sse("token", {"t": token})
+            yield ("token", {"t": token})
     except Exception as exc:  # noqa: BLE001 — surfaced to the client as an SSE error event
         code = exc.kind if isinstance(exc, LLMError) else "error"
         if chunks:
             # The stream broke mid-answer: never present a truncated legal answer as complete.
             code = "interrupted"
-        yield _sse("error", {"code": code, "message": str(exc)[:600]})
+        yield ("error", {"code": code, "message": str(exc)[:600]})
         return
     lap("answer")
     log.info("chat timings ms %s via %s", timings, answered_by.get("model", "?"))
     text = strip_reasoning("".join(chunks)).strip()
     if not text:
-        yield _sse("error", {"code": "empty", "message": "the model returned an empty answer"})
+        yield ("error", {"code": "empty", "message": "the model returned an empty answer"})
         return
     if NO_ANSWER in text:
-        yield _sse("done", {"abstained": True, "cited": [], "text": ABSTENTION[variety],
+        yield ("done", {"abstained": True, "cited": [], "text": ABSTENTION[variety],
                             "timings": timings, **answered_by})
         return
-    yield _sse(
+    yield (
         "done",
         {"abstained": False, "cited": parse_citations(text, len(result.hits)), "text": text,
          "timings": timings, **answered_by},
     )
 
 
+def _chat_stream(req: ChatRequest, record: querylog.QueryRecord) -> Iterator[str]:
+    for event, data in _chat_events(req):
+        record.observe(event, data)
+        yield _sse(event, data)
+
+
+async def _logged_stream(req: ChatRequest) -> AsyncIterator[str]:
+    """Stream the answer, then log the request however the stream ended.
+
+    The sync stream runs in a worker thread; the log is written here, in `finally`, off the
+    event loop and shielded from cancellation. When the client goes away, Starlette either
+    cancels this coroutine or (ASGI 2.4 servers such as uvicorn) abandons it unclosed;
+    `_ClosingStreamingResponse` covers the second case.
+    """
+    record = querylog.QueryRecord(
+        question=req.question.strip(), scope_domain=req.domain, scope_group=req.group,
+        follow_up=bool(req.history),
+    )
+    try:
+        async for chunk in iterate_in_threadpool(_chat_stream(req, record)):
+            yield chunk
+    finally:
+        with anyio.CancelScope(shield=True):
+            await anyio.to_thread.run_sync(querylog.write, record)
+
+
+class _ClosingStreamingResponse(StreamingResponse):
+    """Always close the body iterator, so its `finally` runs even after a disconnect."""
+
+    async def __call__(self, scope, receive, send) -> None:
+        try:
+            await super().__call__(scope, receive, send)
+        finally:
+            await self.body_iterator.aclose()
+
+
 @router.post("/chat", dependencies=[Depends(chat_limit)])
 def chat(req: ChatRequest):
-    return StreamingResponse(
-        _chat_stream(req),
+    return _ClosingStreamingResponse(
+        _logged_stream(req),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

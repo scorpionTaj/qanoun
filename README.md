@@ -137,7 +137,7 @@ child *kafala* 15.01 (only a ministry circular), الحالة المدنية 37.
 |---|---|
 | `data/catalog/laws.yaml` | the list of laws: slugs, sha256, official source URLs, per-law article words |
 | `pipeline/` | fetch → parse (OCR fallback) → split into articles → chunk → embed → load; owns the DB schema |
-| `backend/` | FastAPI: `/api/laws` (+ amendments), `/api/search`, `/api/chat` (SSE), `/api/auth`, `/api/conversations`, `/api/analytics`; RAG in `rag/`, eval in `eval/` |
+| `backend/` | FastAPI: `/api/laws` (+ amendments), `/api/search`, `/api/chat` (SSE), `/api/auth`, `/api/conversations`, `/api/analytics` (+ admin `usage` from the query log); RAG in `rag/`, eval in `eval/` |
 | `frontend/` | Next.js 16 + HeroUI v3 + Tailwind 4 + next-intl (ar RTL default, fr, en) |
 | `data/eval/`, `docs/eval-report.md` | question sets (law- and article-level), run history, latest report |
 | `notebooks/` | EDA, classification, embedding map |
@@ -248,7 +248,10 @@ Signed in, conversations sync to the server (newest copy wins).
    account (admin): `make user EMAIL=you@your-domain`.
 
 Built in: per-IP rate limits (20 questions / min, 10 sign-in attempts / min), counted in
-Postgres so every API process and serverless instance shares them; scrypt password hashing, httpOnly session cookies stored only as hashes, a
+Postgres so every API process and serverless instance shares them; a query log of every
+question's outcome, provider and timings, without IPs or user ids (question text only with
+`QANOUN_LOG_QUESTIONS=true`; admins read abstention rate, p50/p95 latency and the questions
+the corpus could not answer at `GET /api/analytics/usage`); scrypt password hashing, httpOnly session cookies stored only as hashes, a
 CSRF guard (JSON-only writes from allowed origins), security headers on API and web, and
 container healthchecks.
 

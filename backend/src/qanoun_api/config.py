@@ -23,6 +23,7 @@ class Settings:
     allow_signup: bool = True  # public server: false, and create users with `make user`
     cookie_secure: bool = False  # true behind HTTPS (production)
     trust_proxy: bool = False  # rate-limit by X-Forwarded-For (only behind a proxy that sets it)
+    log_questions: bool = False  # keep question text in query_log (tell your users if on)
     cors_origins: tuple[str, ...] = ("http://localhost:3000", "http://127.0.0.1:3000")
     rewrite_cache: Path = Path("data/processed/rewrites.json")
 
@@ -38,6 +39,7 @@ class Settings:
             allow_signup=_flag("QANOUN_ALLOW_SIGNUP", True),
             cookie_secure=_flag("QANOUN_COOKIE_SECURE", False),
             trust_proxy=_flag("QANOUN_TRUST_PROXY", False),
+            log_questions=_flag("QANOUN_LOG_QUESTIONS", False),
             cors_origins=tuple(
                 o.strip().rstrip("/")
                 for o in os.environ.get(
