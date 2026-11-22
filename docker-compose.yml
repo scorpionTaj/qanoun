@@ -26,7 +26,11 @@ services:
       retries: 10
 
   api:
-    build: ./backend
+    build:
+      context: .  # the API image also needs pipeline/
+      dockerfile: backend/Dockerfile
+      args:
+        EXTRAS: models  # PyTorch for the default local embedder (BGE-M3)
     environment:
       QANOUN_DB_URL: postgresql+psycopg://qanoun:qanoun@db:5432/qanoun
       QANOUN_LLM_URL: ${QANOUN_LLM_URL:-http://host.docker.internal:1234/v1}
@@ -63,9 +67,9 @@ services:
   web:
     build: ./frontend
     environment:
+      # Server rendering reaches the API on the compose network; browsers on the host.
       QANOUN_API_URL: http://api:8000
-      # Browsers talk to the API from the host, so the frontend proxies through itself.
-      NEXT_PUBLIC_API_URL: http://localhost:8000
+      QANOUN_PUBLIC_API_URL: http://localhost:8000
     ports:
       - "3000:3000"
     depends_on:

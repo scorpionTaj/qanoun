@@ -10,7 +10,7 @@ import type {
   SearchResponse,
 } from "./types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { apiUrl } from "./api-url.ts";
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -19,7 +19,7 @@ export class ApiError extends Error {
 }
 
 async function get<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, { cache: "no-store" });
+  const response = await fetch(`${apiUrl()}${path}`, { cache: "no-store" });
   if (!response.ok) {
     throw new ApiError(response.status, `GET ${path} failed: ${response.status}`);
   }
@@ -40,7 +40,7 @@ export const api = {
   keywords: (domain?: string) =>
     get<KeywordCount[]>(`/api/analytics/keywords${domain ? `?domain=${domain}` : ""}`),
   search: async (body: { q: string; domain?: string; law_slug?: string; k?: number }) => {
-    const response = await fetch(`${API_URL}/api/search`, {
+    const response = await fetch(`${apiUrl()}/api/search`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),

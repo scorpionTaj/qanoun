@@ -85,7 +85,11 @@ jobs:
     env:
       QANOUN_DB_URL: postgresql://qanoun:qanoun@localhost:5432/qanoun
       QANOUN_CORS_ORIGINS: http://localhost:3000
-      NEXT_PUBLIC_API_URL: http://localhost:8000
+      # The web build carries no API URL: both are given at runtime, as with the published
+      # image (server rendering and browsers happen to use the same URL here).
+      QANOUN_API_URL: http://localhost:8000
+      QANOUN_PUBLIC_API_URL: http://localhost:8000
+      E2E_PUBLIC_API_URL: http://localhost:8000
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e

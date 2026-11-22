@@ -1,0 +1,21 @@
+# Build context is the repo root (the API image needs pipeline/ too): send only sources.
+**/.venv
+**/__pycache__
+**/*.egg-info
+**/.pytest_cache
+**/.ruff_cache
+**/node_modules
+**/.next
+**/.DS_Store
+**/test-results
+**/playwright-report
+.git
+.github
+.env
+.env.*
+!.env.example
+data
+docs
+notebooks
+deploy
+scripts
