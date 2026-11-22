@@ -47,3 +47,35 @@ def test_rerank_reorders_by_cross_encoder_score(monkeypatch):
     hits = [make_hit(number="132"), make_hit(number="136"), make_hit(number="133")]
     out = retrieval.rerank("عدة الحامل", hits, k=2)
     assert [h.article_number for h in out] == ["133", "132"]
+
+
+def test_dense_search_asks_hnsw_for_enough_candidates():
+    """pgvector's default ef_search (40) caps the dense channel below CANDIDATES (50) and
+    hurts recall; search() raises it for its own transaction only."""
+    from contextlib import contextmanager
+
+    from qanoun_api.rag import retrieval
+
+    calls: list[tuple] = []
+
+    class Conn:
+        @contextmanager
+        def transaction(self):
+            calls.append(("begin",))
+            yield
+            calls.append(("commit",))
+
+        def execute(self, sql, params=None):
+            calls.append(("sql", sql.strip().split()[0], params))
+
+            class Rows:
+                def fetchall(self):
+                    return []
+
+            return Rows()
+
+    retrieval._run(Conn(), "q", "q", {"n": retrieval.CANDIDATES})
+    assert retrieval.HNSW_EF_SEARCH >= retrieval.CANDIDATES
+    assert calls[0] == ("begin",) and calls[-1] == ("commit",)
+    assert calls[1] == ("sql", "SELECT", (str(retrieval.HNSW_EF_SEARCH),))  # set_config first
+    assert calls[2][1] == "WITH"  # then the hybrid query, in the same transaction
