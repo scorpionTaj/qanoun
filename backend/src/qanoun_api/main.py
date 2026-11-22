@@ -13,7 +13,6 @@ from fastapi.responses import RedirectResponse
 from qanoun_pipeline.load_db import ensure_schema
 
 from qanoun_api import __version__
-from qanoun_api.accounts import ensure_app_schema
 from qanoun_api.config import SETTINGS
 from qanoun_api.db import close_pool, db
 from qanoun_api.rag.retrieval import get_embedder
@@ -29,10 +28,11 @@ def _warm_up() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Schema lives in qanoun_pipeline.schema (single source of truth, idempotent).
+    # Schema lives in qanoun_pipeline.schema: numbered migrations, applied once each.
     with db() as conn:
-        ensure_schema(conn)
-        ensure_app_schema(conn)  # accounts + synced conversations
+        applied = ensure_schema(conn)
+    if applied:
+        logging.getLogger(__name__).info("applied schema migrations %s", applied)
     # Load the embedding model in the background: the API is up immediately, and the
     # first question no longer waits ~10-30 s for BGE-M3 to load.
     threading.Thread(target=_warm_up, name="embedder-warmup", daemon=True).start()

@@ -11,7 +11,7 @@ import psycopg
 from pgvector.psycopg import register_vector
 
 from qanoun_pipeline.catalog import LawMeta
-from qanoun_pipeline.schema import SCHEMA_SQL
+from qanoun_pipeline.schema import MIGRATION_LOCK_KEY, migrate
 
 
 def db_url(url: str) -> str:
@@ -21,8 +21,14 @@ def db_url(url: str) -> str:
 
 def prepare_connection(conn: psycopg.Connection) -> None:
     """Idempotent per-connection setup: make sure the vector extension exists, then bind
-    the pgvector adapters. Handles a fresh database (extension before registration)."""
-    conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
+    the pgvector adapters. Handles a fresh database (extension before registration).
+
+    Usually a single read. Only a fresh database creates the extension, under the migration
+    lock: `CREATE EXTENSION IF NOT EXISTS` alone is not safe against concurrent cold starts.
+    """
+    if not conn.execute("SELECT 1 FROM pg_extension WHERE extname = 'vector'").fetchone():
+        conn.execute("SELECT pg_advisory_xact_lock(%s)", (MIGRATION_LOCK_KEY,))
+        conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
     conn.commit()
     register_vector(conn)
 
@@ -40,9 +46,9 @@ class IngestCounts:
     chunks: int = 0
 
 
-def ensure_schema(conn: psycopg.Connection) -> None:
-    conn.execute(SCHEMA_SQL)
-    conn.commit()
+def ensure_schema(conn: psycopg.Connection) -> list[int]:
+    """Bring the database up to the latest schema (see qanoun_pipeline.schema)."""
+    return migrate(conn)
 
 
 def upsert_law(

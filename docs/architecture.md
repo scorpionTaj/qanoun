@@ -8,9 +8,11 @@
    anchors, eval expectations — resolves to `(law, article_number, page)`. Page-level RAG
    (as in darija-rag) cites pages nobody can verify quickly; article-level citations link
    straight to the text.
-2. **The pipeline owns the schema.** `pipeline/schema.py` holds the DDL; the pipeline applies
-   it idempotently on load and the API applies it at startup. One source of truth, no
-   drift; Alembic becomes worthwhile when migrations (not creations) start happening.
+2. **The pipeline owns the schema.** `pipeline/schema.py` holds every table (corpus and
+   accounts) as numbered migrations. `migrate()` applies the pending ones under an advisory
+   lock and records them in `schema_migrations`; the pipeline runs it before each load, the
+   API at startup, and `make migrate` on demand. One source of truth, no drift, and no ORM:
+   a shipped migration is never edited, the next number is added instead.
 3. **Index and query must normalize identically.** The same `normalize()` (diacritics,
    alef/ya/ta-marbuta folding, Arabic-Indic digits → ASCII) runs on documents before FTS
    indexing and on questions before FTS matching. Anything else silently kills recall.

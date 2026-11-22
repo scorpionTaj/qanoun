@@ -1,7 +1,7 @@
 """Optional accounts: users, sessions and their synced conversations.
 
-Application data, kept apart from the corpus schema (qanoun_pipeline.schema) so that
-re-ingesting laws can never touch it. Applied idempotently at API start-up.
+Application data, in tables apart from the corpus so that re-ingesting laws can never touch
+it. Their DDL is a migration in qanoun_pipeline.schema, like every other table.
 
 - Passwords: stdlib scrypt (memory-hard), per-user random salt, constant-time compare.
 - Sessions: a random token in an httpOnly cookie; only its SHA-256 is stored, so a database
@@ -15,41 +15,9 @@ from datetime import UTC, datetime, timedelta
 
 import psycopg
 
-APP_SCHEMA_SQL = """\
-CREATE TABLE IF NOT EXISTS users (
-    id             SERIAL PRIMARY KEY,
-    email          TEXT UNIQUE NOT NULL,          -- stored lower-cased
-    password_hash  TEXT NOT NULL,
-    is_admin       BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS sessions (
-    token_hash  TEXT PRIMARY KEY,
-    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    expires_at  TIMESTAMPTZ NOT NULL
-);
-CREATE INDEX IF NOT EXISTS sessions_user_idx ON sessions (user_id);
-
-CREATE TABLE IF NOT EXISTS conversations (
-    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    id          TEXT NOT NULL,                    -- client-generated UUID
-    title       TEXT NOT NULL DEFAULT '',
-    updated_at  BIGINT NOT NULL,                  -- client epoch ms (last write wins)
-    messages    JSONB NOT NULL,
-    PRIMARY KEY (user_id, id)
-);
-"""
-
 SESSION_DAYS = 30
 MIN_PASSWORD = 8
 _SCRYPT = {"n": 2**14, "r": 8, "p": 1, "dklen": 32}
-
-
-def ensure_app_schema(conn: psycopg.Connection) -> None:
-    conn.execute(APP_SCHEMA_SQL)
-    conn.commit()
 
 
 def hash_password(password: str) -> str:
