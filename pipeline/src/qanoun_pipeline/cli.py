@@ -273,7 +273,10 @@ def main(argv: list[str] | None = None) -> int:
     p_mig.set_defaults(func=run_migrations)
 
     args = parser.parse_args(argv)
-    if os.environ.get("QANOUN_DB_URL") and not any(a.startswith("--db-url") for a in (argv or [])):
+    # An explicit --db-url wins over QANOUN_DB_URL. argv is None when run from the command
+    # line: read sys.argv then, or the environment would silently override the flag.
+    given = sys.argv[1:] if argv is None else argv
+    if os.environ.get("QANOUN_DB_URL") and not any(a.startswith("--db-url") for a in given):
         args.db_url = os.environ["QANOUN_DB_URL"]
     return args.func(args)
 

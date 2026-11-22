@@ -69,3 +69,19 @@ def test_ingest_rejects_unknown_slugs_before_doing_anything():
 
     with pytest.raises(SystemExit, match="unknown slugs: \\['no-such-law'\\]"):
         cli.main(["ingest-all", "--skip-fetch", "--slugs", "family-code-ar,no-such-law"])
+
+
+def test_explicit_db_url_beats_the_environment(monkeypatch):
+    from qanoun_pipeline import cli
+
+    seen = {}
+    monkeypatch.setenv("QANOUN_DB_URL", "postgresql://env-db/x")
+    monkeypatch.setattr(cli, "show_summary", lambda args: seen.setdefault("url", args.db_url) and 0)
+    monkeypatch.setattr("sys.argv", ["qanoun_pipeline", "--db-url", "postgresql://flag-db/x", "summary"])
+    cli.main()  # as from the command line: argv=None
+    assert seen["url"] == "postgresql://flag-db/x"
+
+    seen.clear()
+    monkeypatch.setattr("sys.argv", ["qanoun_pipeline", "summary"])
+    cli.main()
+    assert seen["url"] == "postgresql://env-db/x"  # no flag: the environment applies
