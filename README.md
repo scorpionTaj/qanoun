@@ -220,7 +220,8 @@ This is how [qanoun-ma.vercel.app](https://qanoun-ma.vercel.app) runs, at no cos
 - **API:** a Vercel Python function in Paris (`cdg1`), built from
   [`deploy/vercel-api/`](deploy/vercel-api) with `QANOUN_DB_URL`, `QANOUN_JINA_KEY`, an LLM key
   (`QANOUN_GEMINI_KEY`), `QANOUN_EMBED_MODEL`, `QANOUN_CORS_ORIGINS`,
-  `QANOUN_ALLOW_SIGNUP=false`, `QANOUN_REWRITE_CACHE=/tmp/rewrites.json` and, for the build,
+  `QANOUN_ALLOW_SIGNUP=false`, `QANOUN_TRUST_PROXY=true` (rate limits per visitor, not per
+  Vercel proxy), `QANOUN_REWRITE_CACHE=/tmp/rewrites.json` and, for the build,
   `UV_NO_EDITABLE=1`. PyMuPDF is left out of the function: only ingestion reads PDFs.
 - **Web app:** a second Vercel project with `frontend/` as its root and `NEXT_PUBLIC_API_URL`
   pointing at the API.
@@ -246,8 +247,8 @@ Signed in, conversations sync to the server (newest copy wins).
 4. Load the corpus once: `make ingest` against the production database, then create the first
    account (admin): `make user EMAIL=you@your-domain`.
 
-Built in: per-IP rate limits (20 questions / min, 10 sign-in attempts / min; in memory, so
-one API process), scrypt password hashing, httpOnly session cookies stored only as hashes, a
+Built in: per-IP rate limits (20 questions / min, 10 sign-in attempts / min), counted in
+Postgres so every API process and serverless instance shares them; scrypt password hashing, httpOnly session cookies stored only as hashes, a
 CSRF guard (JSON-only writes from allowed origins), security headers on API and web, and
 container healthchecks.
 
@@ -308,8 +309,6 @@ container healthchecks.
   as a law text, so such questions abstain rather than guess.
 - **Homonyms** (كفالة = guarantee in the D.O.C. vs. child kafala) can pull the wrong articles
   unless the question is scoped to a domain or law.
-- **Rate limits are per API process** (in memory). Running several API replicas needs the
-  limit in the reverse proxy instead.
 - **Amendments are what the footnotes say**, not point-in-time versions: the text shown is
   the current consolidated one, and a few footnotes name no article.
 - **Dialect questions are still the weak spot**: with rewriting, Darija reaches 0.83 and

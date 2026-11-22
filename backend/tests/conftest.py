@@ -113,3 +113,12 @@ def parse_sse(body: str) -> list[tuple[str, dict]]:
         if name and data is not None:
             events.append((name, data))
     return events
+
+
+@pytest.fixture(autouse=True)
+def _no_rate_limits(monkeypatch):
+    """The app-wide limiters count in Postgres; API tests run without a database."""
+    from qanoun_api import ratelimit
+
+    for limiter in (ratelimit.chat_limit, ratelimit.auth_limit):
+        monkeypatch.setattr(limiter, "check", lambda key: None)

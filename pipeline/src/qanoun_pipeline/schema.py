@@ -103,6 +103,21 @@ CREATE TABLE IF NOT EXISTS conversations (
 
 MIGRATIONS: list[tuple[int, str, str]] = [
     (1, "base corpus and accounts schema", CORPUS_SQL + "\n" + APP_SQL),
+    (
+        2,
+        "shared rate-limit counters",
+        # UNLOGGED: no WAL, cheap writes; counters lost in a crash only reset the limits.
+        """
+        CREATE UNLOGGED TABLE rate_hits (
+            bucket        TEXT NOT NULL,
+            key           TEXT NOT NULL,
+            window_start  TIMESTAMPTZ NOT NULL,
+            count         INTEGER NOT NULL,
+            PRIMARY KEY (bucket, key, window_start)
+        );
+        CREATE INDEX rate_hits_window_idx ON rate_hits (window_start);
+        """,
+    ),
 ]
 
 # Arbitrary constant: serialises schema changes (and extension creation) across processes.
