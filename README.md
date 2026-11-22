@@ -238,6 +238,21 @@ Free-tier limits apply: Supabase pauses a project after a week without traffic (
 from the dashboard), Jina's free key covers a fixed number of tokens (each question uses a
 few dozen), and Gemini's free tier limits answers per minute and per day.
 
+### Prebuilt images
+
+Each release tag publishes two images to GitHub Container Registry, for amd64 and arm64:
+
+- `ghcr.io/scorpiontaj/qanoun-api`: the API, slim (no PyTorch), so it embeds questions through
+  Jina's API: set `QANOUN_EMBED_MODEL=jina-embeddings-v3` and `QANOUN_JINA_KEY`, plus
+  `QANOUN_DB_URL` and an LLM key. For the local BGE-M3 model, build it yourself with
+  `--build-arg EXTRAS=models` (the compose file does).
+- `ghcr.io/scorpiontaj/qanoun-web`: the web app. The API's address is read at runtime:
+  `QANOUN_PUBLIC_API_URL` (what browsers call) and, if server rendering should use another
+  route, `QANOUN_API_URL` (e.g. `http://api:8000` on a Docker network).
+
+The database must be loaded once with the same embedder (`make ingest`, or
+[`scripts/reembed.py`](scripts/reembed.py) for Jina).
+
 ### Your own server
 
 Accounts are optional: without one, everything works and conversations stay in the browser.
@@ -310,6 +325,9 @@ container healthchecks.
 - [x] CI on every push / pull request: ruff, both test suites (database tests against a
       real Postgres + pgvector), typecheck, production build, and a Playwright smoke test of
       the running API + web app (`.github/workflows/ci.yml`)
+- [x] Weekly retrieval regression gate on the live demo (`.github/workflows/eval.yml`)
+- [x] API and web images on GHCR for each release tag, amd64 + arm64; the web image takes
+      the API's address at runtime (`.github/workflows/release.yml`)
 - [x] Eval harness: 29 + 36 seed questions and the 264-question darija-rag set — hit@k / MRR
       per law, per article and per language, as typed and as /chat retrieves, run history,
       answers graded by a second provider
@@ -340,7 +358,7 @@ container healthchecks.
       *kafala* (15.01) — when published as texts on the portal or another official source
 - [ ] Reranker that improves MRR, not just hit@10 (fine-tune, or rerank only the top 10)
 - [ ] Point-in-time versions of amended articles
-- [ ] Password reset by email; publish Docker images from CI
+- [ ] Password reset by email
 
 Built by [scorpiontaj](https://github.com/scorpiontaj) — retrieval/eval patterns inherited
 from [darija-rag](https://github.com/scorpiontaj/darija-rag).

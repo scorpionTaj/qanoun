@@ -28,13 +28,13 @@ import { printAnswer } from "@/lib/export-answer";
 import { cn } from "@/lib/utils";
 import { ScopeSelect, type Scope } from "./scope-select";
 import { AiSourceSelect } from "./ai-source-select";
+import { apiUrl } from "@/lib/api-url";
 
 const ERROR_CODES = [
   "unreachable", "auth", "rate_limit", "unavailable", "model", "empty", "interrupted", "retrieval", "network",
 ];
 const STAGES = ["rewriting", "searching", "answering"] as const;
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export type OpenSource = (hit: SearchHit, citation: number) => void;
 
@@ -116,7 +116,7 @@ export function ChatPanel({
       try {
         const { provider, model } = loadChoice();
         const preferences = loadPreferences();
-        const response = await fetch(`${API_URL}/api/chat`, {
+        const response = await fetch(`${apiUrl()}/api/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

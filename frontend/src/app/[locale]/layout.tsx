@@ -12,6 +12,7 @@ import { FooterGate } from "@/components/layout/footer-gate";
 import { themeInitScript } from "@/lib/theme";
 import { ThemeSync } from "@/components/layout/theme-sync";
 import "../globals.css";
+import { publicApiUrlFromEnv, runtimeConfigScript } from "@/lib/api-url";
 
 const naskh = Noto_Naskh_Arabic({
   subsets: ["arabic"],
@@ -62,6 +63,7 @@ export default async function LocaleLayout({
   // reloads the document) and hard navigations keep the chosen theme, with no flash.
   const theme = (await cookies()).get("qanoun-theme")?.value === "dark" ? "dark" : "";
   const t = await getTranslations({ locale, namespace: "app" });
+  const publicApiUrl = publicApiUrlFromEnv();
 
   return (
     <html
@@ -77,6 +79,13 @@ export default async function LocaleLayout({
         <Script id="theme-init" strategy="beforeInteractive">
           {themeInitScript}
         </Script>
+        {/* The API's public URL from the runtime environment: one built image fits any
+            domain (see lib/api-url.ts). */}
+        {publicApiUrl && (
+          <Script id="runtime-config" strategy="beforeInteractive">
+            {runtimeConfigScript(publicApiUrl)}
+          </Script>
+        )}
       </head>
       <body
         className={`${naskh.variable} ${inter.variable} min-h-screen`}

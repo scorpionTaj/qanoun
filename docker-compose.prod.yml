@@ -24,11 +24,7 @@ services:
     restart: unless-stopped
 
   web:
-    build:
-      context: ./frontend
-      args:
-        NEXT_PUBLIC_API_URL: ${QANOUN_PUBLIC_API_URL:?set QANOUN_PUBLIC_API_URL, e.g. https://api.qanoun.example.com}
     environment:
-      NEXT_PUBLIC_API_URL: ${QANOUN_PUBLIC_API_URL}
+      QANOUN_PUBLIC_API_URL: ${QANOUN_PUBLIC_API_URL:?set QANOUN_PUBLIC_API_URL, e.g. https://api.qanoun.example.com}
     ports: !reset ["127.0.0.1:3000:3000"]
     restart: unless-stopped

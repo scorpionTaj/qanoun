@@ -2,7 +2,7 @@
 
 import type { Conversation } from "./conversations";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { apiUrl } from "./api-url.ts";
 
 export interface Me {
   user: { id: number; email: string; is_admin: boolean } | null;
@@ -10,7 +10,7 @@ export interface Me {
 }
 
 async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetch(`${apiUrl()}${path}`, {
     credentials: "include",
     ...init,
     headers: { "Content-Type": "application/json", ...(init.headers ?? {}) },

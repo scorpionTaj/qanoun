@@ -2,7 +2,8 @@
  * remembers WHICH configured provider and model to prefer, and sends those two ids with
  * each question. Nothing secret is ever stored here. */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { apiUrl } from "./api-url.ts";
+
 const STORAGE_KEY = "qanoun-llm-choice";
 const LEGACY_KEY = "qanoun-llm-settings"; // held a base URL + API key before keys moved to .env
 
@@ -76,13 +77,13 @@ async function json<T>(response: Response): Promise<T> {
 }
 
 export const llmApi = {
-  providers: () => fetch(`${API_URL}/api/llm/providers`).then((r) => json<ProvidersResponse>(r)),
+  providers: () => fetch(`${apiUrl()}/api/llm/providers`).then((r) => json<ProvidersResponse>(r)),
   models: (provider: string) =>
-    fetch(`${API_URL}/api/llm/providers/${encodeURIComponent(provider)}/models`).then((r) =>
+    fetch(`${apiUrl()}/api/llm/providers/${encodeURIComponent(provider)}/models`).then((r) =>
       json<{ recommended: string | null; models: string[] }>(r)
     ),
   test: (choice: LlmChoice) =>
-    fetch(`${API_URL}/api/llm/test`, {
+    fetch(`${apiUrl()}/api/llm/test`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(choice),

@@ -53,3 +53,13 @@ test("an unknown law is a 404, not a crash", async ({ page }) => {
   const response = await page.goto("/ar/laws/no-such-law");
   expect(response?.status()).toBe(404);
 });
+
+// The web build carries no API URL: the browser gets QANOUN_PUBLIC_API_URL at runtime.
+test("the browser calls the API at the URL configured at runtime", async ({ page }) => {
+  const expected = process.env.E2E_PUBLIC_API_URL;
+  test.skip(!expected, "set E2E_PUBLIC_API_URL to the web server's QANOUN_PUBLIC_API_URL");
+  const providers = page.waitForResponse((r) => r.url() === `${expected}/api/llm/providers`);
+  await page.goto("/ar/settings");
+  expect(await page.evaluate(() => window.__QANOUN_API_URL__)).toBe(expected);
+  expect((await providers).ok()).toBe(true);
+});
