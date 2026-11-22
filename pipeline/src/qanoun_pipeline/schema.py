@@ -118,6 +118,35 @@ MIGRATIONS: list[tuple[int, str, str]] = [
         CREATE INDEX rate_hits_window_idx ON rate_hits (window_start);
         """,
     ),
+    (
+        3,
+        "chat query log",
+        # One row per /api/chat request. No IP and no user id; the question text only when
+        # QANOUN_LOG_QUESTIONS is on. Rows older than the retention window are swept.
+        """
+        CREATE TABLE query_log (
+            id                  BIGSERIAL PRIMARY KEY,
+            ts                  TIMESTAMPTZ NOT NULL DEFAULT now(),
+            question_hash       TEXT NOT NULL,
+            question            TEXT,
+            variety             TEXT,
+            scope_domain        TEXT,
+            scope_group         TEXT,
+            follow_up           BOOLEAN NOT NULL DEFAULT FALSE,
+            outcome             TEXT NOT NULL,  -- answered | abstained | error | disconnected
+            error_code          TEXT,
+            provider            TEXT,
+            model               TEXT,
+            rewrite_ms          INTEGER,
+            search_ms           INTEGER,
+            answer_ms           INTEGER,
+            total_ms            INTEGER NOT NULL,
+            source_article_ids  INTEGER[] NOT NULL DEFAULT '{}',
+            cited               INTEGER[] NOT NULL DEFAULT '{}'
+        );
+        CREATE INDEX query_log_ts_idx ON query_log (ts);
+        """,
+    ),
 ]
 
 # Arbitrary constant: serialises schema changes (and extension creation) across processes.

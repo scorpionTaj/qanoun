@@ -50,6 +50,12 @@ def require_user(user: OptionalUser) -> dict:
 User = Annotated[dict, Depends(require_user)]
 
 
+def require_admin(user: User) -> dict:
+    if not user["is_admin"]:
+        raise HTTPException(403, "admin only")
+    return user
+
+
 class Credentials(BaseModel):
     email: str = Field(min_length=3, max_length=254)
     password: str = Field(min_length=accounts.MIN_PASSWORD, max_length=200)

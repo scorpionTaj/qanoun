@@ -1,12 +1,14 @@
-"""Analytics endpoints: corpus statistics for the data-science dashboard."""
+"""Analytics endpoints: corpus statistics for the data-science dashboard, and (admins only)
+usage of /api/chat from the query log."""
 
 import re
 import time
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from qanoun_pipeline.normalize import STOPWORDS
 
 from qanoun_api.db import db
+from qanoun_api.routers.auth import require_admin
 
 router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 
@@ -159,3 +161,76 @@ def _keywords(domain: str | None, limit: int) -> list[dict]:
         and not w.isdigit()
     ][:limit]
     return [{"token": w, "count": n} for w, n in filtered]
+
+
+_USAGE_SQL = """
+SELECT count(*),
+       count(*) FILTER (WHERE outcome = 'answered'),
+       count(*) FILTER (WHERE outcome = 'abstained'),
+       count(*) FILTER (WHERE outcome = 'error'),
+       count(*) FILTER (WHERE outcome = 'disconnected'),
+       percentile_cont(0.5) WITHIN GROUP (ORDER BY total_ms)
+           FILTER (WHERE outcome IN ('answered', 'abstained')),
+       percentile_cont(0.95) WITHIN GROUP (ORDER BY total_ms)
+           FILTER (WHERE outcome IN ('answered', 'abstained'))
+FROM query_log WHERE ts > now() - make_interval(days => %(days)s)
+"""
+
+_GROUPED_SQL = """
+SELECT {column}, count(*),
+       count(*) FILTER (WHERE outcome = 'abstained'),
+       count(*) FILTER (WHERE outcome = 'error')
+FROM query_log WHERE ts > now() - make_interval(days => %(days)s)
+GROUP BY 1 ORDER BY 2 DESC
+"""
+
+# Questions the corpus could not answer: the to-do list for new laws and eval cases.
+_ABSTAINED_SQL = """
+SELECT max(question), variety, count(*) AS n
+FROM query_log
+WHERE ts > now() - make_interval(days => %(days)s) AND outcome = 'abstained'
+GROUP BY question_hash, variety ORDER BY n DESC LIMIT 20
+"""
+
+
+def _rate(part: int, whole: int) -> float | None:
+    return round(part / whole, 3) if whole else None
+
+
+@router.get("/usage", dependencies=[Depends(require_admin)])
+def usage(days: int = Query(7, ge=1, le=90)):
+    """Chat usage over the last `days` (admins only): outcomes, latency, and where it fails."""
+    params = {"days": days}
+    with db() as conn:
+        total, answered, abstained, errors, disconnected, p50, p95 = conn.execute(
+            _USAGE_SQL, params
+        ).fetchone()
+        grouped = {
+            name: [
+                {"key": row[0], "questions": row[1], "abstained": row[2], "errors": row[3]}
+                for row in conn.execute(_GROUPED_SQL.format(column=column), params).fetchall()
+            ]
+            for name, column in (
+                ("by_variety", "variety"),
+                ("by_provider", "provider"),
+                ("by_error", "error_code"),
+            )
+        }
+        top_abstained = [
+            {"question": row[0], "variety": row[1], "count": row[2]}
+            for row in conn.execute(_ABSTAINED_SQL, params).fetchall()
+        ]
+    return {
+        "days": days,
+        "questions": total,
+        "outcomes": {"answered": answered, "abstained": abstained, "error": errors,
+                     "disconnected": disconnected},
+        "abstention_rate": _rate(abstained, answered + abstained),
+        "error_rate": _rate(errors, total),
+        "latency_ms": {"p50": round(p50) if p50 is not None else None,
+                       "p95": round(p95) if p95 is not None else None},
+        **grouped,
+        "by_error": [g for g in grouped["by_error"] if g["key"] is not None],
+        "top_abstained": top_abstained,
+    }
+
