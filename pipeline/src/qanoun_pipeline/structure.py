@@ -29,6 +29,44 @@ def arabic_header_re(words: tuple[str, ...] = DEFAULT_ARTICLE_WORDS) -> re.Patte
     return re.compile(rf"^\s*(?:{alts})\s*[:：]?\s*{_ARABIC_DIGITS}")
 
 
+# A header rebuilt from two lines may also be a reference that wrapped («… عليها في» /
+# «المادة» / «95»): accept it only when it moves the numbering forward by at most this much
+# (repealed articles leave small gaps), or is a sub-article of the current one.
+MAX_JOINED_GAP = 10
+
+
+def _lines(text: str, words: tuple[str, ...]):
+    """(line, joined) for each non-empty line. A header split over two lines is joined back:
+    some PDFs (the Arabic Commercial Code) put the word and its number on separate lines
+    («المادة» / «26»), which hid half that code's articles inside their neighbours."""
+    alts = "|".join(re.escape(w) for w in (*words, "Article", "ARTICLE"))
+    word_only = re.compile(rf"^\s*(?:{alts})\s*[:：]?\s*$")
+    pending = None
+    for raw in text.splitlines():
+        if not raw.strip():
+            continue
+        if pending is not None:
+            line, pending = pending, None
+            if re.match(r"\s*(?:[0-9٠-٩]|premier\b)", raw):
+                yield f"{line} {raw.strip()}", True
+                continue
+            yield line, False
+        if word_only.match(raw):
+            pending = raw.strip()
+            continue
+        yield raw, False
+    if pending is not None:
+        yield pending, False
+
+
+def _plausible_joined(base: int, has_suffix: bool, seen: list[int]) -> bool:
+    if not seen:
+        return True
+    if has_suffix:
+        return base == seen[-1]
+    return seen[-1] < base <= seen[-1] + MAX_JOINED_GAP
+
+
 @dataclass(frozen=True)
 class ArticleDraft:
     number: str
@@ -94,9 +132,7 @@ def segment(
             current = None
 
     for page in pages:
-        for line in page.text.splitlines():
-            if not line.strip():
-                continue
+        for line, joined in _lines(page.text, article_words):
             if (ar := arabic_header.match(line)) is not None:
                 digits = ar.group(1).translate(_DIGITS)
                 sub = ar.group(2) or ar.group(3)
@@ -111,6 +147,10 @@ def segment(
             base, trimmed = _repair_sequence(digits, seen_bases)
             suffix = f"-{sub.translate(_DIGITS)}" if sub and sub.isdigit() else "-bis" if sub else ""
             number = f"{base}{suffix}"
+            if joined and not _plausible_joined(base, bool(suffix), seen_bases):
+                target = current["text"] if current is not None else preamble_lines
+                target.append(line.strip())
+                continue
             if number in seen_numbers:
                 # Footnote text and amendment notes also start with "Article …". Keeping the
                 # first occurrence (the real header) leaves such lines in the article body.

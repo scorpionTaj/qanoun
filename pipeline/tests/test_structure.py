@@ -92,3 +92,39 @@ def test_segment_drops_duplicate_headers_as_body_text():
     assert len(report.articles) == 1
     assert "إشارة لاحقة" in report.articles[0].text
     assert any("duplicate" in w for w in report.warnings)
+
+
+# The Arabic Commercial Code's text layer puts the header word and its number on separate
+# lines; before the fix, half its articles were swallowed by their predecessors.
+SPLIT_HEADERS = """المادة
+25
+يجوز للتاجر أن يوجه اليمين إلى الطرف الآخر.
+المادة
+26
+يجب أن ترتب وتحفظ أصول المراسلات الواردة."""
+
+
+def test_header_split_over_two_lines_is_joined():
+    report = segment(pages(SPLIT_HEADERS))
+    assert [a.number for a in report.articles] == ["25", "26"]
+    assert "ترتب وتحفظ" in report.articles[1].text
+    assert "ترتب وتحفظ" not in report.articles[0].text
+
+
+def test_wrapped_reference_is_not_taken_for_a_header():
+    text = """المادة 40
+يطبق الجزاء المنصوص عليه في
+المادة
+12
+من هذا القانون.
+المادة
+41
+نص المادة الموالية."""
+    report = segment(pages(text))
+    assert [a.number for a in report.articles] == ["40", "41"]
+    assert "المادة 12" in report.articles[0].text  # kept as part of article 40
+
+
+def test_joined_headers_tolerate_a_small_gap_for_repealed_articles():
+    text = "المادة\n5\nأ.\nالمادة\n9\nب.\nالمادة\n90\nمرجع بعيد."
+    assert [a.number for a in segment(pages(text)).articles] == ["5", "9"]
