@@ -27,6 +27,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from qanoun_api.config import SETTINGS
+from qanoun_api.db import close_pool
 from qanoun_api.rag.answer import Answerer
 from qanoun_api.rag.llm import ChatModel
 from qanoun_api.rag.providers import get_router
@@ -185,6 +186,33 @@ def record_history(
     with path.open("a", encoding="utf-8") as f:
         f.write(json.dumps(entry) + "\n")
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+# What the regression gate compares (`--max-drop`).
+GATED_METRICS = (
+    "hit_rate", "mrr", "article_hit_rate", "article_mrr",
+    "page_hit_rate", "page_mrr", "cited_hit_rate", "cited_mrr",
+)
+_SETUP = ("k", "embedder", "reranker", "rewrite")
+
+
+def regressions(history: list[dict], max_drop: float) -> list[str]:
+    """Metrics of the newest run that fell more than `max_drop` below the previous run of
+    the same setup (k, embedder, reranker, rewrite). Empty when there is no such run."""
+    current = history[-1]
+    baseline = next(
+        (run for run in reversed(history[:-1]) if all(run.get(k) == current.get(k) for k in _SETUP)),
+        None,
+    )
+    if baseline is None:
+        print(f"gate: no earlier {current['embedder']} run with rewrite {current['rewrite']} to compare")
+        return []
+    return [
+        f"{metric} ({current['embedder']}, rewrite {current['rewrite']}): "
+        f"{baseline[metric]} → {current[metric]} (baseline {baseline['commit']})"
+        for metric in GATED_METRICS
+        if metric in baseline and metric in current and current[metric] < baseline[metric] - max_drop
+    ]
 
 
 _JUDGE_SYSTEM = (
@@ -411,7 +439,13 @@ def main(argv: list[str] | None = None) -> int:
         help="grade answers with this provider (gemini, openrouter, nvidia, local) instead of "
         "the answering one; it never falls back to another provider",
     )
+    parser.add_argument(
+        "--max-drop", type=float, default=None, metavar="X",
+        help="exit 1 if a retrieval metric is more than X below the previous run of the same "
+        "setup in --history (the CI regression gate)",
+    )
     args = parser.parse_args(argv)
+    failures: list[str] = []
 
     questions = load_questions(args.questions)
     article_questions = load_questions(args.articles) if args.articles.exists() else []
@@ -431,6 +465,8 @@ def main(argv: list[str] | None = None) -> int:
     metrics, page_metrics = retrieval_metrics(results), retrieval_metrics(page_runs["raw"])
     summarize("raw", metrics, page_metrics)
     history = record_history(args.history, metrics, args.k, page_metrics=page_metrics)
+    if args.max_drop is not None:
+        failures += regressions(history, args.max_drop)
 
     rewritten_metrics = None
     if args.rewrite or not args.retrieval_only:
@@ -446,6 +482,8 @@ def main(argv: list[str] | None = None) -> int:
         history = record_history(
             args.history, rewritten_metrics, args.k, rewrite=True, page_metrics=page_metrics
         )
+        if args.max_drop is not None:
+            failures += regressions(history, args.max_drop)
         if not args.retrieval_only:
             judge = None
             if args.judge:
@@ -460,8 +498,16 @@ def main(argv: list[str] | None = None) -> int:
         rewritten_metrics=rewritten_metrics, page_runs=page_runs, judge_label=args.judge,
     )
     print(f"report → {args.report}")
+    if failures:
+        print("retrieval regressed:\n  " + "\n  ".join(failures))
+        return 1
+    if args.max_drop is not None:
+        print(f"gate: no metric dropped more than {args.max_drop}")
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    finally:
+        close_pool()  # else the pool's worker threads hold the process open on exit
