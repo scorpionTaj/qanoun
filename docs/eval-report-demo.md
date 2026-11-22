@@ -1,7 +1,7 @@
 # Qanoun evaluation report
 
 - Questions: 65 (scored for retrieval: 26)
-- Law-level hit@10: **0.923** (MRR 0.856)
+- Law-level hit@10: **0.923** (MRR 0.837)
 - Article-level hit@10: **0.778** (MRR 0.584, 36 questions)
 
 ## History (last 10 runs)
@@ -15,6 +15,7 @@
 | 2026-11-12T03:50:09+00:00 | e2424fa | jina-embeddings-v3 | off | off | 0.923 / 0.856 | 0.778 / 0.584 | 0.746 / 0.607 | 0.712 / 0.553 |
 | 2026-11-12T03:54:20+00:00 | e2424fa | jina-embeddings-v3 | off | on | 1.0 / 0.896 | 0.833 / 0.609 | 0.894 / 0.688 | 0.869 / 0.629 |
 | 2026-11-22T20:34:31+00:00 | 7b27b4b | jina-embeddings-v3 | off | off | 0.923 / 0.856 | 0.778 / 0.584 | 0.746 / 0.609 | 0.712 / 0.555 |
+| 2026-11-22T23:33:49+00:00 | 2109587 | jina-embeddings-v3 | off | off | 0.923 / 0.837 | 0.778 / 0.584 | 0.742 / 0.605 | 0.708 / 0.552 |
 
 ## darija-rag question set (264 questions)
 
@@ -22,19 +23,19 @@ Ported from darija-rag (`scripts/port_darija_rag_eval.py`). **Page-level**: any 
 
 | Page-level | n | raw hit@10 / MRR |
 |---|---|---|
-| all | 264 | 0.746 / 0.609 |
-| msa | 117 | 0.94 / 0.789 |
-| darija | 59 | 0.576 / 0.437 |
+| all | 264 | 0.742 / 0.605 |
+| msa | 117 | 0.94 / 0.778 |
+| darija | 59 | 0.559 / 0.443 |
 | arabizi | 31 | 0.065 / 0.038 |
-| other | 57 | 0.895 / 0.73 |
+| other | 57 | 0.895 / 0.728 |
 
 | Cited article | n | raw hit@10 / MRR |
 |---|---|---|
-| all | 260 | 0.712 / 0.555 |
-| msa | 114 | 0.921 / 0.759 |
-| darija | 58 | 0.483 / 0.336 |
-| arabizi | 31 | 0.032 / 0.011 |
-| other | 57 | 0.895 / 0.667 |
+| all | 260 | 0.708 / 0.552 |
+| msa | 114 | 0.921 / 0.749 |
+| darija | 58 | 0.466 / 0.343 |
+| arabizi | 31 | 0.032 / 0.008 |
+| other | 57 | 0.895 / 0.666 |
 
 Page-level misses (raw):
 
@@ -46,6 +47,7 @@ Page-level misses (raw):
 - drag-q031 (msa): هل يمكن التنازل عن صفة الوارث للغير؟
 - drag-q035 (darija): واش الراجل يقدر يزوج على مراتو بلا ما يكون عندو الفلوس؟
 - drag-q047 (darija): راجلي مسافر وغبر عليا عامين، واش نقدر نطلق؟
+- drag-q049 (darija): المرا اللي مات ليها راجلها شحال كتبقى فالعدة؟
 - drag-q054 (darija): إلا تزوجت من بعد الطلاق واش غادي يحيدو ليا ولادي؟
 - drag-q062 (msa): إلى ماذا يرجع فيما لم يرد به نص في مدونة الأسرة؟
 - drag-q063 (arabizi): chno howa sen rochd f lmaghrib?
@@ -123,7 +125,7 @@ Page-level misses (raw):
 | labour-cdd-01 | msa | labour-code-ar, labour-code-fr | ✓ | 1.00 |
 | labour-leave-01 | msa | labour-code-ar, labour-code-fr | ✓ | 1.00 |
 | labour-dismiss-01 | msa | labour-code-ar, labour-code-fr | ✓ | 1.00 |
-| labour-salary-01 | darija | labour-code-ar, labour-code-fr | ✓ | 1.00 |
+| labour-salary-01 | darija | labour-code-ar, labour-code-fr | ✓ | 0.50 |
 | labour-try-01 | darija | labour-code-ar, labour-code-fr | ✓ | 1.00 |
 | labour-heures-01 | arabizi | labour-code-ar, labour-code-fr | ✗ | 0.00 |
 | labour-conge-fr-01 | other | labour-code-fr, labour-code-ar | ✓ | 1.00 |

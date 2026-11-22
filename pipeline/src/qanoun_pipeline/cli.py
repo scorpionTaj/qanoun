@@ -36,6 +36,12 @@ def ingest_all(args: argparse.Namespace) -> int:
         if unknown:
             sys.exit(f"unknown domains: {sorted(unknown)}")
         laws = [law for law in laws if law.domain in wanted]
+    if args.slugs:
+        wanted = {slug.strip() for slug in args.slugs.split(",") if slug.strip()}
+        unknown = wanted - {law.slug for law in laws}
+        if unknown:
+            sys.exit(f"unknown slugs: {sorted(unknown)}")
+        laws = [law for law in laws if law.slug in wanted]
     if args.limit:
         laws = laws[: args.limit]
     print(f"catalog: {len(laws)} file(s) selected")
@@ -252,6 +258,7 @@ def main(argv: list[str] | None = None) -> int:
     p_ingest = sub.add_parser("ingest-all", help="fetch → parse → structure → chunk → embed → load")
     p_ingest.add_argument("--skip-fetch", action="store_true", help="never hit the network")
     p_ingest.add_argument("--domains", help="comma-separated domain filter")
+    p_ingest.add_argument("--slugs", help="comma-separated law filter (re-ingest only these laws)")
     p_ingest.add_argument("--limit", type=int, help="only the first N catalog entries")
     p_ingest.add_argument("--chunk-size", type=int, default=chunk.DEFAULT_SIZE)
     p_ingest.add_argument("--chunk-overlap", type=int, default=chunk.DEFAULT_OVERLAP)
@@ -266,7 +273,10 @@ def main(argv: list[str] | None = None) -> int:
     p_mig.set_defaults(func=run_migrations)
 
     args = parser.parse_args(argv)
-    if os.environ.get("QANOUN_DB_URL") and not any(a.startswith("--db-url") for a in (argv or [])):
+    # An explicit --db-url wins over QANOUN_DB_URL. argv is None when run from the command
+    # line: read sys.argv then, or the environment would silently override the flag.
+    given = sys.argv[1:] if argv is None else argv
+    if os.environ.get("QANOUN_DB_URL") and not any(a.startswith("--db-url") for a in given):
         args.db_url = os.environ["QANOUN_DB_URL"]
     return args.func(args)
 

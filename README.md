@@ -67,7 +67,7 @@ Open http://localhost:3000 → you land on `/ar` (RTL). Switch to FR/EN in the h
 ## The corpus
 
 Ingested from the Ministry of Justice's official legal portal ([adala.justice.gov.ma](https://adala.justice.gov.ma)),
-**45 documents / 11,700+ articles across 13 domains**, each verified by sha256
+**45 documents / 12,500 articles across 13 domains**, each verified by sha256
 (see `data/catalog/laws.yaml`):
 
 | Domain | Laws (examples) |
@@ -285,7 +285,7 @@ container healthchecks.
 ### Done (November 2026)
 
 **Corpus & pipeline**
-- [x] 45 documents · 11,748 articles · 13,880 indexed passages · 13 domains · 1913–2023
+- [x] 45 documents · 12,500 articles · 14,365 indexed passages · 13 domains · 1913–2023
 - [x] 7 laws in both Arabic and French (38 AR + 7 FR documents), linked as one law in the UI
 - [x] sha256-verified fetch, OCR fallback for scanned PDFs, article segmentation with
       footnote/sub-article repair, BGE-M3 embeddings, Postgres/pgvector load
