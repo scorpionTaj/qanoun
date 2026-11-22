@@ -20,6 +20,12 @@ from qanoun_api.db import db
 
 RRF_K = 60
 CANDIDATES = 50  # per-channel candidate pool before fusion
+# HNSW returns at most ef_search rows (pgvector's default is 40, i.e. fewer than CANDIDATES)
+# and its recall grows with it. Legal passages embed close together, so the default misses
+# true neighbours. Measured on the demo (Jina, 13.9k chunks, freshly built index), recall@10
+# against an exact scan / median query time: 0.63 / 1 ms at 40, 0.91 / 3 ms at 200,
+# 1.00 / 5 ms at 400, and the exact scan itself takes 93 ms.
+HNSW_EF_SEARCH = 400
 RERANK_POOL = 30  # fused candidates the cross-encoder re-scores (when enabled)
 
 
@@ -194,7 +200,9 @@ def rerank(query: str, hits: list[Hit], k: int) -> list[Hit]:
 
 
 def _run(conn: psycopg.Connection, query: str, effective: str, params: dict) -> RetrievalResult:
-    rows = conn.execute(_SQL, params).fetchall()
+    with conn.transaction():  # set_config(..., true) lasts until the end of this transaction
+        conn.execute("SELECT set_config('hnsw.ef_search', %s, true)", (str(HNSW_EF_SEARCH),))
+        rows = conn.execute(_SQL, params).fetchall()
     hits = [
         Hit(
             law_slug=r[0], law_title=r[1], law_title_fr=r[2], group_slug=r[3], domain=r[4],

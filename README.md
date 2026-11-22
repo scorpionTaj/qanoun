@@ -192,7 +192,10 @@ answers graded. 5 were answered but not graded (the judge failed), 2 out-of-scop
 were correctly refused, and 3 abstention calls were wrong.
 
 Every run appends to `data/eval/history.jsonl` and the report (`docs/eval-report.md`) shows
-the trend, the per-language tables and the misses.
+the trend, the per-language tables and the misses. `--max-drop 0.02` turns a run into a gate:
+it exits 1 when a metric falls more than 0.02 below the previous run of the same setup.
+`.github/workflows/eval.yml` runs that gate on the live demo weekly, on demand, and on pull
+requests that touch retrieval, through a read-only database role.
 
 The opt-in reranker (`QANOUN_RERANKER=BAAI/bge-reranker-v2-m3`) was measured on the seed
 sets, as typed, at an earlier commit: article-level hit@10 0.833 → 0.889, MRR 0.668 → 0.623.

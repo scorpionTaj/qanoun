@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from qanoun_api.eval import run as run_mod
 from qanoun_api.eval.run import (
     QuestionResult,
     load_questions,
@@ -233,3 +234,28 @@ def test_a_failing_judge_is_recorded_not_raised():
             raise RuntimeError("provider unreachable")
 
     assert judge_answer(_Down(), "q", "a", ["source"]) == {"error": "judge failed: provider unreachable"}
+
+
+def _run(embedder="jina-embeddings-v3", rewrite="off", commit="c", **metrics):
+    base = {"k": 10, "embedder": embedder, "reranker": "off", "rewrite": rewrite, "commit": commit}
+    return base | {m: 0.8 for m in run_mod.GATED_METRICS} | metrics
+
+
+def test_gate_flags_drops_beyond_tolerance_only():
+    history = [_run(commit="base"), _run(mrr=0.79, page_hit_rate=0.77)]
+    failures = run_mod.regressions(history, max_drop=0.02)
+    assert len(failures) == 1 and failures[0].startswith("page_hit_rate") and "base" in failures[0]
+
+
+def test_gate_compares_with_the_same_setup():
+    history = [
+        _run(commit="jina"),
+        _run(embedder="BAAI/bge-m3", page_hit_rate=0.95, commit="bge"),  # different embedder
+        _run(rewrite="on", page_hit_rate=0.95, commit="rw"),  # different mode
+        _run(page_hit_rate=0.79),
+    ]
+    assert run_mod.regressions(history, max_drop=0.02) == []
+
+
+def test_gate_passes_without_a_baseline():
+    assert run_mod.regressions([_run(embedder="new-model")], max_drop=0.02) == []
