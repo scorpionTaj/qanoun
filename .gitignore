@@ -17,6 +17,9 @@ dist/
 # Node
 node_modules/
 .next/
+# Playwright outputs
+test-results/
+playwright-report/
 out/
 *.tsbuildinfo
 next-env.d.ts

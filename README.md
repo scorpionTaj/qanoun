@@ -149,6 +149,11 @@ More detail (design principles, retrieval SQL, prompt contract) in [docs/archite
 
 ```bash
 make test          # offline unit tests (models faked) + frontend typecheck and unit tests
+QANOUN_TEST_DB_URL=postgresql://qanoun:qanoun@localhost:5433/qanoun make test
+                   # + the tests that need Postgres (migrations, load, rate limit, query log)
+# browser smoke test: seed a fixture law, run the API and `npm run build && npm start`, then
+QANOUN_DB_URL=… uv run --project pipeline python scripts/seed_fixture.py
+cd frontend && npx playwright install chromium && npm run e2e
 make eval-retrieval  # questions searched as typed: hit@10 / MRR, no LLM (needs ingest)
 make eval-rewrite  # + retrieval as /chat does it: Darija/Arabizi rewritten to MSA (needs an LLM)
 make eval          # + grounded answers judged by an LLM; add a second provider as judge with
@@ -299,8 +304,9 @@ container healthchecks.
 **Quality**
 - [x] 81 backend + 47 pipeline + frontend unit tests (offline, models faked), ruff clean,
       strict typecheck
-- [x] CI on every push / pull request: ruff, both test suites, typecheck, production build
-      (`.github/workflows/ci.yml`)
+- [x] CI on every push / pull request: ruff, both test suites (database tests against a
+      real Postgres + pgvector), typecheck, production build, and a Playwright smoke test of
+      the running API + web app (`.github/workflows/ci.yml`)
 - [x] Eval harness: 29 + 36 seed questions and the 264-question darija-rag set — hit@k / MRR
       per law, per article and per language, as typed and as /chat retrieves, run history,
       answers graded by a second provider
