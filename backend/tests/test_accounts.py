@@ -41,10 +41,19 @@ def test_csrf_guard_requires_json_from_allowed_origin():
 
 @pytest.mark.skipif(not os.environ.get("QANOUN_TEST_DB_URL"), reason="QANOUN_TEST_DB_URL not set")
 def test_full_account_flow(monkeypatch):
+    from dataclasses import replace
+
     from fastapi.testclient import TestClient
 
-    monkeypatch.setenv("QANOUN_DB_URL", os.environ["QANOUN_TEST_DB_URL"])
+    from qanoun_api import db as db_module
     from qanoun_api.main import app
+
+    # SETTINGS was read at import: point the pool itself at the test database (setting
+    # QANOUN_DB_URL here would be too late and silently use the default one).
+    db_module.close_pool()
+    monkeypatch.setattr(
+        db_module, "SETTINGS", replace(db_module.SETTINGS, db_url=os.environ["QANOUN_TEST_DB_URL"])
+    )
 
     email = "flow-test@example.com"
     client = TestClient(app, headers={"origin": "http://localhost:3000"})

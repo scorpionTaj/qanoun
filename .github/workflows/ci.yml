@@ -1,5 +1,6 @@
-# Offline checks on every push and pull request: the same gates as `make test` + `make lint`
-# + a production build. No database, LLM or embedding model is needed (tests fake them).
+# Checks on every push and pull request: the same gates as `make test` + `make lint`, a
+# production build, the database tests against a real Postgres + pgvector, and a browser
+# smoke test of the running stack. No LLM or embedding model is needed (tests fake them).
 name: CI
 
 on:
@@ -15,6 +16,20 @@ jobs:
   python:
     name: Pipeline + API (pytest, ruff)
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: qanoun
+          POSTGRES_PASSWORD: qanoun
+          POSTGRES_DB: qanoun
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U qanoun" --health-interval 5s --health-timeout 3s
+          --health-retries 10
+    env:
+      # Turns on the tests that need a real database (migrations, load, rate limit, query log).
+      QANOUN_TEST_DB_URL: postgresql://qanoun:qanoun@localhost:5432/qanoun
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
@@ -51,3 +66,65 @@ jobs:
         env:
           # Server components fetch the API at request time only; the build needs no backend.
           NEXT_PUBLIC_API_URL: http://localhost:8000
+
+  e2e:
+    name: Browser smoke test (API + web + Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: qanoun
+          POSTGRES_PASSWORD: qanoun
+          POSTGRES_DB: qanoun
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U qanoun" --health-interval 5s --health-timeout 3s
+          --health-retries 10
+    env:
+      QANOUN_DB_URL: postgresql://qanoun:qanoun@localhost:5432/qanoun
+      QANOUN_CORS_ORIGINS: http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Seed the fixture law (also applies the migrations)
+        run: uv run --project pipeline python scripts/seed_fixture.py
+      - name: Start the API
+        run: |
+          uv run --project backend uvicorn qanoun_api.main:app --port 8000 > api.log 2>&1 &
+          for i in $(seq 60); do curl -sf localhost:8000/api/laws > /dev/null && exit 0; sleep 2; done
+          cat api.log; exit 1
+      - name: Build and start the web app
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+          npm start > ../web.log 2>&1 &
+          for i in $(seq 60); do curl -sf -o /dev/null localhost:3000/ar && exit 0; sleep 2; done
+          cat ../web.log; exit 1
+      - name: Playwright
+        working-directory: frontend
+        run: |
+          npx playwright install --with-deps chromium
+          npm run e2e
+      - name: Upload the report and server logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-report
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+            api.log
+            web.log
+          retention-days: 7
