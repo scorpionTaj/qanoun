@@ -139,17 +139,22 @@ def ingest_all(args: argparse.Namespace) -> int:
 def _process_file(meta: catalog.LawMeta, args: argparse.Namespace) -> tuple[structure.StructureReport, int]:
     """Read pages (text layer first; OCR as fallback) and segment into articles.
 
-    The OCR fallback fires on two signals: no articles at all, or a suspiciously low
-    article density — the labour-code Arabic PDF, for example, extracts 23 headers across
-    162 pages while the same text really has ~570 (the layer scrambles header lines). OCR
-    is only attempted when tesseract is installed.
+    The OCR fallback fires on three signals: no articles at all, a suspiciously low article
+    density (the labour-code Arabic PDF extracts 23 headers across 162 pages while the text
+    really has ~570), or articles that cover too little of their own numbering (that same
+    PDF yields 129 headers numbered up to ~440). OCR is only attempted when tesseract is
+    installed, and kept only when it finds more articles.
     """
     path = fetch.ensure_file(meta, RAW_DIR, verify_only=args.skip_fetch)
     ocr_lang = "ara" if meta.language == "ar" else "fra"
     pages = _read(path, ocr_lang)
     report = _try_segment(pages, meta.article_words)
-    if (report is None or len(report.articles) < _expected_articles(len(pages))) and shutil.which("tesseract"):
-        signal = "no articles" if report is None else f"only {len(report.articles)} articles in {len(pages)} pages"
+    weak = report is None or len(report.articles) < _expected_articles(len(pages)) or _coverage(report) < MIN_COVERAGE
+    if weak and shutil.which("tesseract"):
+        signal = (
+            "no articles" if report is None
+            else f"{len(report.articles)} articles in {len(pages)} pages, {_coverage(report):.0%} of their numbering"
+        )
         print(f"  {meta.slug}: {signal} in the text layer, falling back to OCR ({ocr_lang})")
         ocr_pages = _read(path, ocr_lang, force_ocr=True)
         ocr_report = _try_segment(ocr_pages, meta.article_words)
@@ -171,6 +176,17 @@ def _try_segment(pages: list[parse.Page], article_words: tuple[str, ...]) -> str
         return structure.segment(pages, article_words)
     except structure.StructureError:
         return None
+
+
+MIN_COVERAGE = 0.5
+
+
+def _coverage(report: structure.StructureReport) -> float:
+    """Share of the article numbers 1..N present, N being the 95th-percentile number (a few
+    glued-footnote numbers such as 292106 must not count as the law's length)."""
+    numbers = sorted(int(a.number.split("-")[0]) for a in report.articles)
+    top = numbers[int(0.95 * (len(numbers) - 1))]
+    return len(set(numbers)) / max(top, 1)
 
 
 def _expected_articles(page_count: int) -> int:
