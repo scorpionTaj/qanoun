@@ -62,3 +62,10 @@ def test_missing_required_field_reports_entry(tmp_path: Path):
     bad.write_text("- slug: x\n  domain: family\n  language: ar\n", encoding="utf-8")
     with pytest.raises(catalog.CatalogError, match="title_ar"):
         catalog.load(bad)
+
+
+def test_ingest_rejects_unknown_slugs_before_doing_anything():
+    from qanoun_pipeline import cli
+
+    with pytest.raises(SystemExit, match="unknown slugs: \\['no-such-law'\\]"):
+        cli.main(["ingest-all", "--skip-fetch", "--slugs", "family-code-ar,no-such-law"])
