@@ -502,3 +502,116 @@ entries:
   source_url: https://adala.justice.gov.ma/api/uploads/2026/03/19/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D8%A7%D9%84%D8%AA%D8%AD%D9%81%D9%8A%D8%B8%20%D8%A7%D9%84%D8%B9%D9%82%D8%A7%D8%B1%D9%8A-1773931844340.pdf
   sha256: 5756056853ee705c4b8c0b6bea58849d0898a695d3393f986122ec2a4dad5402
   article_words: الفصل,فصل
+
+# ── added 2026-11-23: constitution, consumers, companies, women, information, lawyers ──
+- slug: constitution-ar
+  group: constitution
+  title_ar: دستور المملكة المغربية
+  title_fr: Constitution du Royaume du Maroc
+  law_number: '2011'
+  year: 2011
+  domain: governance
+  language: ar
+  file: constitution-ar.pdf
+  article_words: الفصل,فصل
+  source_url: https://adala.justice.gov.ma/api/uploads/2024/01/30/%D8%A7%D9%84%D8%AF%D8%B3%D8%AA%D9%88%D8%B1-1706626006826.pdf
+  sha256: df3fa3c9547dabc2e69aa179b938ed583c9d462e592113304f2f7960efccc9e8
+- slug: constitution-fr
+  group: constitution
+  title_ar: دستور المملكة المغربية
+  title_fr: Constitution du Royaume du Maroc
+  law_number: '2011'
+  year: 2011
+  domain: governance
+  language: fr
+  file: constitution-fr.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2024/02/28/costitution-1709118294788.pdf
+  sha256: fd6f2f4c1cf16b707e963ca91bdd1baeac75a29ec250a0627888ecdb082722b5
+- slug: consumer-protection-ar
+  group: consumer-protection
+  title_ar: قانون تدابير حماية المستهلك
+  title_fr: Loi édictant des mesures de protection du consommateur
+  law_number: 31-08
+  year: 2011
+  domain: commercial
+  language: ar
+  file: consumer-protection-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2026/10/22/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.11.03%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2031.08%20%D8%A7%20%281%29-1792665155973.pdf
+  sha256: b8afc38e580eb8c829a5a38436dce1fcadbcefaf14bfa5628569f8a7a4a8a418
+- slug: consumer-protection-fr
+  group: consumer-protection
+  title_ar: قانون تدابير حماية المستهلك
+  title_fr: Loi édictant des mesures de protection du consommateur
+  law_number: 31-08
+  year: 2011
+  domain: commercial
+  language: fr
+  file: consumer-protection-fr.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2024/03/01/protection%20de%20consommateur-1709283839988.pdf
+  sha256: e4675bca2d24aeff8b96c76a3f8bc8668599d4810b8d804f9effe8cbcb4a5362
+- slug: companies-ar
+  group: companies-596
+  title_ar: قانون شركات التضامن والتوصية والمحاصة والشركة ذات المسؤولية المحدودة
+  title_fr: Loi relative aux SNC, SCS, SCA, SARL et sociétés en participation
+  law_number: 5-96
+  year: 1997
+  domain: commercial
+  language: ar
+  file: companies-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2025/12/03/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.97.49-1764751267036.pdf
+  sha256: 2bf5667686b560f248a618632d45d5feb5526e273329ecbd4e704a299a4ad1c6
+- slug: companies-fr
+  group: companies-596
+  title_ar: قانون شركات التضامن والتوصية والمحاصة والشركة ذات المسؤولية المحدودة
+  title_fr: Loi relative aux SNC, SCS, SCA, SARL et sociétés en participation
+  law_number: 5-96
+  year: 1997
+  domain: commercial
+  language: fr
+  file: companies-fr.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2024/03/26/LA%20SOCIETE%20EN%20NOM%20COLLECTIF-1711463631100.pdf
+  sha256: 45979305f86e277d896fe4ff6c9e3cb132ea71c1ee324dbdea3e7e01063b1be6
+- slug: violence-women-ar
+  group: violence-women
+  title_ar: قانون محاربة العنف ضد النساء
+  title_fr: Loi relative à la lutte contre les violences faites aux femmes
+  law_number: 103-13
+  year: 2018
+  domain: penal
+  language: ar
+  file: violence-women-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2026/10/20/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.18.19%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%20103.13%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D9%85%D8%AD%D8%A7%D8%B1%D8%A8%D8%A9%20%D8%A7%D9%84%D8%B9%D9%86%D9%81%20%D8%B6%D8%AF%20%D8%A7%D9%84%D9%86%D8%B3%D8%A7%D8%A1-1792507857329.pdf
+  sha256: a84c95260aa702726a2dbbb85aa989f4ab55f6f28bdb43abad435a9629f13ba2
+- slug: access-information-ar
+  group: access-information
+  title_ar: قانون الحق في الحصول على المعلومات
+  title_fr: Loi relative au droit d'accès à l'information
+  law_number: 31-13
+  year: 2018
+  domain: governance
+  language: ar
+  file: access-information-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2024/02/13/%D8%A7%D9%84%D8%AD%D9%82%20%D9%81%D9%8A%20%D8%A7%D9%84%D9%85%D8%B9%D9%84%D9%88%D9%85%D8%A7%D8%AA-1707831482089.pdf
+  sha256: fdd630f856121ec27c467d4cc0f214a8e1cf19dffb2e1eeb0352fd1faf34e078
+- slug: access-information-fr
+  group: access-information
+  title_ar: قانون الحق في الحصول على المعلومات
+  title_fr: Loi relative au droit d'accès à l'information
+  law_number: 31-13
+  year: 2018
+  domain: governance
+  language: fr
+  file: access-information-fr.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2025/10/27/Dahir%20n%C2%B0%201-18-15%20portant%20promulgation%20de%20la%20loi%20n%C2%B0%2031-13%20relative%20au%20droit%20d%27acc%C3%A8s%20%C3%A0%20l%27information-1761558922160.pdf
+  sha256: 0e487ee232cd227113771c6395f1c5a25b6d33e9c76b305bee8f0d679335c9c7
+- slug: legal-profession-ar
+  group: legal-profession
+  title_ar: قانون تنظيم مهنة المحاماة
+  title_fr: Loi organisant la profession d'avocat
+  law_number: 66-23
+  year: 2026
+  domain: justice
+  language: ar
+  file: legal-profession-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2026/09/22/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.26.75%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2066.23%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D8%AA%D9%86%D8%B8%D9%8A%D9%85%20%D9%85%D9%87%D9%86%D8%A9%20%D8%A7%D9%84%D9%85%D8%AD%D8%A7%D9%85%D8%A7%D8%A9-1790070416475.pdf
+  sha256: f450573b8566ad44dc790ad458c3f5c1b792c9adae27abf9b970f866e9d2b0ee
