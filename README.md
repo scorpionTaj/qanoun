@@ -179,8 +179,11 @@ what users get. The darija-rag set by language, page-level hit@10:
 
 **The live demo** embeds with `jina-embeddings-v3` instead of BGE-M3 (see Deploy). Measured
 the same way ([report](docs/eval-report-demo.md)), it is close: page-level hit@10 0.894 as
-/chat retrieves (Darija 0.864, Arabizi 0.774, MSA 0.940, French 0.895), cited article 0.869,
-and on the seed sets 1.000 for the right law and 0.833 for the exact article.
+/chat retrieves (Darija 0.898, Arabizi 0.871, MSA 0.940, French 0.895), cited article 0.873,
+and on the seed sets 1.000 for the right law and 0.778 for the exact article. (Re-measured on
+the 55-document corpus after the rewrite prompt stopped naming codes and adding boilerplate:
+Arabizi 0.774 → 0.871 and Darija 0.864 → 0.898 page-level; the exact-article seed set lost
+two Darija questions that sit near rank 10, 0.833 → 0.778.)
 
 The same questions scored 0.93 in [darija-rag](https://github.com/scorpionTaj/darija-rag)
 (Darija 0.95, Arabizi 0.90), on 8 documents and with a reranker. Here they compete with 45
