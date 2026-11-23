@@ -128,3 +128,30 @@ def test_wrapped_reference_is_not_taken_for_a_header():
 def test_joined_headers_tolerate_a_small_gap_for_repealed_articles():
     text = "المادة\n5\nأ.\nالمادة\n9\nب.\nالمادة\n90\nمرجع بعيد."
     assert [a.number for a in segment(pages(text)).articles] == ["5", "9"]
+
+
+# Right-to-left extraction splits a sub-article header over three lines and reverses it:
+# «الفصل 218-1» comes out «الفصل1» / «-» / «218» (the Penal Code's terrorism chapter).
+def test_three_line_sub_article_header_right_to_left():
+    text = "الفصل 218\nنص الفصل.\nالفصل1\n-\n218\nتعتبر الجرائم الآتية أفعالا إرهابية."
+    report = segment(pages(text), ("الفصل",))
+    assert [a.number for a in report.articles] == ["218", "218-1"]
+    assert "إرهابية" in report.articles[1].text and "إرهابية" not in report.articles[0].text
+
+
+def test_three_line_sub_article_header_in_reading_order():
+    text = "المادة 40\nنص.\nالمادة40\n-\n1\nيجوز لوكيل الملك."
+    assert [a.number for a in segment(pages(text)).articles] == ["40", "40-1"]
+
+
+def test_three_line_header_of_another_article_stays_body_text():
+    text = "المادة 40\nنص.\nالمادة5\n-\n90\nبقية النص."
+    report = segment(pages(text))
+    assert [a.number for a in report.articles] == ["40"]
+    assert "بقية النص" in report.articles[0].text
+
+
+def test_one_line_reversed_sub_article_is_reoriented():
+    # Insurance Code: «المادة4 - 10» right after article 10 is article 10-4
+    text = "المادة 10\nنص.\nالمادة4 - 10\nنص فرعي.\nالمادة 65 - 1\nلا علاقة."
+    assert [a.number for a in segment(pages(text)).articles][:2] == ["10", "10-4"]

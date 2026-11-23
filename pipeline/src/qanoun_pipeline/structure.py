@@ -35,28 +35,43 @@ def arabic_header_re(words: tuple[str, ...] = DEFAULT_ARTICLE_WORDS) -> re.Patte
 MAX_JOINED_GAP = 10
 
 
+# How a header line was rebuilt (None: read as is).
+JOINED = "joined"  # «المادة» / «26»: the word, then its number on the next line
+SPLIT_SUB = "split-sub"  # «الفصل1» / «-» / «218»: a sub-article over three lines, either order
+
+
 def _lines(text: str, words: tuple[str, ...]):
-    """(line, joined) for each non-empty line. A header split over two lines is joined back:
-    some PDFs (the Arabic Commercial Code) put the word and its number on separate lines
-    («المادة» / «26»), which hid half that code's articles inside their neighbours."""
+    """(line, how) for each non-empty line, with split headers joined back.
+
+    Some PDFs put the word and its number on separate lines («المادة» / «26»: half the
+    Arabic Commercial Code hid inside its neighbours). Right-to-left extraction also splits a
+    sub-article header over three lines and reverses it: «الفصل 218-1» comes out «الفصل1» /
+    «-» / «218», which read as article 1 (a duplicate, so its text joined article 218).
+    """
     alts = "|".join(re.escape(w) for w in (*words, "Article", "ARTICLE"))
     word_only = re.compile(rf"^\s*(?:{alts})\s*[:：]?\s*$")
-    pending = None
-    for raw in text.splitlines():
-        if not raw.strip():
+    word_number = re.compile(rf"^\s*((?:{alts}))\s*[:：]?\s*([0-9٠-٩]+)\s*$")
+    dash = re.compile(r"^\s*[-–]\s*$")
+    number = re.compile(r"^\s*([0-9٠-٩]+)\s*$")
+    lines = [raw for raw in text.splitlines() if raw.strip()]
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if (
+            (head := word_number.match(line)) is not None
+            and i + 2 < len(lines)
+            and dash.match(lines[i + 1])
+            and (tail := number.match(lines[i + 2])) is not None
+        ):
+            yield f"{head.group(1)} {head.group(2)} - {tail.group(1)}", SPLIT_SUB
+            i += 3
             continue
-        if pending is not None:
-            line, pending = pending, None
-            if re.match(r"\s*(?:[0-9٠-٩]|premier\b)", raw):
-                yield f"{line} {raw.strip()}", True
-                continue
-            yield line, False
-        if word_only.match(raw):
-            pending = raw.strip()
+        if word_only.match(line) and i + 1 < len(lines) and re.match(r"\s*(?:[0-9٠-٩]|premier\b)", lines[i + 1]):
+            yield f"{line.strip()} {lines[i + 1].strip()}", JOINED
+            i += 2
             continue
-        yield raw, False
-    if pending is not None:
-        yield pending, False
+        yield line, None
+        i += 1
 
 
 def _plausible_joined(base: int, has_suffix: bool, seen: list[int]) -> bool:
@@ -132,7 +147,7 @@ def segment(
             current = None
 
     for page in pages:
-        for line, joined in _lines(page.text, article_words):
+        for line, how in _lines(page.text, article_words):
             if (ar := arabic_header.match(line)) is not None:
                 digits = ar.group(1).translate(_DIGITS)
                 sub = ar.group(2) or ar.group(3)
@@ -144,10 +159,28 @@ def segment(
                 target.append(line.strip())
                 continue
             digits = "1" if digits == "premier" else digits
+            if how == SPLIT_SUB:
+                # A sub-article of the article in progress: «1 - 218» after 218 is 218-1
+                # (right-to-left order), «218 - 1» is the same in reading order.
+                first, second = int(digits), int(sub.translate(_DIGITS))
+                open_base = seen_bases[-1] if seen_bases else None
+                parent, child = (
+                    (second, first) if second == open_base else (first, second) if first == open_base else (None, None)
+                )
+                if parent is None:
+                    target = current["text"] if current is not None else preamble_lines
+                    target.append(line.strip())
+                    continue
+                digits, sub = str(parent), str(child)
+            elif sub and sub.isdigit() and seen_bases:
+                # Same reversal on one line: «المادة4 - 10» after article 10 is 10-4.
+                first, second = int(digits.translate(_DIGITS)), int(sub.translate(_DIGITS))
+                if second == seen_bases[-1] and first != seen_bases[-1]:
+                    digits, sub = str(second), str(first)
             base, trimmed = _repair_sequence(digits, seen_bases)
             suffix = f"-{sub.translate(_DIGITS)}" if sub and sub.isdigit() else "-bis" if sub else ""
             number = f"{base}{suffix}"
-            if joined and not _plausible_joined(base, bool(suffix), seen_bases):
+            if how == JOINED and not _plausible_joined(base, bool(suffix), seen_bases):
                 target = current["text"] if current is not None else preamble_lines
                 target.append(line.strip())
                 continue
