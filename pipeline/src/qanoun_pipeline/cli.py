@@ -14,7 +14,7 @@ import shutil
 import sys
 from pathlib import Path
 
-from qanoun_pipeline import catalog, chunk, load_db, parse, structure
+from qanoun_pipeline import catalog, chunk, load_db, parse, references, structure
 from qanoun_pipeline import embed as embed_mod
 from qanoun_pipeline.normalize import normalize
 from qanoun_pipeline.sources import fetch
@@ -138,6 +138,9 @@ def ingest_all(args: argparse.Namespace) -> int:
                 for i, c in enumerate(x for x in chunk_rows if x["law_slug"] == meta.slug)
             ]
             load_db.insert_chunks(conn, law_id, rows)
+        # Every law's links, not only the reloaded ones: links into a reloaded law come
+        # from the others, and its own outgoing links were deleted with its articles.
+        print(f"cross-references: {references.rebuild(conn)} links between articles")
         _print_summary(load_db.summary(conn))
     return 0
 
@@ -242,6 +245,14 @@ def show_summary(args: argparse.Namespace) -> int:
     return 0
 
 
+def rebuild_references(args: argparse.Namespace) -> int:
+    with load_db.connect(args.db_url) as conn:
+        load_db.ensure_schema(conn)
+        count = references.rebuild(conn)
+    print(f"cross-references: {count} links between articles")
+    return 0
+
+
 def run_migrations(args: argparse.Namespace) -> int:
     with load_db.connect(args.db_url) as conn:
         applied = load_db.ensure_schema(conn)
@@ -268,6 +279,9 @@ def main(argv: list[str] | None = None) -> int:
 
     p_sum = sub.add_parser("summary", help="what is currently in the database")
     p_sum.set_defaults(func=show_summary)
+
+    p_refs = sub.add_parser("refs", help="rebuild cross-references between articles (no re-ingest needed)")
+    p_refs.set_defaults(func=rebuild_references)
 
     p_mig = sub.add_parser("migrate", help="apply pending schema migrations")
     p_mig.set_defaults(func=run_migrations)

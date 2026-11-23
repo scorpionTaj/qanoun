@@ -39,10 +39,24 @@ export interface Amendments {
   articles: Record<string, string[]>; // article number → amending texts
 }
 
+/** An article another article cites, or is cited by (same law or another one). */
+export interface ArticleRef {
+  law_slug: string;
+  number: string;
+}
+
+/** Cross-references for a law's articles, keyed by article number. */
+export interface References {
+  cites: Record<string, ArticleRef[]>;
+  cited_by: Record<string, ArticleRef[]>;
+  laws: Record<string, { title_ar: string; title_fr: string | null }>; // the other laws named
+}
+
 export interface LawDetail extends LawSummary {
   preamble: string | null;
   warnings: string[];
   amendments: Amendments;
+  references?: References; // absent from an API that predates cross-references
   articles: Article[];
 }
 

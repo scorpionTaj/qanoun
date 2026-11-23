@@ -9,7 +9,7 @@ Re-running replaces the fixture law.
 
 import os
 
-from qanoun_pipeline import load_db
+from qanoun_pipeline import load_db, references
 from qanoun_pipeline.catalog import LawMeta
 from qanoun_pipeline.normalize import normalize
 
@@ -17,7 +17,8 @@ SLUG = "fixture-family-code-ar"
 ARTICLES = {
     "1": "يسمى هذا القانون مدونة الأسرة.",
     "4": "الزواج ميثاق تراض وترابط شرعي بين رجل وامرأة على وجه الدوام.",
-    "19": "تكتمل أهلية الزواج بإتمام الفتى والفتاة المتمتعين بقواهما العقلية ثمان عشرة سنة شمسية.",
+    "19": "تكتمل أهلية الزواج بإتمام الفتى والفتاة المتمتعين بقواهما العقلية ثمان عشرة سنة شمسية، "
+    "مع مراعاة أحكام المادة 4 أعلاه.",
 }
 
 
@@ -43,7 +44,8 @@ def main() -> None:
              "article_id": ids[n], "embedding": [1.0] + [0.0] * (dim - 1)}
             for n, text in ARTICLES.items()
         ])
-    print(f"seeded {SLUG}: {len(ARTICLES)} articles")
+        links = references.rebuild(conn)
+    print(f"seeded {SLUG}: {len(ARTICLES)} articles, {links} cross-reference(s)")
 
 
 if __name__ == "__main__":

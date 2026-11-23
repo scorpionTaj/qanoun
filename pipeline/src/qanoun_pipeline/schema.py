@@ -147,6 +147,22 @@ MIGRATIONS: list[tuple[int, str, str]] = [
         CREATE INDEX query_log_ts_idx ON query_log (ts);
         """,
     ),
+    (
+        4,
+        "article cross-references",
+        # Built by qanoun_pipeline.references.rebuild. The target is a law slug + article
+        # number (no foreign key), so links survive a re-ingest of the target law.
+        """
+        CREATE TABLE article_refs (
+            article_id       INTEGER NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+            target_law_slug  TEXT NOT NULL,
+            target_number    TEXT NOT NULL,
+            raw              TEXT NOT NULL,
+            PRIMARY KEY (article_id, target_law_slug, target_number)
+        );
+        CREATE INDEX article_refs_target_idx ON article_refs (target_law_slug, target_number);
+        """,
+    ),
 ]
 
 # Arbitrary constant: serialises schema changes (and extension creation) across processes.

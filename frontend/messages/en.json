@@ -181,7 +181,10 @@
     "amendmentsHint": "From the official text's own footnotes. Click an article to jump to it. This shows what was changed, not earlier versions.",
     "amendingText": "No. {ref}",
     "amendmentsGeneral": "Several provisions",
-    "amended": "Amended · {refs}"
+    "amended": "Amended · {refs}",
+    "refersTo": "Refers to",
+    "referencedBy": "Referenced by",
+    "moreRefs": "+{count} more"
   },
   "settings": {
     "title": "AI settings",

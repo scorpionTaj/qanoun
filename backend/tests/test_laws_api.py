@@ -104,3 +104,36 @@ def test_root_serves_swagger_ui_and_docs_redirects_there():
     assert moved.status_code == 307 and moved.headers["location"] == "/"
     schema = client.get("/openapi.json").json()
     assert "/api/chat" in schema["paths"] and "/" not in schema["paths"]
+
+
+def _refs_db(fake_db):
+    # FakeConn answers the first key found in the SQL: specific keys first
+    return fake_db({
+        "WHERE sl.slug": [("12", "family-code-ar", "4"), ("12", "civil-procedure-ar", "38")],
+        "WHERE r.target_law_slug": [("12", "family-code-ar", "16")],
+        "slug = ANY": [("civil-procedure-ar", "المسطرة المدنية", "Code de procédure civile"),
+                       ("family-code-ar", "مدونة الأسرة", "Code de la famille")],
+        "FROM laws WHERE slug": [DETAIL_ROW],
+        "JOIN laws l ON": [ARTICLE_ROW + ("family-code-ar", "مدونة الأسرة")],
+    })
+
+
+def test_law_detail_lists_references_per_article(fake_db):
+    _refs_db(fake_db)
+    refs = client.get("/api/laws/family-code-ar").json()["references"]
+    assert refs["cites"]["12"] == [
+        {"law_slug": "family-code-ar", "number": "4"},
+        {"law_slug": "civil-procedure-ar", "number": "38"},
+    ]
+    assert refs["cited_by"]["12"] == [{"law_slug": "family-code-ar", "number": "16"}]
+    assert refs["laws"]["civil-procedure-ar"]["title_ar"] == "المسطرة المدنية"  # titles for other laws
+
+
+def test_article_detail_carries_references_with_titles(fake_db):
+    _refs_db(fake_db)
+    data = client.get("/api/laws/family-code-ar/articles/12").json()
+    assert [(r["law_slug"], r["number"]) for r in data["cites"]] == [("family-code-ar", "4"), ("civil-procedure-ar", "38")]
+    assert data["cites"][1]["title_fr"] == "Code de procédure civile"
+    assert data["cited_by"] == [
+        {"law_slug": "family-code-ar", "number": "16", "title_ar": "مدونة الأسرة", "title_fr": "Code de la famille"}
+    ]

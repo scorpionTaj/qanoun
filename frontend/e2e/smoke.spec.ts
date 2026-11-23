@@ -63,3 +63,14 @@ test("the browser calls the API at the URL configured at runtime", async ({ page
   expect(await page.evaluate(() => window.__QANOUN_API_URL__)).toBe(expected);
   expect((await providers).ok()).toBe(true);
 });
+
+test("cross-references link both ways within the law", async ({ page }) => {
+  await page.goto(`/ar/laws/${LAW}`);
+  const citing = page.locator("#article-19");
+  await expect(citing.getByText("يحيل على")).toBeVisible();
+  await citing.getByRole("link", { name: "المادة 4" }).click();
+  await expect(page).toHaveURL(/#article-4$/);
+  const cited = page.locator("#article-4");
+  await expect(cited.getByText("محال عليها في")).toBeVisible();
+  await expect(cited.getByRole("link", { name: "المادة 19" })).toHaveAttribute("href", "#article-19");
+});

@@ -181,7 +181,10 @@
     "amendmentsHint": "مستخرجة من هوامش النص الرسمي. انقر على مادة للانتقال إليها. لا تُعرض الصيغ السابقة.",
     "amendingText": "رقم {ref}",
     "amendmentsGeneral": "مقتضيات متعددة",
-    "amended": "معدّلة · {refs}"
+    "amended": "معدّلة · {refs}",
+    "refersTo": "يحيل على",
+    "referencedBy": "محال عليها في",
+    "moreRefs": "و{count} أخرى"
   },
   "settings": {
     "title": "إعدادات الذكاء الاصطناعي",

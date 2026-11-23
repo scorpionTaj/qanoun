@@ -205,6 +205,7 @@ off by default.
 ## Common tasks
 
 ```bash
+uv run --project pipeline python -m qanoun_pipeline.cli refs   # rebuild cross-references (no re-ingest)
 make ingest-smoke                      # full pipeline without the embedding model download
 uv run --project pipeline python -m qanoun_pipeline.cli summary   # what's in the DB
 docker compose up --build              # full stack in containers (api :8000, web :3000)
@@ -314,6 +315,9 @@ container healthchecks.
       in-law search, text size, deep links to `#article-N`, copy citation
 - [x] Amendments: each law lists the amending texts named in its official footnotes, with
       links to the changed articles and an «Amended» badge on each
+- [x] Cross-references: under each article, the articles it cites and those that cite it,
+      within the law or in another one («المادة 53 أعلاه», «l'article 12 de la loi n° 70-03»);
+      about 6,400 links, rebuilt from the article text with `cli refs`
 - [x] Print / save as PDF: an answer with its question, cited articles and disclaimer
 - [x] Settings page: AI model, answer length and language, sources per answer, default
       search scope, export or delete conversations, optional account

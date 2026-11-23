@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { Button, Chip, SearchField, ToggleButton, ToggleButtonGroup, Tooltip } from "@heroui/react";
 import { Check, Copy, Link2 } from "lucide-react";
-import type { Article } from "@/lib/types";
-import { normalizeArabic } from "@/lib/utils";
+import { lawUrl } from "@/lib/api";
+import type { Article, ArticleRef, References } from "@/lib/types";
+import { lawTitle as titleIn, normalizeArabic } from "@/lib/utils";
+
+const MAX_REFS_SHOWN = 12;
 
 type FontSize = "sm" | "base" | "lg" | "xl";
 const SIZES: FontSize[] = ["sm", "base", "lg", "xl"];
@@ -16,13 +20,18 @@ export function ReaderClient({
   lawTitle,
   isArabic,
   amended = {},
+  lawSlug,
+  references,
 }: {
   articles: Article[];
   lawTitle: string;
   isArabic: boolean;
   amended?: Record<string, string[]>; // article number → amending texts
+  lawSlug: string;
+  references?: References;
 }) {
   const t = useTranslations("reader");
+  const locale = useLocale();
   const [fontSize, setFontSize] = useState<FontSize>("base");
   const [query, setQuery] = useState("");
   const [copied, setCopied] = useState<number | null>(null);
@@ -69,6 +78,27 @@ export function ReaderClient({
   };
 
   const articleLabel = (number: string) => (isArabic ? `المادة ${number}` : `Article ${number}`);
+
+  // Same law: jump within the page. Another law: open its reader at that article.
+  const refRow = (label: string, refs: ArticleRef[]) => (
+    <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+      <span className="text-muted">{label}</span>
+      {refs.slice(0, MAX_REFS_SHOWN).map((ref) => {
+        const other = ref.law_slug !== lawSlug ? references?.laws[ref.law_slug] : undefined;
+        const text = other ? `${articleLabel(ref.number)} — ${titleIn(other, locale)}` : articleLabel(ref.number);
+        return ref.law_slug === lawSlug ? (
+          <a key={`${ref.law_slug}#${ref.number}`} href={`#article-${encodeURIComponent(ref.number)}`} className="text-accent hover:underline">
+            {text}
+          </a>
+        ) : (
+          <Link key={`${ref.law_slug}#${ref.number}`} href={lawUrl(locale, ref.law_slug, ref.number)} className="text-accent hover:underline">
+            {text}
+          </Link>
+        );
+      })}
+      {refs.length > MAX_REFS_SHOWN && <span className="text-muted">{t("moreRefs", { count: refs.length - MAX_REFS_SHOWN })}</span>}
+    </p>
+  );
 
   return (
     <div>
@@ -158,6 +188,12 @@ export function ReaderClient({
             <p className="mt-3 whitespace-pre-line leading-[2]" dir={isArabic ? "rtl" : "ltr"} lang={isArabic ? "ar" : "fr"}>
               {article.text}
             </p>
+            {(references?.cites[article.number] || references?.cited_by[article.number]) && (
+              <div className="mt-3 flex flex-col gap-1 border-t border-separator pt-3 text-sm">
+                {references.cites[article.number] && refRow(t("refersTo"), references.cites[article.number])}
+                {references.cited_by[article.number] && refRow(t("referencedBy"), references.cited_by[article.number])}
+              </div>
+            )}
           </article>
         ))}
       </div>

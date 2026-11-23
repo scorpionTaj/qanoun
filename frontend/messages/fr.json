@@ -181,7 +181,10 @@
     "amendmentsHint": "D’après les notes de bas de page du texte officiel. Cliquez sur un article pour y aller. Les versions antérieures ne sont pas affichées.",
     "amendingText": "N° {ref}",
     "amendmentsGeneral": "Plusieurs dispositions",
-    "amended": "Modifié · {refs}"
+    "amended": "Modifié · {refs}",
+    "refersTo": "Renvoie à",
+    "referencedBy": "Cité par",
+    "moreRefs": "+{count} autres"
   },
   "settings": {
     "title": "Paramètres IA",

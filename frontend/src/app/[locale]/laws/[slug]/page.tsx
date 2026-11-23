@@ -108,7 +108,14 @@ export default async function LawReaderPage({
       {law.amendments && <Amendments data={law.amendments} />}
 
       <div className="mt-8">
-        <ReaderClient articles={law.articles} lawTitle={title} isArabic={isArabic} amended={law.amendments?.articles} />
+        <ReaderClient
+          articles={law.articles}
+          lawTitle={title}
+          isArabic={isArabic}
+          amended={law.amendments?.articles}
+          lawSlug={law.slug}
+          references={law.references}
+        />
       </div>
     </div>
   );
