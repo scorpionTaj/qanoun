@@ -67,24 +67,24 @@ Open http://localhost:3000 → you land on `/ar` (RTL). Switch to FR/EN in the h
 ## The corpus
 
 Ingested from the Ministry of Justice's official legal portal ([adala.justice.gov.ma](https://adala.justice.gov.ma)),
-**45 documents / 12,500 articles across 13 domains**, each verified by sha256
+**55 documents / 14,196 articles across 13 domains**, each verified by sha256
 (see `data/catalog/laws.yaml`):
 
 | Domain | Laws (examples) |
 |---|---|
 | civil | قانون الالتزامات والعقود (D.O.C., ar+fr) |
 | family | مدونة الأسرة (ar+fr), صندوق التكافل العائلي |
-| penal | مجموعة القانون الجنائي (ar+fr), مكافحة غسل الأموال |
-| justice | المسطرة المدنية (ar+fr), المسطرة الجنائية, التنظيم القضائي, قضاء القرب, المحاكم المالية |
+| penal | مجموعة القانون الجنائي (ar+fr), مكافحة غسل الأموال, محاربة العنف ضد النساء (103.13) |
+| justice | المسطرة المدنية (ar+fr), المسطرة الجنائية, التنظيم القضائي, قضاء القرب, المحاكم المالية, مهنة المحاماة (66.23) |
 | labour | مدونة الشغل (ar+fr), العمال المنزليين, حوادث الشغل |
-| commercial | مدونة التجارة (ar+fr), شركات المساهمة, المنافسة, المقاول الذاتي, ميثاق الاستثمار (03.22) |
+| commercial | مدونة التجارة (ar+fr), شركات المساهمة, الشركات الأخرى (5.96, ar+fr), حماية المستهلك (31.08, ar+fr), المنافسة, المقاول الذاتي, ميثاق الاستثمار (03.22) |
 | education | التعليم العالي, التعليم المدرسي الخصوصي (06.00), دور الحضانة الخاصة |
 | nationality | قانون الجنسية (ar+fr) |
 | social | مدونة التأمينات |
 | housing | القانون 67.12 المتعلق بالكراء, كراء المحلات التجارية |
 | transport | مدونة السير على الطرق (52.05) |
 | property | الحقوق العينية, التعمير, الملكية المشتركة, ظهير التحفيظ العقاري (1913, consolidated) |
-| governance | الجمعيات, الصحافة والنشر, النقابات, حماية المعطيات الشخصية, الأوقاف, الأجانب, تحصيل الديون العمومية |
+| governance | الدستور (2011, ar+fr), الحق في الحصول على المعلومات (31.13, ar+fr), الجمعيات, الصحافة والنشر, النقابات, حماية المعطيات الشخصية, الأوقاف, الأجانب, تحصيل الديون العمومية |
 
 Bilingual laws carry both AR and FR editions as separate documents (`group` links them in
 the UI). Scanned PDFs (الجنسية، الجمعيات، النقابات، التنظيم القضائي) are OCR'd
@@ -290,8 +290,8 @@ container healthchecks.
 ### Done (November 2026)
 
 **Corpus & pipeline**
-- [x] 45 documents · 12,500 articles · 14,365 indexed passages · 13 domains · 1913–2023
-- [x] 7 laws in both Arabic and French (38 AR + 7 FR documents), linked as one law in the UI
+- [x] 55 documents · 14,196 articles · 16,003 indexed passages · 13 domains · 1913–2026
+- [x] 11 laws in both Arabic and French (44 AR + 11 FR documents), linked as one law in the UI
 - [x] sha256-verified fetch, OCR fallback for scanned PDFs, article segmentation with
       footnote/sub-article repair, BGE-M3 embeddings, Postgres/pgvector load
 
@@ -321,7 +321,7 @@ container healthchecks.
       links to the changed articles and an «Amended» badge on each
 - [x] Cross-references: under each article, the articles it cites and those that cite it,
       within the law or in another one («المادة 53 أعلاه», «l'article 12 de la loi n° 70-03»);
-      about 6,400 links, rebuilt from the article text with `cli refs`
+      about 7,300 links, rebuilt from the article text with `cli refs`
 - [x] Print / save as PDF: an answer with its question, cited articles and disclaimer
 - [x] Settings page: AI model, answer length and language, sources per answer, default
       search scope, export or delete conversations, optional account

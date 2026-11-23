@@ -16,6 +16,7 @@
 | 2026-11-12T03:54:20+00:00 | e2424fa | jina-embeddings-v3 | off | on | 1.0 / 0.896 | 0.833 / 0.609 | 0.894 / 0.688 | 0.869 / 0.629 |
 | 2026-11-22T20:34:31+00:00 | 7b27b4b | jina-embeddings-v3 | off | off | 0.923 / 0.856 | 0.778 / 0.584 | 0.746 / 0.609 | 0.712 / 0.555 |
 | 2026-11-22T23:33:49+00:00 | 2109587 | jina-embeddings-v3 | off | off | 0.923 / 0.837 | 0.778 / 0.584 | 0.742 / 0.605 | 0.708 / 0.552 |
+| 2026-11-23T01:08:35+00:00 | 9ae1331 | jina-embeddings-v3 | off | off | 0.923 / 0.837 | 0.778 / 0.584 | 0.742 / 0.609 | 0.7 / 0.554 |
 
 ## darija-rag question set (264 questions)
 
@@ -23,19 +24,19 @@ Ported from darija-rag (`scripts/port_darija_rag_eval.py`). **Page-level**: any 
 
 | Page-level | n | raw hit@10 / MRR |
 |---|---|---|
-| all | 264 | 0.742 / 0.605 |
-| msa | 117 | 0.94 / 0.778 |
+| all | 264 | 0.742 / 0.609 |
+| msa | 117 | 0.94 / 0.782 |
 | darija | 59 | 0.559 / 0.443 |
 | arabizi | 31 | 0.065 / 0.038 |
-| other | 57 | 0.895 / 0.728 |
+| other | 57 | 0.895 / 0.735 |
 
 | Cited article | n | raw hit@10 / MRR |
 |---|---|---|
-| all | 260 | 0.708 / 0.552 |
-| msa | 114 | 0.921 / 0.749 |
+| all | 260 | 0.7 / 0.554 |
+| msa | 114 | 0.912 / 0.752 |
 | darija | 58 | 0.466 / 0.343 |
 | arabizi | 31 | 0.032 / 0.008 |
-| other | 57 | 0.895 / 0.666 |
+| other | 57 | 0.877 / 0.671 |
 
 Page-level misses (raw):
 
@@ -112,7 +113,7 @@ Page-level misses (raw):
 
 | id | variety | expected | hit | rr |
 |---|---|---|---|---|
-| moudawana-marriage-01 | msa | family-code-ar, family-code-fr | ✓ | 0.14 |
+| moudawana-marriage-01 | msa | family-code-ar, family-code-fr | ✓ | 0.12 |
 | moudawana-fiance-01 | msa | family-code-ar, family-code-fr | ✓ | 1.00 |
 | moudawana-sadaq-01 | msa | family-code-ar, family-code-fr | ✓ | 1.00 |
 | moudawana-divorce-01 | msa | family-code-ar, family-code-fr | ✓ | 1.00 |
