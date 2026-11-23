@@ -76,6 +76,52 @@ def list_laws(
     ]
 
 
+# Links whose target article exists now (they are stored as law slug + number, so a target
+# law can be re-ingested without losing them). Source and target in the reading order.
+_CITES_SQL = """
+SELECT sa.number, r.target_law_slug, r.target_number
+FROM article_refs r
+JOIN articles sa ON sa.id = r.article_id
+JOIN laws sl ON sl.id = sa.law_id
+JOIN laws tl ON tl.slug = r.target_law_slug
+JOIN articles ta ON ta.law_id = tl.id AND ta.number = r.target_number
+WHERE sl.slug = %(slug)s {article_filter}
+ORDER BY sa.ordinal, tl.slug <> sl.slug, ta.ordinal
+"""
+
+_CITED_BY_SQL = """
+SELECT r.target_number, sl.slug, sa.number
+FROM article_refs r
+JOIN articles sa ON sa.id = r.article_id
+JOIN laws sl ON sl.id = sa.law_id
+JOIN laws tl ON tl.slug = r.target_law_slug
+JOIN articles ta ON ta.law_id = tl.id AND ta.number = r.target_number
+WHERE r.target_law_slug = %(slug)s {article_filter}
+ORDER BY ta.ordinal, sl.slug <> r.target_law_slug, sl.slug, sa.ordinal
+"""
+
+
+def _law_titles(conn, slugs: set[str]) -> dict[str, dict]:
+    if not slugs:
+        return {}
+    rows = conn.execute(
+        "SELECT slug, title_ar, title_fr FROM laws WHERE slug = ANY(%(slugs)s)", {"slugs": list(slugs)}
+    ).fetchall()
+    return {row[0]: {"title_ar": row[1], "title_fr": row[2]} for row in rows}
+
+
+def _references(conn, slug: str) -> dict:
+    """Per article number: what it cites and what cites it (same law or another)."""
+    cites: dict[str, list[dict]] = {}
+    for number, law, target in conn.execute(_CITES_SQL.format(article_filter=""), {"slug": slug}).fetchall():
+        cites.setdefault(number, []).append({"law_slug": law, "number": target})
+    cited_by: dict[str, list[dict]] = {}
+    for number, law, source in conn.execute(_CITED_BY_SQL.format(article_filter=""), {"slug": slug}).fetchall():
+        cited_by.setdefault(number, []).append({"law_slug": law, "number": source})
+    others = {ref["law_slug"] for refs in (*cites.values(), *cited_by.values()) for ref in refs} - {slug}
+    return {"cites": cites, "cited_by": cited_by, "laws": _law_titles(conn, others)}
+
+
 @router.get("/laws/{slug}")
 def law_detail(slug: str):
     with db() as conn:
@@ -97,12 +143,14 @@ def law_detail(slug: str):
             """,
             {"slug": slug},
         ).fetchall()
+        references = _references(conn, slug)
     return {
         "slug": row[0], "group_slug": row[1], "title_ar": row[2], "title_fr": row[3],
         "law_number": row[4], "year": row[5], "domain": row[6], "language": row[7],
         "source_url": row[8], "page_count": row[9], "article_count": row[10],
         "preamble": row[11], "warnings": row[12],
         "amendments": summarize([row[11] or "", *(a[3] for a in articles)]),
+        "references": references,
         "articles": [
             {
                 "id": a[0], "number": a[1], "ordinal": a[2], "text": a[3],
@@ -124,9 +172,26 @@ def article_detail(slug: str, number: str):
             """,
             {"slug": slug, "number": number},
         ).fetchone()
-    if row is None:
-        raise HTTPException(404, f"unknown article {slug}#{number}")
+        if row is None:
+            raise HTTPException(404, f"unknown article {slug}#{number}")
+        params = {"slug": slug, "number": number}
+        cites = [
+            {"law_slug": law, "number": target}
+            for _, law, target in conn.execute(
+                _CITES_SQL.format(article_filter="AND sa.number = %(number)s"), params
+            ).fetchall()
+        ]
+        cited_by = [
+            {"law_slug": law, "number": source}
+            for _, law, source in conn.execute(
+                _CITED_BY_SQL.format(article_filter="AND r.target_number = %(number)s"), params
+            ).fetchall()
+        ]
+        titles = _law_titles(conn, {ref["law_slug"] for ref in (*cites, *cited_by)} | {slug})
+    for ref in (*cites, *cited_by):
+        ref.update(titles.get(ref["law_slug"], {}))
     return {
         "id": row[0], "number": row[1], "ordinal": row[2], "text": row[3],
         "page_start": row[4], "page_end": row[5], "law_slug": row[6], "law_title": row[7],
+        "cites": cites, "cited_by": cited_by,
     }
