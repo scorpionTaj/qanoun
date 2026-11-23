@@ -113,6 +113,27 @@ CANDIDATES = [
      "uploads/2026/02/12/ظـهـيـر شريف رقم 1.22.76 بتنفيذ القانون - الإطار رقم 03.22 بمثابة ميثاق الاستثمار-1770890118949.pdf"),
     ("land-registration-ar", "land-registration", "ظهير التحفيظ العقاري", None, "1913", 1913, "property", "ar",
      "uploads/2026/03/19/ظهير شريف  المتعلق بالتحفيظ العقاري-1773931844340.pdf"),
+    # ── added 2026-11-23: constitution, consumers, companies, women, information, lawyers ──
+    ("constitution-ar", "constitution", "دستور المملكة المغربية", "Constitution du Royaume du Maroc", "2011", 2011, "governance", "ar",
+     "uploads/2024/01/30/الدستور-1706626006826.pdf"),
+    ("constitution-fr", "constitution", "دستور المملكة المغربية", "Constitution du Royaume du Maroc", "2011", 2011, "governance", "fr",
+     "uploads/2024/02/28/costitution-1709118294788.pdf"),
+    ("consumer-protection-ar", "consumer-protection", "قانون تدابير حماية المستهلك", "Loi édictant des mesures de protection du consommateur", "31-08", 2011, "commercial", "ar",
+     "uploads/2026/10/22/ظهير شريف رقم 1.11.03 بتنفيذ القانون رقم 31.08 ا (1)-1792665155973.pdf"),
+    ("consumer-protection-fr", "consumer-protection", "قانون تدابير حماية المستهلك", "Loi édictant des mesures de protection du consommateur", "31-08", 2011, "commercial", "fr",
+     "uploads/2024/03/01/protection de consommateur-1709283839988.pdf"),
+    ("companies-ar", "companies-596", "قانون شركات التضامن والتوصية والمحاصة والشركة ذات المسؤولية المحدودة", "Loi relative aux SNC, SCS, SCA, SARL et sociétés en participation", "5-96", 1997, "commercial", "ar",
+     "uploads/2025/12/03/ظهير شريف رقم 1.97.49-1764751267036.pdf"),
+    ("companies-fr", "companies-596", "قانون شركات التضامن والتوصية والمحاصة والشركة ذات المسؤولية المحدودة", "Loi relative aux SNC, SCS, SCA, SARL et sociétés en participation", "5-96", 1997, "commercial", "fr",
+     "uploads/2024/03/26/LA SOCIETE EN NOM COLLECTIF-1711463631100.pdf"),
+    ("violence-women-ar", "violence-women", "قانون محاربة العنف ضد النساء", "Loi relative à la lutte contre les violences faites aux femmes", "103-13", 2018, "penal", "ar",
+     "uploads/2026/10/20/ظهير شريف رقم 1.18.19 بتنفيذ القانون رقم 103.13 المتعلق بمحاربة العنف ضد النساء-1792507857329.pdf"),
+    ("access-information-ar", "access-information", "قانون الحق في الحصول على المعلومات", "Loi relative au droit d'accès à l'information", "31-13", 2018, "governance", "ar",
+     "uploads/2024/02/13/الحق في المعلومات-1707831482089.pdf"),
+    ("access-information-fr", "access-information", "قانون الحق في الحصول على المعلومات", "Loi relative au droit d'accès à l'information", "31-13", 2018, "governance", "fr",
+     "uploads/2025/10/27/Dahir n° 1-18-15 portant promulgation de la loi n° 31-13 relative au droit d'accès à l'information-1761558922160.pdf"),
+    ("legal-profession-ar", "legal-profession", "قانون تنظيم مهنة المحاماة", "Loi organisant la profession d'avocat", "66-23", 2026, "justice", "ar",
+     "uploads/2026/09/22/ظهير شريف رقم 1.26.75 بتنفيذ القانون رقم 66.23 المتعلق بتنظيم مهنة المحاماة-1790070416475.pdf"),
 ]
 
 

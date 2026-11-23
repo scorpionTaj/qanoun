@@ -155,3 +155,16 @@ def test_one_line_reversed_sub_article_is_reoriented():
     # Insurance Code: «المادة4 - 10» right after article 10 is article 10-4
     text = "المادة 10\nنص.\nالمادة4 - 10\nنص فرعي.\nالمادة 65 - 1\nلا علاقة."
     assert [a.number for a in segment(pages(text)).articles][:2] == ["10", "10-4"]
+
+
+def test_first_article_written_in_words():
+    # «المادة الأولى» (here with the PDFs' lam-alef artifact) is article 1, not preamble
+    text = "ظهير شريف بتنفيذ القانون.\nالمادة األولى\nتساهم المحاماة في تحقيق العدالة.\nالمادة 2\nنص."
+    report = segment(pages(text))
+    assert [a.number for a in report.articles] == ["1", "2"]
+    assert "تساهم المحاماة" in report.articles[0].text and "تساهم" not in report.preamble
+
+
+def test_first_article_in_words_only_before_any_article():
+    text = "المادة 1\nنص.\nالمادة 2\nتطبق المادة الأولى أعلاه.\nالمادة الأولى من القانون رقم 12.\nالمادة 3\nنص."
+    assert [a.number for a in segment(pages(text)).articles] == ["1", "2", "3"]

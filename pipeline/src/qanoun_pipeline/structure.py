@@ -21,6 +21,9 @@ _FRENCH_HEADER = re.compile(r"^\s*(?:Article|ARTICLE)\s+(premier|\d+)(?:er)?(?:\
 # The D.O.C. says "الفصل" where every other code says "المادة" — the words are per-law
 # (catalog field article_words) so "الفصل" as chapter/dismissal elsewhere can't misfire.
 DEFAULT_ARTICLE_WORDS = ("المادة", "مادة")
+# Many laws write their first article in words: «المادة الأولى» (and, with the PDFs' lam-alef
+# artifact, «المادة األولى»). Only accepted before any other article, where article 1 belongs.
+_FIRST_ARTICLE_IN_WORDS = re.compile(r"^\s*(?:المادة|مادة)\s*[:：]?\s*(?:الأولى|األولى|االولى|الاولى)(?!\S)")
 _DIGITS = str.maketrans({chr(0x0660 + i): str(i) for i in range(10)} | {chr(0x06F0 + i): str(i) for i in range(10)})
 
 
@@ -154,6 +157,8 @@ def segment(
             elif (fr := _FRENCH_HEADER.match(line)) is not None:
                 digits = fr.group(1).translate(_DIGITS)
                 sub = fr.group(2)
+            elif not seen_bases and _FIRST_ARTICLE_IN_WORDS.match(line):
+                digits, sub = "1", None
             else:
                 target = current["text"] if current is not None else preamble_lines
                 target.append(line.strip())
