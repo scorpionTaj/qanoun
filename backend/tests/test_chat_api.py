@@ -45,7 +45,7 @@ def test_chat_abstains_without_sources(monkeypatch, fake_llm):
     assert done["text"]
     # the Darija question is rewritten for search, but nothing is generated without sources
     assert len(fake_llm.calls) == 1
-    assert fake_llm.calls[0][0]["content"].startswith("You rewrite Moroccan questions")
+    assert fake_llm.calls[0][0]["content"].startswith("You rewrite a Moroccan question")
 
 
 def test_chat_abstains_on_no_answer_sentinel(monkeypatch):

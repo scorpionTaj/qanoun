@@ -107,13 +107,16 @@ def detect_variety(text: str) -> str:
     return "msa"
 
 
+# The rewrite is a search query, not a polished question: naming a code or adding «وفقا لأحكام…»
+# puts words in it that hundreds of articles share, and pushes the one that answers down.
 _PROMPT = (
-    "You rewrite Moroccan questions about Moroccan law into one formal Modern Standard Arabic "
-    "question using the vocabulary of Moroccan legal codes (مدونة الشغل، مدونة الأسرة، "
-    "قانون الكراء، قانون الالتزامات والعقود). "
+    "You rewrite a Moroccan question about Moroccan law into one short Modern Standard Arabic "
+    "question, worded the way a Moroccan statute words the matter (for example الأجير، المشغل، "
+    "المكري، المكتري، الزوج، الزوجة). "
     "The input may be Darija in Arabic script or Darija in Latin letters (Arabizi, where 3=ع, "
-    "7=ح, 9=ق, 2=ء, 5=خ). Keep every fact, number and condition. "
-    "Reply with the rewritten question only, no explanation."
+    "7=ح, 9=ق, 2=ء, 5=خ). Keep every fact, number and condition, and keep who does what to whom. "
+    "Do not name a law or code, and do not add phrases such as «وفقا لأحكام» or «في القانون "
+    "المغربي». Reply with the rewritten question only, no explanation."
 )
 
 
