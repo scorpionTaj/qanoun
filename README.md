@@ -225,7 +225,11 @@ This is how [qanoun-ma.vercel.app](https://qanoun-ma.vercel.app) runs, at no cos
   tier was tried first; it allows 1,000 embeddings a day, two weeks for this corpus.)
 - **Database:** a free Supabase project. The tables live in a `qanoun` schema, which
   Supabase's public Data API does not expose, owned by a dedicated `qanoun_api` role. The API
-  connects through the IPv4 session pooler.
+  connects through the IPv4 **transaction** pooler (port 6543), not the session pooler (5432):
+  each warm serverless instance kept a session open, and the free tier's 15 session slots ran
+  out, so a new instance could not connect. Behind the transaction pooler an idle instance
+  holds no server connection (30 concurrent requests: all 200). One-off CLI runs (ingest,
+  `cli refs`) can use either port.
 - **API:** a Vercel Python function in Paris (`cdg1`), built from
   [`deploy/vercel-api/`](deploy/vercel-api) with `QANOUN_DB_URL`, `QANOUN_JINA_KEY`, an LLM key
   (`QANOUN_GEMINI_KEY`), `QANOUN_EMBED_MODEL`, `QANOUN_CORS_ORIGINS`,
