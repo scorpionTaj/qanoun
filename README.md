@@ -341,6 +341,10 @@ container healthchecks.
       real Postgres + pgvector), typecheck, production build, and a Playwright smoke test of
       the running API + web app (`.github/workflows/ci.yml`)
 - [x] Weekly retrieval regression gate on the live demo (`.github/workflows/eval.yml`)
+- [x] Weekly portal watcher (`.github/workflows/watch-portal.yml`): finds newer uploads of the
+      catalog's laws on adala.justice.gov.ma, keeps one only if it changed and still segments
+      into 80% of the current articles (counted with OCR, as ingestion does), and opens a pull
+      request updating `data/catalog/laws.yaml`, listing new texts that cite our laws
 - [x] API and web images on GHCR for each release tag, amd64 + arm64; the web image takes
       the API's address at runtime (`.github/workflows/release.yml`)
 - [x] Eval harness: 29 + 36 seed questions and the 264-question darija-rag set — hit@k / MRR
