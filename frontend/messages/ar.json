@@ -184,7 +184,17 @@
     "amended": "معدّلة · {refs}",
     "refersTo": "يحيل على",
     "referencedBy": "محال عليها في",
-    "moreRefs": "و{count} أخرى"
+    "moreRefs": "و{count} أخرى",
+    "history": "سجل التعديلات",
+    "amendedSince": "عُدّلت منذ",
+    "anyTime": "كل المواد",
+    "kind": {
+      "amended": "تغيير",
+      "supplemented": "تتميم",
+      "repealed": "نسخ",
+      "replaced": "تعويض",
+      "added": "إضافة"
+    }
   },
   "settings": {
     "title": "إعدادات الذكاء الاصطناعي",

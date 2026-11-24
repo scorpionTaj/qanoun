@@ -33,10 +33,21 @@ export interface Article {
   page_end: number;
 }
 
-/** Amending texts named in the law's footnotes (not a point-in-time history). */
+export type AmendmentKind = "amended" | "supplemented" | "repealed" | "replaced" | "added";
+
+/** One footnote-recorded change to an article. `year` is the year in the amending text's
+ * number («12.18» → 2018), or a date the note gives when the number has none. */
+export interface AmendmentEvent {
+  ref: string;
+  kinds: AmendmentKind[];
+  year: number | null;
+}
+
+/** Amending texts named in the law's footnotes: what changed and when, not the past wording. */
 export interface Amendments {
-  laws: { ref: string; mentions: number; articles: string[] }[];
+  laws: { ref: string; mentions: number; articles: string[]; year?: number | null }[];
   articles: Record<string, string[]>; // article number → amending texts
+  history?: Record<string, AmendmentEvent[]>; // article number → changes, oldest first
 }
 
 /** An article another article cites, or is cited by (same law or another one). */

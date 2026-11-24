@@ -115,6 +115,7 @@ export default async function LawReaderPage({
           amended={law.amendments?.articles}
           lawSlug={law.slug}
           references={law.references}
+          history={law.amendments?.history}
         />
       </div>
     </div>

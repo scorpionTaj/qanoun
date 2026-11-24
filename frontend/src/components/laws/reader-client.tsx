@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Button, Chip, SearchField, ToggleButton, ToggleButtonGroup, Tooltip } from "@heroui/react";
 import { Check, Copy, Link2 } from "lucide-react";
 import { lawUrl } from "@/lib/api";
-import type { Article, ArticleRef, References } from "@/lib/types";
+import type { AmendmentEvent, Article, ArticleRef, References } from "@/lib/types";
 import { lawTitle as titleIn, normalizeArabic } from "@/lib/utils";
 
 const MAX_REFS_SHOWN = 12;
@@ -22,6 +22,7 @@ export function ReaderClient({
   amended = {},
   lawSlug,
   references,
+  history = {},
 }: {
   articles: Article[];
   lawTitle: string;
@@ -29,12 +30,19 @@ export function ReaderClient({
   amended?: Record<string, string[]>; // article number → amending texts
   lawSlug: string;
   references?: References;
+  history?: Record<string, AmendmentEvent[]>; // article number → changes, oldest first
 }) {
   const t = useTranslations("reader");
   const locale = useLocale();
   const [fontSize, setFontSize] = useState<FontSize>("base");
   const [query, setQuery] = useState("");
   const [copied, setCopied] = useState<number | null>(null);
+  const [amendedSince, setAmendedSince] = useState<number | null>(null);
+  // Years in which this law's articles were amended, newest first, for the "amended since" filter.
+  const amendmentYears = useMemo(
+    () => [...new Set(Object.values(history).flatMap((events) => events.map((e) => e.year)).filter((y): y is number => !!y))].sort((a, b) => b - a),
+    [history],
+  );
 
   // Restore the saved font size after mount (avoids a hydration mismatch).
   useEffect(() => {
@@ -55,10 +63,13 @@ export function ReaderClient({
   const normalizedTexts = useMemo(() => articles.map((a) => normalizeArabic(a.text)), [articles]);
   const filtered = useMemo(() => {
     const q = normalizeArabic(query.trim());
-    if (!q) return articles;
-    // by article number prefix or content (أحكام finds احكام, ١٢ finds 12)
-    return articles.filter((a, i) => a.number.startsWith(q) || normalizedTexts[i].includes(q));
-  }, [articles, normalizedTexts, query]);
+    const since = amendedSince;
+    return articles.filter((a, i) => {
+      if (since && !(history[a.number] ?? []).some((e) => (e.year ?? 0) >= since)) return false;
+      // by article number prefix or content (أحكام finds احكام, ١٢ finds 12)
+      return !q || a.number.startsWith(q) || normalizedTexts[i].includes(q);
+    });
+  }, [articles, normalizedTexts, query, amendedSince, history]);
 
   const flash = (id: number) => {
     setCopied(id);
@@ -138,6 +149,24 @@ export function ReaderClient({
           {copied === -1 ? t("copied") : t("share")}
         </Button>
 
+        {amendmentYears.length > 0 && (
+          <label className="flex items-center gap-2 text-sm">
+            <span className="text-muted">{t("amendedSince")}</span>
+            <select
+              className="h-10 rounded-lg border border-border bg-surface px-2 tabular-nums"
+              value={amendedSince ?? ""}
+              onChange={(e) => setAmendedSince(e.target.value ? Number(e.target.value) : null)}
+            >
+              <option value="">{t("anyTime")}</option>
+              {amendmentYears.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
         <span className="text-xs tabular-nums text-muted" aria-live="polite">
           {filtered.length}/{articles.length}
         </span>
@@ -188,6 +217,18 @@ export function ReaderClient({
             <p className="mt-3 whitespace-pre-line leading-[2]" dir={isArabic ? "rtl" : "ltr"} lang={isArabic ? "ar" : "fr"}>
               {article.text}
             </p>
+            {history[article.number] && (
+              <p className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-separator pt-3 text-sm" data-testid="amendment-history">
+                <span className="text-muted">{t("history")}</span>
+                {history[article.number].map((event) => (
+                  <span key={event.ref} className="tabular-nums">
+                    {event.year ? <span className="font-semibold">{event.year}</span> : null}{" "}
+                    <span dir="ltr">{event.ref}</span>
+                    {event.kinds.length ? <span className="text-muted"> ({event.kinds.map((k) => t(`kind.${k}`)).join(locale === "ar" ? "، " : ", ")})</span> : null}
+                  </span>
+                ))}
+              </p>
+            )}
             {(references?.cites[article.number] || references?.cited_by[article.number]) && (
               <div className="mt-3 flex flex-col gap-1 border-t border-separator pt-3 text-sm">
                 {references.cites[article.number] && refRow(t("refersTo"), references.cites[article.number])}
