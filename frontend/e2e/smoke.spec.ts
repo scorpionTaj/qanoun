@@ -84,7 +84,8 @@ test("an amended article shows its history, and the reader filters by year", asy
   await page.getByRole("combobox").selectOption("2021");
   await expect(page.locator("article.article-card")).toHaveCount(1);
   await expect(page.locator("#article-4")).toBeVisible();
-||||||| parent of 7350dee (feat: implementing decrees linked to their law (+8 decrees); one group per law)
+});
+
 test("a law lists its implementing decrees, and a decree links back", async ({ page }) => {
   await page.goto(`/ar/laws/${LAW}`);
   const decrees = page.getByRole("region", { name: /المراسيم التطبيقية/ });
