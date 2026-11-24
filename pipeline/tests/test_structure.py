@@ -96,7 +96,9 @@ def test_segment_drops_duplicate_headers_as_body_text():
 
 # The Arabic Commercial Code's text layer puts the header word and its number on separate
 # lines; before the fix, half its articles were swallowed by their predecessors.
-SPLIT_HEADERS = """المادة
+SPLIT_HEADERS = """المادة 24
+نص المادة السابقة.
+المادة
 25
 يجوز للتاجر أن يوجه اليمين إلى الطرف الآخر.
 المادة
@@ -106,9 +108,9 @@ SPLIT_HEADERS = """المادة
 
 def test_header_split_over_two_lines_is_joined():
     report = segment(pages(SPLIT_HEADERS))
-    assert [a.number for a in report.articles] == ["25", "26"]
-    assert "ترتب وتحفظ" in report.articles[1].text
-    assert "ترتب وتحفظ" not in report.articles[0].text
+    assert [a.number for a in report.articles] == ["24", "25", "26"]
+    assert "ترتب وتحفظ" in report.articles[2].text
+    assert "ترتب وتحفظ" not in report.articles[1].text
 
 
 def test_wrapped_reference_is_not_taken_for_a_header():
@@ -168,3 +170,22 @@ def test_first_article_written_in_words():
 def test_first_article_in_words_only_before_any_article():
     text = "المادة 1\nنص.\nالمادة 2\nتطبق المادة الأولى أعلاه.\nالمادة الأولى من القانون رقم 12.\nالمادة 3\nنص."
     assert [a.number for a in segment(pages(text)).articles] == ["1", "2", "3"]
+
+
+def test_article_numbers_in_words_with_a_gap():
+    # decree layout: «الثانية» missing from the text layer, numbering continues
+    text = "مرسوم.\nالمادة األولى\nأ.\nالمادة الثالثة\nب.\nالمادة الحادية عشرة\nج.\nتطبق المادة الثانية من القانون.\nالمادة الثانية عشرة\nد."
+    report = segment(pages(text))
+    assert [a.number for a in report.articles] == ["1", "3", "11", "12"]
+    assert "تطبق المادة الثانية" in report.articles[2].text  # mid-text mention stays text
+
+
+def test_ordinal_header_must_move_forward():
+    text = "المادة 1\nأ.\nالمادة 2\nب.\nالمادة الأولى\nإحالة.\nالمادة الثالثة\nج."
+    assert [a.number for a in segment(pages(text)).articles] == ["1", "2", "3"]
+
+
+def test_wrapped_reference_in_the_preamble_is_not_the_first_article():
+    # minimum-wage decree: «… بمقتضى المادة» / «356 من القانون …» then «المادة الثانيـة» (tatweel)
+    text = "بناء على\nالمادة\n356 من القانون رقم 65.99؛\nالمادة األولى\nأ.\nالمادة الثانيـة\nب."
+    assert [a.number for a in segment(pages(text)).articles] == ["1", "2"]

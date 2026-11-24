@@ -8,7 +8,7 @@ client = TestClient(app)
 
 LAW_ROW = (
     "family-code-ar", "moudawana", "مدونة الأسرة", "Code de la famille", "70-03", 2004,
-    "family", "ar", "https://example.org/x.pdf", 107, 400, 417,
+    "family", "ar", "https://example.org/x.pdf", 107, 400, 417, None,
 )
 DOMAIN_ROW = ("family", 2, 800)
 DETAIL_ROW = (
@@ -137,3 +137,18 @@ def test_article_detail_carries_references_with_titles(fake_db):
     assert data["cited_by"] == [
         {"law_slug": "family-code-ar", "number": "16", "title_ar": "مدونة الأسرة", "title_fr": "Code de la famille"}
     ]
+
+
+def test_law_detail_lists_decrees_and_a_decree_its_parent(fake_db):
+    fake_db({
+        "JOIN LATERAL": [
+            ("decree", "working-hours-decree-ar", "مرسوم مدة العمل", "Décret durée du travail", "2.04.569", 2004, "ar"),
+            ("parent", "labour-code-ar", "مدونة الشغل", "Code du travail", "65-99", 2003, "ar"),
+        ],
+        "FROM laws WHERE slug": [DETAIL_ROW],
+        "JOIN laws l ON": [ARTICLE_ROW],
+    })
+    data = client.get("/api/laws/family-code-ar").json()
+    assert data["parent"]["slug"] == "labour-code-ar"
+    assert [d["slug"] for d in data["decrees"]] == ["working-hours-decree-ar"]
+    assert data["decrees"][0]["law_number"] == "2.04.569"

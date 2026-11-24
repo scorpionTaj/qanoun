@@ -163,6 +163,15 @@ MIGRATIONS: list[tuple[int, str, str]] = [
         CREATE INDEX article_refs_target_idx ON article_refs (target_law_slug, target_number);
         """,
     ),
+    (
+        5,
+        "implementing decrees name their parent law",
+        # The group of the law a decree applies (catalog `parent`); NULL for a law.
+        """
+        ALTER TABLE laws ADD COLUMN parent_group TEXT;
+        CREATE INDEX laws_parent_group_idx ON laws (parent_group);
+        """,
+    ),
 ]
 
 # Arbitrary constant: serialises schema changes (and extension creation) across processes.

@@ -157,7 +157,7 @@ entries:
   source_url: https://adala.justice.gov.ma/api/uploads/2026/09/09/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.02.255%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2022.01%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D8%A7%D9%84%D9%85%29-1788960852357.pdf
   sha256: 1cb583821ddfd894f77a6da79370a19156c95763a7b5a92c1939cf1b406cb79b
 - slug: judges-statute-ar
-  group: judicial-organization
+  group: judges-statute
   title_ar: النظام الأساسي للقضاة
   title_fr: null
   law_number: 1-16-41
@@ -212,7 +212,7 @@ entries:
   source_url: https://adala.justice.gov.ma/api/uploads/2024/03/01/Code%20de%20commerce_compressed-1709282723074.pdf
   sha256: e02151d1b3d585a8ed888dca187172d1c8fc682f02c4537131f2b95c3cde1696
 - slug: joint-stock-companies-ar
-  group: companies
+  group: joint-stock-companies
   title_ar: قانون شركات المساهمة
   title_fr: null
   law_number: 17-95
@@ -234,7 +234,7 @@ entries:
   source_url: https://adala.justice.gov.ma/api/uploads/2026/02/23/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.14.116%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%20104.12%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D8%AD%D8%B1%D9%8A%D8%A9%20%D8%A7%D9%84%D8%A3%D8%B3%D8%B9%D8%A7%D8%B1%20%D9%88%D8%A7%D9%84%D9%85%D9%86%D8%A7%D9%81%D8%B3%D8%A9-1771857502394.pdf
   sha256: f4c997e9c518680f74d4ef8f82056b134fd7bf1f4425c72e7318c20332b1f60b
 - slug: self-entrepreneur-ar
-  group: companies
+  group: self-entrepreneur
   title_ar: نظام المقاول الذاتي
   title_fr: null
   law_number: 114-13
@@ -300,7 +300,7 @@ entries:
   source_url: https://adala.justice.gov.ma/api/uploads/2025/11/26/%D8%B8%D9%80%D9%80%D9%87%D9%80%D9%80%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.02.238%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2017.99%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D9%85%D8%AF%D9%88%D9%86%D8%A9%20%D8%A7%D9%84%D8%AA%D8%A3%D9%85%D9%8A%D9%86%D8%A7%D8%AA-1764168111488.pdf
   sha256: 9b5d7ac498f42d56458fc5c1c187d9c2249bfcb7b899228a8e0e0dd64027463a
 - slug: higher-education-ar
-  group: education
+  group: higher-education
   title_ar: قانون التعليم العالي
   title_fr: null
   law_number: 01-00
@@ -311,7 +311,7 @@ entries:
   source_url: https://adala.justice.gov.ma/api/uploads/2026/03/06/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.00.199%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%20%2001.00-1772808846692.pdf
   sha256: dfd2d6ef9fe02ac7ac0e6e8df107516d48de3d56173de974eb0508a329e07385
 - slug: nurseries-ar
-  group: education
+  group: nurseries
   title_ar: النظام الأساسي لدور الحضانة الخاصة
   title_fr: null
   law_number: 40-04
@@ -333,7 +333,7 @@ entries:
   source_url: https://adala.justice.gov.ma/api/uploads/2025/06/11/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%201.10.07%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2052.05%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D9%85%D8%AF%D9%88%D9%86%D8%A9%20%D8%A7%D9%84%D8%B3%D9%8A%D8%B1%20%D8%B9%D9%84%D9%89%20%D8%A7%D9%84%D8%B7%D8%B1%D9%82%20-1749642259749.pdf
   sha256: 20d808d759e1394651cb4f565a3cccdf1952ac7b12b1efab395c606846209e80
 - slug: real-rights-ar
-  group: property
+  group: real-rights
   title_ar: مدونة الحقوق العينية
   title_fr: null
   law_number: 39-08
@@ -344,7 +344,7 @@ entries:
   source_url: https://adala.justice.gov.ma/api/uploads/2026/07/28/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.11.178%20%2039.08%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D9%85%D8%AF%D9%88%D9%86%D8%A9%20%D8%A7%D9%84%D8%AD%D9%82%D9%88%D9%82%20%D8%A7%D9%84%D8%B9%D9%8A%D9%86%D9%8A%D8%A9-1785250244908.pdf
   sha256: 61728d5027518f92c516d63e522ac1d68b7516f2b29ca7ce04373d3e2cb40a60
 - slug: urbanism-ar
-  group: property
+  group: urbanism
   title_ar: قانون التعمير
   title_fr: null
   law_number: 12-90
@@ -355,7 +355,7 @@ entries:
   source_url: https://adala.justice.gov.ma/api/uploads/2026/10/15/%D9%85%D8%B1%D8%B3%D9%88%D9%85%20%D8%B1%D9%82%D9%85%202.92.832%20%D9%84%D8%AA%D8%B7%D8%A8%D9%8A%D9%82%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2012.90%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D8%A7%D9%84%D8%AA%D8%B9%D9%85%D9%8A%D8%B1-1792066720715.pdf
   sha256: 3f497ff85bc788704563b82715449991a3ab79bdf701f03e84a73ad19b1e4644
 - slug: joint-ownership-ar
-  group: property
+  group: joint-ownership
   title_ar: قانون الملكية المشتركة للعقارات المبنية
   title_fr: null
   law_number: 18-00
@@ -366,7 +366,7 @@ entries:
   source_url: https://adala.justice.gov.ma/api/uploads/2026/07/29/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%20%201.02.298%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2018.00-1785318450026.pdf
   sha256: a4127525615a106946c6cb90d9d8b9dbeaf975f84d92e756ccff2825a6e392dc
 - slug: press-code-ar
-  group: governance
+  group: press-code
   title_ar: قانون الصحافة والنشر
   title_fr: null
   law_number: 88-13
@@ -377,7 +377,7 @@ entries:
   source_url: https://adala.justice.gov.ma/api/uploads/2024/07/26/%D8%A7%D9%84%D8%B5%D8%AD%D8%A7%D9%81%D8%A9%20%D9%88%D8%A7%D9%84%D9%86%D8%B4%D8%B1-1721982145338.pdf
   sha256: 3f2c46ee9751b3c39d66529fcfa03a65a04c19acc5028910c723a0c3ec736f76
 - slug: data-protection-ar
-  group: governance
+  group: data-protection
   title_ar: قانون حماية الأشخاص الذاتيين تجاه معالجة المعطيات ذات الطابع الشخصي
   title_fr: null
   law_number: 09-08
@@ -388,7 +388,7 @@ entries:
   source_url: https://adala.justice.gov.ma/api/uploads/2024/09/05/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.09.15%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2009.08%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D8%AD%D9%85%D8%A7%D9%8A%D8%A9%20%D8%A7%D9%84%D8%A3%D8%B4%D8%AE%D8%A7%D8%B5%20%D8%A7%D9%84.._-1725534598486.pdf
   sha256: 01018cc1ef12b81c9379559bc0d6372ea8a686d0d5c2c273657b631882adf181
 - slug: public-debt-collection-ar
-  group: governance
+  group: public-debt-collection
   title_ar: قانون تحصيل الديون العمومية
   title_fr: null
   law_number: 15-97
@@ -399,7 +399,7 @@ entries:
   source_url: https://adala.justice.gov.ma/api/uploads/2026/10/05/%D8%B8%D9%80%D9%87%D9%8A%D8%B1%20%D8%B4%D9%80%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.00.175%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2015.97-1791213329814.pdf
   sha256: 42a7e9c7df5c99df85726ed610204130ae779b65720147559fd0df0127a1f37c
 - slug: waqf-code-ar
-  group: governance
+  group: waqf-code
   title_ar: مدونة الأوقاف
   title_fr: null
   law_number: 1-09-236
@@ -410,7 +410,7 @@ entries:
   source_url: https://adala.justice.gov.ma/api/uploads/2024/02/20/%D9%85%D8%AF%D9%88%D9%86%D8%A9%20%D8%A7%D9%84%D8%A3%D9%88%D9%82%D8%A7%D9%81-1708419195028.pdf
   sha256: e78cab122d90420f2c6cc4d3a949381b4f9428269ce3631ec2c975c4dadc1193
 - slug: foreigners-ar
-  group: governance
+  group: foreigners
   title_ar: قانون دخول وإقامة الأجانب بالمملكة المغربية
   title_fr: null
   law_number: 02-03
@@ -445,7 +445,7 @@ entries:
   sha256: a4f9f8ef3e405a95296cc9719febd3bf5268fdb9da309f37771bdcecacd98a4e
   article_words: الفصل,فصل
 - slug: associations-ar
-  group: governance
+  group: associations
   title_ar: ظهير حق تأسيس الجمعيات
   title_fr: null
   law_number: 1-58-376
@@ -457,7 +457,7 @@ entries:
   sha256: dfbd119869124c8920d4d95fc899464b6855cb1fae142cd20717529e1f2be491
   article_words: الفصل,فصل
 - slug: unions-ar
-  group: governance
+  group: unions
   title_ar: ظهير النقابات المهنية
   title_fr: null
   law_number: 1-57-119
@@ -615,3 +615,101 @@ entries:
   file: legal-profession-ar.pdf
   source_url: https://adala.justice.gov.ma/api/uploads/2026/09/22/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.26.75%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2066.23%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D8%AA%D9%86%D8%B8%D9%8A%D9%85%20%D9%85%D9%87%D9%86%D8%A9%20%D8%A7%D9%84%D9%85%D8%AD%D8%A7%D9%85%D8%A7%D8%A9-1790070416475.pdf
   sha256: f450573b8566ad44dc790ad458c3f5c1b792c9adae27abf9b970f866e9d2b0ee
+
+# ── implementing decrees (parent: the group of the law each applies), added 2026-11-24 ──
+- slug: working-hours-decree-ar
+  group: working-hours-decree
+  title_ar: مرسوم تحديد إجراءات تطبيق المادة 184 من مدونة الشغل (مدة العمل)
+  title_fr: Décret fixant les modalités d'application de l'article 184 du Code du travail (durée du travail)
+  law_number: 2.04.569
+  year: 2004
+  domain: labour
+  language: ar
+  file: working-hours-decree-ar.pdf
+  parent: labour-code
+  source_url: https://adala.justice.gov.ma/api/uploads/2024/09/09/%D9%85%D8%B1%D8%B3%D9%88%D9%85%20%D8%B1%D9%82%D9%85%20%202.04.569%20%20%D8%B5%D8%A7%D8%AF%D8%B1%20%D9%81%D9%8A%2016%20%D9%85%D9%86%20%D8%B0%D9%8A%20%D8%A7%D9%84%D9%82%D8%B9%D8%AF%D8%A9%20%201425%20-1725875800223.pdf
+  sha256: c0ed13e39a2c338f4870c80ac5b84f0582312cc3f06070d36d6685ffc0ad3c3c
+- slug: weekly-rest-decree-ar
+  group: weekly-rest-decree
+  title_ar: مرسوم تنظيم الراحة الأسبوعية
+  title_fr: Décret relatif au repos hebdomadaire
+  law_number: 2.04.513
+  year: 2004
+  domain: labour
+  language: ar
+  file: weekly-rest-decree-ar.pdf
+  parent: labour-code
+  source_url: https://adala.justice.gov.ma/api/uploads/2024/09/11/%D9%85%D8%B1%D8%B3%D9%88%D9%85%20%D8%B1%D9%82%D9%85%202.04.513%20%D8%A8%D8%AA%D9%86%D8%B8%D9%8A%D9%85%20%D8%A7%D9%84%D8%B1%D8%A7%D8%AD%D8%A9%20%D8%A7%D9%84%D8%A3%D8%B3%D8%A8%D9%88%D8%B9%D9%8A%D8%A9-1726048239012.pdf
+  sha256: d7ca7664b6eee57f5a2923c1f3dec7e17be5c788cd5cdfd6ad3bd06ae3e4b05c
+- slug: women-night-work-decree-ar
+  group: women-night-work-decree
+  title_ar: مرسوم شروط تشغيل النساء في الشغل الليلي
+  title_fr: Décret fixant les conditions du travail de nuit des femmes
+  law_number: 2.04.568
+  year: 2004
+  domain: labour
+  language: ar
+  file: women-night-work-decree-ar.pdf
+  parent: labour-code
+  source_url: https://adala.justice.gov.ma/api/uploads/2024/09/13/%D9%85%D8%B1%D8%B3%D9%88%D9%85%20%D8%B1%D9%82%D9%85%202.04.568%20%D8%B5%D8%A7%D8%AF%D8%B1%20%D9%81%D9%8A%2016%D9%85%D9%86%20%D8%B0%D9%8A%20%D8%A7%D9%84%D9%82%D8%B9%D8%AF%D8%A9%20%D8%A1%20%D9%81%D9%8A%20%D8%A3%D9%8A%20%D8%B4%D8%BA%D9%84%20%D9%84%D9%8A%D9%84%D9%8A-1726223570502.pdf
+  sha256: 1ae98d4e69cd8f1e3de49c0b6faa9bc0e54eb25ca3947fd011641d732526ef6b
+- slug: prohibited-works-decree-ar
+  group: prohibited-works-decree
+  title_ar: مرسوم لائحة الأشغال التي يمنع أن يشغل فيها بعض الفئات من الأشخاص
+  title_fr: Décret fixant la liste des travaux interdits à certaines catégories de personnes
+  law_number: 2.10.183
+  year: 2010
+  domain: labour
+  language: ar
+  file: prohibited-works-decree-ar.pdf
+  parent: labour-code
+  source_url: https://adala.justice.gov.ma/api/uploads/2024/04/15/%D9%85%D8%B1%D8%B3%D9%88%D9%85%20183-1713176716611.pdf
+  sha256: 3b5101153edfe5ed9b9bffa0fcee4983fae933efe74b31dad941f367a870e579
+- slug: minimum-wage-decree-ar
+  group: minimum-wage-decree
+  title_ar: مرسوم تحديد مبلغ الحد الأدنى القانوني للأجر
+  title_fr: Décret fixant le salaire minimum légal
+  law_number: 2.24.1122
+  year: 2024
+  domain: labour
+  language: ar
+  file: minimum-wage-decree-ar.pdf
+  parent: labour-code
+  source_url: https://adala.justice.gov.ma/api/uploads/2026/01/05/%D9%86%D8%B3%D8%AE%20-%D9%85%D8%B1%D8%B3%D9%88%D9%85%20%D8%B1%D9%82%D9%85%202.24.1122%20%D8%A8%D8%AA%D8%AD%D8%AF%D9%8A%D8%AF%20%D9%85%D8%A8%D9%84%D8%BA%20%D8%A7%D9%84%D8%AD%D8%AF%20%D8%A7%D9%84%D8%A3%D8%AF%D9%86%D9%89%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%D9%8A%20%D9%84%D9%84%D8%A3%D8%AC%D8%B1-1767607929383.pdf
+  sha256: 4da7bc936f7253a7b94ee9b59687a7642eaa596eab1c66560dc742585cbc0e9b
+- slug: consumer-protection-decree-ar
+  group: consumer-protection-decree
+  title_ar: مرسوم تطبيق بعض أحكام قانون حماية المستهلك
+  title_fr: Décret d'application de la loi 31-08 sur la protection du consommateur
+  law_number: 2.12.503
+  year: 2013
+  domain: commercial
+  language: ar
+  file: consumer-protection-decree-ar.pdf
+  parent: consumer-protection
+  source_url: https://adala.justice.gov.ma/api/uploads/2024/11/21/%D9%85%D8%B1%D8%B3%D9%88%D9%85%20%D8%B1%D9%82%D9%85%202.12.503%20%D8%A8%D8%AA%D8%B7%D8%A8%D9%8A%D9%82%20%D8%A8%D8%B9%D8%AA%D9%87%D9%84%D9%83-1732180751682.pdf
+  sha256: 617aca93ccd123088f394ab23ddd2ba93fc555c05484f1d6de50b08c1f8c0d35
+- slug: data-protection-decree-ar
+  group: data-protection-decree
+  title_ar: مرسوم تطبيق قانون حماية الأشخاص الذاتيين تجاه معالجة المعطيات ذات الطابع الشخصي
+  title_fr: Décret d'application de la loi 09-08 sur la protection des données personnelles
+  law_number: 2.09.165
+  year: 2009
+  domain: governance
+  language: ar
+  file: data-protection-decree-ar.pdf
+  parent: data-protection
+  source_url: https://adala.justice.gov.ma/api/uploads/2024/07/31/%D9%85%D8%B1%D8%B3%D9%88%D9%85%20%D9%84%D8%AA%D8%B7%D8%A8%D9%8A%D9%82%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2009.08%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D8%AD%D9%85%D8%A7%D9%8A%D8%A9-1722420738987.pdf
+  sha256: c8021a1f811cae84e4e0cd6775dd77708b49cdc8e672c1cefb4f1a94ba3848bb
+- slug: domestic-work-contract-decree-ar
+  group: domestic-work-contract-decree
+  title_ar: مرسوم نموذج عقد العمل الخاص بالعاملة أو العامل المنزلي
+  title_fr: Décret fixant le modèle de contrat de travail des travailleurs domestiques
+  law_number: 2.17.355
+  year: 2017
+  domain: labour
+  language: ar
+  file: domestic-work-contract-decree-ar.pdf
+  parent: domestic-workers
+  source_url: https://adala.justice.gov.ma/api/uploads/2025/11/17/%D9%85%D8%B1%D8%B3%D9%88%D9%85%20%D8%B1%D9%82%D9%85%202.17.355%20%D8%A8%D8%AA%D8%AD%D8%AF%D9%8A%D8%AF%20%D9%86%D9%85%D9%88%D8%B0%D8%AC%20%D8%B9%D9%82%D8%AF%20%D8%A7%D9%84%D8%B9%D9%85%D9%84%20%D8%A7%D9%84%D8%AE%D8%A7%D8%B5%20%D8%A8%D8%A7%D9%84%D8%B9%D8%A7%D9%85%D9%84%D8%A9%20%D8%A3%D9%88%20%D8%A7%D9%84%D8%B9%D8%A7%D9%85%D9%84%20%D8%A7%D9%84%D9%85%D9%86%D8%B2%D9%84%D9%8A-1763374049043.pdf
+  sha256: 76cccbff6d627b9172a76a05d3d69aefe22c6b293ab5f925a9405bb7f90df2ee

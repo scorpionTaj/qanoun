@@ -12,6 +12,7 @@ import re
 from dataclasses import dataclass, field
 from itertools import pairwise
 
+from qanoun_pipeline.normalize import normalize
 from qanoun_pipeline.parse import Page
 
 # Header patterns. Real files glue the number to the word ("المادة1"), write "Article
@@ -21,9 +22,25 @@ _FRENCH_HEADER = re.compile(r"^\s*(?:Article|ARTICLE)\s+(premier|\d+)(?:er)?(?:\
 # The D.O.C. says "الفصل" where every other code says "المادة" — the words are per-law
 # (catalog field article_words) so "الفصل" as chapter/dismissal elsewhere can't misfire.
 DEFAULT_ARTICLE_WORDS = ("المادة", "مادة")
-# Many laws write their first article in words: «المادة الأولى» (and, with the PDFs' lam-alef
-# artifact, «المادة األولى»). Only accepted before any other article, where article 1 belongs.
-_FIRST_ARTICLE_IN_WORDS = re.compile(r"^\s*(?:المادة|مادة)\s*[:：]?\s*(?:الأولى|األولى|االولى|الاولى)(?!\S)")
+def _ordinals() -> dict[str, int]:
+    """Article numbers in words, normalized: «الأولى» … «الثلاثون» (decrees and short laws)."""
+    units = ["الاولي", "الثانيه", "الثالثه", "الرابعه", "الخامسه", "السادسه", "السابعه", "الثامنه", "التاسعه"]
+    tens = {20: "العشرون", 30: "الثلاثون"}
+    words = {u: i for i, u in enumerate(units, start=1)} | {"االولي": 1, "العاشره": 10}  # االولي: «األولى», the lam-alef artifact
+    words |= {"الحاديه عشره": 11} | {f"{u} عشره": i for i, u in enumerate(units[1:], start=12)}
+    words |= {"الحاديه والعشرون": 21} | {f"{u} والعشرون": i for i, u in enumerate(units[1:], start=22)}
+    return words | {w: n for n, w in tens.items()}
+
+
+_ORDINALS = _ordinals()
+# Many laws and most decrees write article numbers in words («المادة الأولى», «المادة الثالثة»).
+# Accepted at a line start and only as the next article (see segment), so a sentence such as
+# «المادة الثانية من القانون …» is never taken for a header.
+_ORDINAL_HEADER = re.compile(
+    r"^\s*(?:الماده|ماده)\s*[:：]?\s*("
+    + "|".join(sorted(map(re.escape, _ORDINALS), key=len, reverse=True))
+    + r")(?!\S)"
+)
 _DIGITS = str.maketrans({chr(0x0660 + i): str(i) for i in range(10)} | {chr(0x06F0 + i): str(i) for i in range(10)})
 
 
@@ -79,7 +96,9 @@ def _lines(text: str, words: tuple[str, ...]):
 
 def _plausible_joined(base: int, has_suffix: bool, seen: list[int]) -> bool:
     if not seen:
-        return True
+        # A law starts near article 1: a wrapped reference in the preamble («… بمقتضى المادة» /
+        # «356 من القانون …») must not become its first article.
+        return not has_suffix and base <= MAX_JOINED_GAP
     if has_suffix:
         return base == seen[-1]
     return seen[-1] < base <= seen[-1] + MAX_JOINED_GAP
@@ -157,8 +176,11 @@ def segment(
             elif (fr := _FRENCH_HEADER.match(line)) is not None:
                 digits = fr.group(1).translate(_DIGITS)
                 sub = fr.group(2)
-            elif not seen_bases and _FIRST_ARTICLE_IN_WORDS.match(line):
-                digits, sub = "1", None
+            elif (word := _ORDINAL_HEADER.match(normalize(line.replace("\u0640", "")))) is not None and (
+                _ORDINALS[word.group(1)] == 1 if not seen_bases
+                else _plausible_joined(_ORDINALS[word.group(1)], False, seen_bases)
+            ):
+                digits, sub = str(_ORDINALS[word.group(1)]), None
             else:
                 target = current["text"] if current is not None else preamble_lines
                 target.append(line.strip())

@@ -14,6 +14,7 @@ from qanoun_pipeline.catalog import LawMeta
 from qanoun_pipeline.normalize import normalize
 
 SLUG = "fixture-family-code-ar"
+DECREE = "fixture-decree-ar"
 ARTICLES = {
     "1": "يسمى هذا القانون مدونة الأسرة.",
     "4": "الزواج ميثاق تراض وترابط شرعي بين رجل وامرأة على وجه الدوام.",
@@ -45,8 +46,20 @@ def main() -> None:
              "article_id": ids[n], "embedding": [1.0] + [0.0] * (dim - 1)}
             for n, text in ARTICLES.items()
         ])
+        # An implementing decree of the fixture law (catalog `parent`).
+        decree = LawMeta(
+            slug=DECREE, group="fixture-decree", title_ar="مرسوم تطبيقي (نص تجريبي)",
+            title_fr="Décret d'application (fixture)", law_number="2.04.569", year=2004,
+            domain="family", language="ar", file="fixture-decree.pdf", source_url=None,
+            sha256=None, parent="fixture-family-code",
+        )
+        decree_id = load_db.upsert_law(conn, decree, page_count=1, article_count=1, preamble="", warnings=[])
+        load_db.insert_articles(conn, decree_id, [
+            {"law_slug": DECREE, "number": "1", "ordinal": 1, "text": "المادة الأولى يطبق هذا المرسوم.",
+             "normalized": normalize("يطبق هذا المرسوم"), "page_start": 1, "page_end": 1}
+        ])
         links = references.rebuild(conn)
-    print(f"seeded {SLUG}: {len(ARTICLES)} articles, {links} cross-reference(s)")
+    print(f"seeded {SLUG} and {DECREE}: {len(ARTICLES)} + 1 articles, {links} cross-reference(s)")
 
 
 if __name__ == "__main__":

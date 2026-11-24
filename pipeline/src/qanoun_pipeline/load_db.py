@@ -65,14 +65,14 @@ def upsert_law(
         """
         INSERT INTO laws (slug, group_slug, title_ar, title_fr, law_number, year, domain,
                           language, source_url, sha256, file, page_count, article_count,
-                          preamble, warnings)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                          preamble, warnings, parent_group)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id
         """,
         (
             meta.slug, meta.group, meta.title_ar, meta.title_fr, meta.law_number, meta.year,
             meta.domain, meta.language, meta.source_url, meta.sha256, meta.file,
-            page_count, article_count, preamble, warnings,
+            page_count, article_count, preamble, warnings, meta.parent,
         ),
     ).fetchone()
     conn.commit()

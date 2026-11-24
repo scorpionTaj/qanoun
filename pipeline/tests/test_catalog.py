@@ -85,3 +85,30 @@ def test_explicit_db_url_beats_the_environment(monkeypatch):
     monkeypatch.setattr("sys.argv", ["qanoun_pipeline", "summary"])
     cli.main()
     assert seen["url"] == "postgresql://env-db/x"  # no flag: the environment applies
+
+
+def _write(tmp_path, entries):
+    import yaml
+
+    path = tmp_path / "catalog.yaml"
+    path.write_text(yaml.safe_dump(entries, allow_unicode=True), encoding="utf-8")
+    return path
+
+
+def _entry(slug, group, language="ar", **extra):
+    return {"slug": slug, "group": group, "title_ar": slug, "domain": "labour", "language": language,
+            "file": f"{slug}.pdf", **extra}
+
+
+def test_a_group_is_one_law(tmp_path):
+    ok = [_entry("a-ar", "a"), _entry("a-fr", "a", "fr")]
+    assert len(catalog.load(_write(tmp_path, ok))) == 2
+    with pytest.raises(catalog.CatalogError, match="two ar editions"):
+        catalog.load(_write(tmp_path, [_entry("a-ar", "shared"), _entry("b-ar", "shared")]))
+
+
+def test_a_decree_names_an_existing_parent_law(tmp_path):
+    law, decree = _entry("labour-ar", "labour"), _entry("hours-decree-ar", "hours-decree", parent="labour")
+    assert catalog.load(_write(tmp_path, [law, decree]))[1].parent == "labour"
+    with pytest.raises(catalog.CatalogError, match="parent 'nope'"):
+        catalog.load(_write(tmp_path, [law, _entry("x-ar", "x", parent="nope")]))
