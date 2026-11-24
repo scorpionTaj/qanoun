@@ -85,3 +85,12 @@ test("an amended article shows its history, and the reader filters by year", asy
   await expect(page.locator("article.article-card")).toHaveCount(1);
   await expect(page.locator("#article-4")).toBeVisible();
 });
+
+test("a law lists its implementing decrees, and a decree links back", async ({ page }) => {
+  await page.goto(`/ar/laws/${LAW}`);
+  const decrees = page.getByRole("region", { name: /المراسيم التطبيقية/ });
+  await decrees.getByRole("link", { name: "مرسوم تطبيقي (نص تجريبي)" }).click();
+  await expect(page).toHaveURL(/\/ar\/laws\/fixture-decree-ar/);
+  await page.getByRole("link", { name: TITLE }).click();
+  await expect(page).toHaveURL(new RegExp(`/ar/laws/${LAW}$`));
+});

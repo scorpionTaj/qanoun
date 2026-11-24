@@ -22,6 +22,17 @@ export interface LawSummary {
   page_count: number | null;
   article_count: number | null;
   chunk_count: number;
+  parent_group?: string | null; // set for an implementing decree: the law it applies
+}
+
+/** A law or decree named from another one (a decree's parent, a law's decrees). */
+export interface LawRef {
+  slug: string;
+  title_ar: string;
+  title_fr: string | null;
+  law_number: string | null;
+  year: number | null;
+  language: "ar" | "fr";
 }
 
 export interface Article {
@@ -68,6 +79,8 @@ export interface LawDetail extends LawSummary {
   warnings: string[];
   amendments: Amendments;
   references?: References; // absent from an API that predates cross-references
+  parent?: LawRef | null; // for an implementing decree: the law it applies
+  decrees?: LawRef[]; // for a law: its implementing decrees
   articles: Article[];
 }
 

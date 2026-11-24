@@ -2,7 +2,9 @@
 
 One YAML entry per document file. A bilingual law (official Arabic edition + French
 translation) has two entries sharing a `group`, so the UI can show editions side by side
-while retrieval treats each file as one document.
+while retrieval treats each file as one document. A group is one law: it holds at most one
+edition per language. An implementing decree names the law it applies with `parent` (that
+law's group).
 """
 
 import hashlib
@@ -45,6 +47,7 @@ class LawMeta:
     source_url: str | None
     sha256: str | None
     article_words: tuple[str, ...] = ("المادة", "مادة")
+    parent: str | None = None  # implementing decree: the group of the law it applies
 
     @property
     def title(self) -> str:  # convenience for CLI prints (a property can't take a language)
@@ -70,6 +73,17 @@ def load(path: Path | str) -> list[LawMeta]:
     slugs = [law.slug for law in laws]
     if len(slugs) != len(set(slugs)):
         raise CatalogError("duplicate slugs in catalog")
+    editions: dict[tuple[str, str], str] = {}
+    for law in laws:
+        if (other := editions.setdefault((law.group, law.language), law.slug)) != law.slug:
+            raise CatalogError(
+                f"group '{law.group}' has two {law.language} editions ({other}, {law.slug}): "
+                "a group is one law, give each law its own"
+            )
+    groups = {law.group for law in laws}
+    for law in laws:
+        if law.parent is not None and (law.parent not in groups or law.parent == law.group):
+            raise CatalogError(f"{law.slug}: parent '{law.parent}' is not another law's group")
     return laws
 
 
@@ -100,6 +114,7 @@ def _parse(raw: dict) -> LawMeta:
         # e.g. article_words: الفصل,فصل for the D.O.C.; المادة,مادة everywhere else
         article_words=tuple(w.strip() for w in article_words.split(",")) if article_words
         else ("المادة", "مادة"),
+        parent=raw.get("parent"),
     )
 
 

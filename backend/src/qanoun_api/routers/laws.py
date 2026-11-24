@@ -57,7 +57,8 @@ def list_laws(
             """
             SELECT l.slug, l.group_slug, l.title_ar, l.title_fr, l.law_number, l.year, l.domain,
                    l.language, l.source_url, l.page_count, l.article_count,
-                   (SELECT count(*) FROM chunks c WHERE c.law_id = l.id) AS chunk_count
+                   (SELECT count(*) FROM chunks c WHERE c.law_id = l.id) AS chunk_count,
+                   l.parent_group
             FROM laws l
             WHERE (%(domain)s::text IS NULL OR l.domain = %(domain)s)
               AND (%(group)s::text IS NULL OR l.group_slug = %(group)s)
@@ -70,7 +71,7 @@ def list_laws(
             "slug": r[0], "group_slug": r[1], "title_ar": r[2], "title_fr": r[3],
             "law_number": r[4], "year": r[5], "domain": r[6], "language": r[7],
             "source_url": r[8], "page_count": r[9], "article_count": r[10],
-            "chunk_count": r[11],
+            "chunk_count": r[11], "parent_group": r[12],
         }
         for r in rows
     ]
@@ -122,6 +123,34 @@ def _references(conn, slug: str) -> dict:
     return {"cites": cites, "cited_by": cited_by, "laws": _law_titles(conn, others)}
 
 
+# A decree's parent: the edition of that law in the decree's language, else any edition.
+# A law's decrees: every text whose parent is this law's group.
+_FAMILY_SQL = """
+SELECT 'parent' AS role, p.slug, p.title_ar, p.title_fr, p.law_number, p.year, p.language
+FROM laws d JOIN LATERAL (
+    SELECT * FROM laws p WHERE p.group_slug = d.parent_group
+    ORDER BY p.language = d.language DESC, p.slug LIMIT 1
+) p ON TRUE
+WHERE d.slug = %(slug)s
+UNION ALL
+SELECT 'decree', d.slug, d.title_ar, d.title_fr, d.law_number, d.year, d.language
+FROM laws l JOIN laws d ON d.parent_group = l.group_slug
+WHERE l.slug = %(slug)s
+ORDER BY 1, 6 NULLS LAST, 2
+"""
+
+
+def _decree_family(conn, slug: str) -> dict:
+    parent, decrees = None, []
+    for role, *fields in conn.execute(_FAMILY_SQL, {"slug": slug}).fetchall():
+        item = dict(zip(("slug", "title_ar", "title_fr", "law_number", "year", "language"), fields, strict=True))
+        if role == "parent":
+            parent = item
+        else:
+            decrees.append(item)
+    return {"parent": parent, "decrees": decrees}
+
+
 @router.get("/laws/{slug}")
 def law_detail(slug: str):
     with db() as conn:
@@ -144,6 +173,7 @@ def law_detail(slug: str):
             {"slug": slug},
         ).fetchall()
         references = _references(conn, slug)
+        family = _decree_family(conn, slug)
     return {
         "slug": row[0], "group_slug": row[1], "title_ar": row[2], "title_fr": row[3],
         "law_number": row[4], "year": row[5], "domain": row[6], "language": row[7],
@@ -151,6 +181,7 @@ def law_detail(slug: str):
         "preamble": row[11], "warnings": row[12],
         "amendments": summarize([row[11] or "", *(a[3] for a in articles)]),
         "references": references,
+        **family,
         "articles": [
             {
                 "id": a[0], "number": a[1], "ordinal": a[2], "text": a[3],

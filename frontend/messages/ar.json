@@ -57,7 +57,9 @@
     "resultsFor": "نتائج البحث عن",
     "searchInLaws": "نتائج من نص القوانين",
     "relevance": "الملاءمة",
-    "domainFilter": "تصفية حسب المجال"
+    "domainFilter": "تصفية حسب المجال",
+    "implements": "مرسوم تطبيقي لـ",
+    "decrees": "المراسيم التطبيقية ({count})"
   },
   "chat": {
     "title": "اسأل القانون",

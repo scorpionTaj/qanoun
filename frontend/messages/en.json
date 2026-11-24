@@ -57,7 +57,9 @@
     "resultsFor": "Results for",
     "searchInLaws": "Results from legal texts",
     "relevance": "Relevance",
-    "domainFilter": "Filter by domain"
+    "domainFilter": "Filter by domain",
+    "implements": "Implementing decree of",
+    "decrees": "Implementing decrees ({count})"
   },
   "chat": {
     "title": "Ask the law",

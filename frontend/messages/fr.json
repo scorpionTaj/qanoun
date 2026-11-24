@@ -57,7 +57,9 @@
     "resultsFor": "Résultats pour",
     "searchInLaws": "Résultats dans les textes",
     "relevance": "Pertinence",
-    "domainFilter": "Filtrer par domaine"
+    "domainFilter": "Filtrer par domaine",
+    "implements": "Décret d'application de",
+    "decrees": "Décrets d'application ({count})"
   },
   "chat": {
     "title": "Demander à la loi",

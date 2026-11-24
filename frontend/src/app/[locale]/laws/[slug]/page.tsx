@@ -102,7 +102,33 @@ export default async function LawReaderPage({
             </Link>
           </span>
         </div>
+        {law.parent && (
+          <p className="text-sm">
+            <span className="text-muted">{t("implements")} </span>
+            <Link href={`/${locale}/laws/${law.parent.slug}`} className="font-medium text-accent hover:underline">
+              {lawTitle(law.parent, locale)}
+            </Link>
+          </p>
+        )}
       </header>
+
+      {law.decrees && law.decrees.length > 0 && (
+        <section className="mt-4 rounded-[var(--radius)] border border-separator bg-surface px-5 py-4" aria-labelledby="decrees-heading">
+          <h2 id="decrees-heading" className="font-semibold">
+            {t("decrees", { count: law.decrees.length })}
+          </h2>
+          <ul className="mt-2 flex flex-col gap-1.5 text-sm">
+            {law.decrees.map((decree) => (
+              <li key={decree.slug}>
+                <Link href={`/${locale}/laws/${decree.slug}`} className="text-accent hover:underline">
+                  {lawTitle(decree, locale)}
+                </Link>
+                {decree.law_number && <span className="ms-2 tabular-nums text-muted" dir="ltr">{decree.law_number}</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {law.preamble && <Preamble title={t("preamble")} text={law.preamble} isArabic={isArabic} />}
       {law.amendments && <Amendments data={law.amendments} />}
