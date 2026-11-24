@@ -184,7 +184,17 @@
     "amended": "Modifié · {refs}",
     "refersTo": "Renvoie à",
     "referencedBy": "Cité par",
-    "moreRefs": "+{count} autres"
+    "moreRefs": "+{count} autres",
+    "history": "Historique des modifications",
+    "amendedSince": "Modifiés depuis",
+    "anyTime": "Tous les articles",
+    "kind": {
+      "amended": "modifié",
+      "supplemented": "complété",
+      "repealed": "abrogé",
+      "replaced": "remplacé",
+      "added": "ajouté"
+    }
   },
   "settings": {
     "title": "Paramètres IA",

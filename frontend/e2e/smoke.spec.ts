@@ -74,3 +74,14 @@ test("cross-references link both ways within the law", async ({ page }) => {
   await expect(cited.getByText("محال عليها في")).toBeVisible();
   await expect(cited.getByRole("link", { name: "المادة 19" })).toHaveAttribute("href", "#article-19");
 });
+
+test("an amended article shows its history, and the reader filters by year", async ({ page }) => {
+  await page.goto(`/ar/laws/${LAW}`);
+  const history = page.locator("#article-4").getByTestId("amendment-history");
+  await expect(history).toContainText("2021");
+  await expect(history).toContainText("102.21");
+  await expect(history).toContainText("تغيير، تتميم");
+  await page.getByRole("combobox").selectOption("2021");
+  await expect(page.locator("article.article-card")).toHaveCount(1);
+  await expect(page.locator("#article-4")).toBeVisible();
+});

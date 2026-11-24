@@ -184,7 +184,17 @@
     "amended": "Amended · {refs}",
     "refersTo": "Refers to",
     "referencedBy": "Referenced by",
-    "moreRefs": "+{count} more"
+    "moreRefs": "+{count} more",
+    "history": "Amendment history",
+    "amendedSince": "Amended since",
+    "anyTime": "All articles",
+    "kind": {
+      "amended": "amended",
+      "supplemented": "supplemented",
+      "repealed": "repealed",
+      "replaced": "replaced",
+      "added": "added"
+    }
   },
   "settings": {
     "title": "AI settings",

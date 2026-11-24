@@ -9,6 +9,8 @@ import type { Amendments as AmendmentsData } from "@/lib/types";
 export function Amendments({ data }: { data: AmendmentsData }) {
   const t = useTranslations("reader");
   if (!data.laws.length) return null;
+  // Chronological when the years are known (they come from the amending texts' numbers).
+  const laws = [...data.laws].sort((a, b) => (a.year ?? 9999) - (b.year ?? 9999) || b.mentions - a.mentions);
   return (
     <Disclosure className="mt-4 rounded-[var(--radius)] border border-separator bg-surface">
       <Disclosure.Heading>
@@ -24,10 +26,11 @@ export function Amendments({ data }: { data: AmendmentsData }) {
         <Disclosure.Body className="flex flex-col gap-3 px-5 pb-5">
           <p className="text-sm text-muted">{t("amendmentsHint")}</p>
           <ul className="flex flex-col divide-y divide-separator">
-            {data.laws.map((law) => (
+            {laws.map((law) => (
               <li key={law.ref} className="flex flex-col gap-1.5 py-2.5 sm:flex-row sm:items-baseline sm:gap-4">
                 <span className="shrink-0 font-semibold tabular-nums sm:w-40" dir="ltr">
                   {t("amendingText", { ref: law.ref })}
+                  {law.year ? <span className="ms-2 font-normal text-muted">{law.year}</span> : null}
                 </span>
                 {law.articles.length ? (
                   <span className="flex flex-wrap gap-1.5">

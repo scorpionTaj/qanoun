@@ -321,7 +321,9 @@ container healthchecks.
 - [x] Laws: one card per law with its editions, sticky filters; reader with Arabic-normalized
       in-law search, text size, deep links to `#article-N`, copy citation
 - [x] Amendments: each law lists the amending texts named in its official footnotes, with
-      links to the changed articles and an «Amended» badge on each
+      their year and links to the changed articles; each amended article shows its history
+      (year, amending text, amended / supplemented / repealed / replaced / added), and the
+      reader filters to «articles amended since <year>"
 - [x] Cross-references: under each article, the articles it cites and those that cite it,
       within the law or in another one («المادة 53 أعلاه», «l'article 12 de la loi n° 70-03»);
       about 7,300 links, rebuilt from the article text with `cli refs`
@@ -352,8 +354,10 @@ container healthchecks.
   as a law text, so such questions abstain rather than guess.
 - **Homonyms** (كفالة = guarantee in the D.O.C. vs. child kafala) can pull the wrong articles
   unless the question is scoped to a domain or law.
-- **Amendments are what the footnotes say**, not point-in-time versions: the text shown is
-  the current consolidated one, and a few footnotes name no article.
+- **Amendments are what the footnotes say**, not past wording: the portal publishes only the
+  current consolidated text, so the history lists what changed and when, not what the article
+  said before. The year is the one in the amending text's number («12.18» → 2018); its
+  promulgation can be a year later. A few footnotes name no article.
 - **Dialect questions are still the weak spot**: with rewriting, Darija reaches 0.83 and
   Arabizi 0.74 page-level hit@10 against 0.97 for MSA; without it Arabizi is at 0.10.
 - **Retrieval misses some short exact articles**: «and for a pregnant woman?» is understood
@@ -370,7 +374,6 @@ container healthchecks.
 - [ ] Corpus: الحالة المدنية (37.10), مدونة التغطية الصحية (65.00), مدونة الانتخابات, child
       *kafala* (15.01) — when published as texts on the portal or another official source
 - [ ] Reranker that improves MRR, not just hit@10 (fine-tune, or rerank only the top 10)
-- [ ] Point-in-time versions of amended articles
 - [ ] Password reset by email
 
 Built by [scorpiontaj](https://github.com/scorpiontaj) — retrieval/eval patterns inherited
