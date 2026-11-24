@@ -323,7 +323,7 @@ container healthchecks.
 - [x] Amendments: each law lists the amending texts named in its official footnotes, with
       their year and links to the changed articles; each amended article shows its history
       (year, amending text, amended / supplemented / repealed / replaced / added), and the
-      reader filters to «articles amended since <year>"
+      reader filters to «articles amended since <year>»
 - [x] Cross-references: under each article, the articles it cites and those that cite it,
       within the law or in another one («المادة 53 أعلاه», «l'article 12 de la loi n° 70-03»);
       about 7,300 links, rebuilt from the article text with `cli refs`
