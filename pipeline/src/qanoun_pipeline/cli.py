@@ -146,6 +146,11 @@ def ingest_all(args: argparse.Namespace) -> int:
 
 
 def _process_file(meta: catalog.LawMeta, args: argparse.Namespace) -> tuple[structure.StructureReport, int]:
+    path = fetch.ensure_file(meta, RAW_DIR, verify_only=args.skip_fetch)
+    return segment_pdf(path, meta)
+
+
+def segment_pdf(path: Path, meta: catalog.LawMeta) -> tuple[structure.StructureReport, int]:
     """Read pages (text layer first; OCR as fallback) and segment into articles.
 
     The OCR fallback fires on three signals: no articles at all, a suspiciously low article
@@ -154,7 +159,6 @@ def _process_file(meta: catalog.LawMeta, args: argparse.Namespace) -> tuple[stru
     PDF yields 129 headers numbered up to ~440). OCR is only attempted when tesseract is
     installed, and kept only when it finds more articles.
     """
-    path = fetch.ensure_file(meta, RAW_DIR, verify_only=args.skip_fetch)
     ocr_lang = "ara" if meta.language == "ar" else "fra"
     pages = _read(path, ocr_lang)
     report = _try_segment(pages, meta.article_words)

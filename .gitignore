@@ -1,5 +1,6 @@
 # Data: raw PDFs and processed artifacts stay out of git; the fetch script recreates them.
 data/raw/*.pdf
+data/raw/_watch/
 data/raw/*.txt
 data/processed/
 data/ocr/
