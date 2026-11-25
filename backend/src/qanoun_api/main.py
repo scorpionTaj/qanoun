@@ -79,7 +79,9 @@ app.include_router(auth.router)
 app.include_router(conversations.router)
 app.include_router(keys.router)
 # MCP for AI agents (streamable HTTP at /mcp), see qanoun_api.mcp_server.
-app.add_route("/mcp", mcp_server.endpoint, methods=["GET", "POST", "DELETE"], include_in_schema=False)
+# POST only: stateless, there is no server stream to GET (a 405 tells clients so at once;
+# a GET used to stay open until the function timed out) and no session to DELETE.
+app.add_route("/mcp", mcp_server.endpoint, methods=["POST"], include_in_schema=False)
 
 
 @app.get("/docs", include_in_schema=False)

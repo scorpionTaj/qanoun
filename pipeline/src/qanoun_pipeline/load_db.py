@@ -33,8 +33,14 @@ def prepare_connection(conn: psycopg.Connection) -> None:
     register_vector(conn)
 
 
+# No server-side prepared statements: behind a transaction-mode pooler (Supabase's, port 6543)
+# consecutive transactions run on different server sessions, so a statement psycopg prepared
+# (it does after 5 uses) is missing on one session and already exists on another.
+CONNECT_KWARGS = {"prepare_threshold": None}
+
+
 def connect(url: str) -> psycopg.Connection:
-    conn = psycopg.connect(db_url(url))
+    conn = psycopg.connect(db_url(url), **CONNECT_KWARGS)
     prepare_connection(conn)
     return conn
 
