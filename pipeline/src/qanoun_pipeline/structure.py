@@ -49,6 +49,29 @@ def arabic_header_re(words: tuple[str, ...] = DEFAULT_ARTICLE_WORDS) -> re.Patte
     return re.compile(rf"^\s*(?:{alts})\s*[:：]?\s*{_ARABIC_DIGITS}")
 
 
+# A line can start like a header and still be something else: a reference that wrapped to the
+# line start («المادة 109 من نفس القانون التنظيمي»), a footnote citing another law («المادة209»
+# / «من القانون رقم70.03»), or an amendment note quoting a former wording («المادة19 : "يدخل…»).
+# Consolidated texts are full of these; taken for headers, they cut the real article in two
+# and, as duplicates, push the real header into the previous article's body.
+# A citation of another text can follow on the next line; «من هذا…» and a quote only count on
+# the header's own line, because a real article can open with them («المادة 73» / «"التوصيل
+# عن تصفية كل حساب" هو…», a definition).
+_CITES_ANOTHER_TEXT = re.compile(
+    r"^\s*(?:من\s+(?:ال)?(?:قانون|ظهير|مرسوم|مدونة|نفس|قرار)|(?:de\s+la|du|de\s+l['’])\s+(?:loi|dahir|décret|même))"
+)
+_QUOTED = re.compile(r"^\s*[:：]\s*[\"“«]")  # «: "…»: a former wording quoted in a note
+_CITES_OR_QUOTES = re.compile(r"^\s*(?:من\s+(?:هذا|هذه)\s|(?:du|de\s+la)\s+présente?\b|[:：]\s*[\"“«])")
+
+
+def _is_reference(same_line: str, next_line: str) -> bool:
+    """Whether a header-like line is a citation or a quote. `same_line`: what follows the
+    number on its line; `next_line`: the next two lines, read only when `same_line` is empty."""
+    if same_line.strip():
+        return bool(_CITES_ANOTHER_TEXT.match(same_line) or _CITES_OR_QUOTES.match(same_line))
+    return bool(_CITES_ANOTHER_TEXT.match(next_line) or _QUOTED.match(next_line))
+
+
 # A header rebuilt from two lines may also be a reference that wrapped («… عليها في» /
 # «المادة» / «95»): accept it only when it moves the numbering forward by at most this much
 # (repealed articles leave small gaps), or is a sub-article of the current one.
@@ -169,7 +192,14 @@ def segment(
             current = None
 
     for page in pages:
-        for line, how in _lines(page.text, article_words):
+        page_lines = list(_lines(page.text, article_words))
+        for i, (line, how) in enumerate(page_lines):
+            head = arabic_header.match(line) or _FRENCH_HEADER.match(line)
+            following = " ".join(text for text, _ in page_lines[i + 1 : i + 3])  # «:» may sit alone on a line
+            if head is not None and _is_reference(line[head.end():], following):
+                target = current["text"] if current is not None else preamble_lines
+                target.append(line.strip())
+                continue
             if (ar := arabic_header.match(line)) is not None:
                 digits = ar.group(1).translate(_DIGITS)
                 sub = ar.group(2) or ar.group(3)

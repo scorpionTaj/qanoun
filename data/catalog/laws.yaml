@@ -616,6 +616,52 @@ entries:
   source_url: https://adala.justice.gov.ma/api/uploads/2026/09/22/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.26.75%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2066.23%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D8%AA%D9%86%D8%B8%D9%8A%D9%85%20%D9%85%D9%87%D9%86%D8%A9%20%D8%A7%D9%84%D9%85%D8%AD%D8%A7%D9%85%D8%A7%D8%A9-1790070416475.pdf
   sha256: f450573b8566ad44dc790ad458c3f5c1b792c9adae27abf9b970f866e9d2b0ee
 
+# ── on the portal since 2026: civil status (36.21, replaced 37.99), kafala, health coverage, elections ──
+- slug: civil-status-ar
+  group: civil-status
+  title_ar: قانون الحالة المدنية
+  title_fr: Loi relative à l'état civil
+  law_number: 36-21
+  year: 2021
+  domain: family
+  language: ar
+  file: civil-status-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2026/04/16/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.21.81%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2036.21%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D8%A7%D9%84%D8%AD%D8%A7%D9%84%D8%A9%20%D8%A7%D9%84%D9%85%D8%AF%D9%86%D9%8A%D8%A9%20%281%29-1776328405081.pdf
+  sha256: be6f21406199073fdf31c238417961de92a777bf8912df252caef63a19da44b6
+- slug: kafala-ar
+  group: kafala
+  title_ar: قانون كفالة الأطفال المهملين
+  title_fr: Loi relative à la kafala des enfants abandonnés
+  law_number: 15-01
+  year: 2002
+  domain: family
+  language: ar
+  file: kafala-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2026/07/29/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.02.172%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%2015.01%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D9%83%D9%81%D8%A7%D9%84%D8%A9%20%D8%A7%D9%84%D8%A3%D8%B7%D9%81%D8%A7%D9%84%20%D8%A7%D9%84%D9%85%D9%87%D9%85%D9%84%D9%8A%D9%86-1785317078022.pdf
+  sha256: 0b9f38e28b7029e81be04da9135e2ec32e93449eae0714f79fda924220a52148
+- slug: health-coverage-ar
+  group: health-coverage
+  title_ar: مدونة التغطية الصحية الأساسية
+  title_fr: Code de la couverture médicale de base
+  law_number: 65-00
+  year: 2002
+  domain: social
+  language: ar
+  file: health-coverage-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2026/03/06/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.02.296%20%D8%B5%D8%A7%D8%AF%D8%B1%20%D9%81%D9%8A%20%282%29-1772789292321.pdf
+  sha256: 503680f704c54e4ea82cab0471e20b025b66c571b5f81c547464e36c9e0b26da
+- slug: elections-code-ar
+  group: elections-code
+  title_ar: مدونة الانتخابات
+  title_fr: Code électoral
+  law_number: 9-97
+  year: 1997
+  domain: governance
+  language: ar
+  file: elections-code-ar.pdf
+  source_url: https://adala.justice.gov.ma/api/uploads/2026/07/29/%D8%B8%D9%87%D9%8A%D8%B1%20%D8%B4%D8%B1%D9%8A%D9%81%20%D8%B1%D9%82%D9%85%201.97.83%20%D8%A8%D8%AA%D9%86%D9%81%D9%8A%D8%B0%20%D8%A7%D9%84%D9%82%D8%A7%D9%86%D9%88%D9%86%20%D8%B1%D9%82%D9%85%209.97%20%D8%A7%D9%84%D9%85%D8%AA%D8%B9%D9%84%D9%82%20%D8%A8%D9%85%D8%AF%D9%88%D9%86%D8%A9%20%D8%A7%D9%84%D8%A7%D9%86%D8%AA%D8%AE%D8%A7%D8%A8%D8%A7%D8%AA-1785320564115.pdf
+  sha256: 27a0fc2f3e2119c63c71c856508259e3a1b0878222249b2ef49cb03b7500edae
+
 # ── implementing decrees (parent: the group of the law each applies), added 2026-11-24 ──
 - slug: working-hours-decree-ar
   group: working-hours-decree
