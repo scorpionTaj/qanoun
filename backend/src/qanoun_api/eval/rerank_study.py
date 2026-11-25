@@ -35,6 +35,11 @@ def passage(hit) -> str:
     return f"{hit.law_title} — {hit.article_number}: {hit.text}"
 
 
+def save(path: Path, cache: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(cache, ensure_ascii=False), encoding="utf-8")
+
+
 def blend(order: list[int], scores: list[float], k: float, weight: float) -> list[int]:
     """Indexes of `order` (fused ranking) re-ranked by weighted RRF with the reranker's ranks."""
     by_score = sorted(order, key=lambda i: -scores[i])
@@ -67,7 +72,7 @@ def main() -> int:
     args = parser.parse_args()
 
     cache = json.loads(args.cache.read_text(encoding="utf-8")) if args.cache.exists() else {}
-    reranker = JinaReranker(args.model)
+    reranker = JinaReranker(args.model, attempts=8)
     pools: dict[str, RetrievalResult] = {}
     scores: dict[str, list[float]] = {}
     questions = {path: load_questions(Path(path))[: args.limit] for path in SETS}
@@ -85,8 +90,7 @@ def main() -> int:
             scores[text] = reranker.predict([(text, passage(h)) for h in result.hits])
             cache[key] = {"keys": [f"{h.group_slug}:{h.article_number}" for h in result.hits],
                           "scores": scores[text]}  # fmt: skip
-    args.cache.parent.mkdir(parents=True, exist_ok=True)
-    args.cache.write_text(json.dumps(cache, ensure_ascii=False), encoding="utf-8")
+            save(args.cache, cache)  # a rerun after a failure starts where this one stopped
     close_pool()
 
     asked = len(pools)

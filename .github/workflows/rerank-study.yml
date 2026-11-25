@@ -18,7 +18,9 @@ jobs:
         with:
           python-version: "3.13"
           enable-cache: true
-      - run: |
+      - shell: bash
+        run: |
+          set -o pipefail
           uv run --project backend python -m qanoun_api.eval.rerank_study --pool 20 --cache rerank-cache.json \
             | tee study.md
           cat study.md >> "$GITHUB_STEP_SUMMARY"

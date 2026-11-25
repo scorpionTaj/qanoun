@@ -6,8 +6,10 @@ pipeline normalizer (same letter folding, same digit mapping) for FTS, and embed
 the same model and prefixes for the vector search.
 """
 
+import logging
 import os
 import threading
+import time
 from dataclasses import dataclass, field
 
 import httpx
@@ -18,6 +20,8 @@ from qanoun_pipeline.normalize import normalize
 
 from qanoun_api.config import SETTINGS
 from qanoun_api.db import db
+
+log = logging.getLogger(__name__)
 
 RRF_K = 60
 CANDIDATES = 50  # per-channel candidate pool before fusion
@@ -187,12 +191,16 @@ class JinaReranker:
     URL = "https://api.jina.ai/v1/rerank"
     MAX_CHARS = 600
 
-    def __init__(self, model: str, key: str | None = None, client: httpx.Client | None = None):
+    def __init__(self, model: str, key: str | None = None, client: httpx.Client | None = None,
+                 attempts: int = 1, sleep=time.sleep):  # fmt: skip
         self.model = model
         self.key = key or os.environ.get("QANOUN_JINA_KEY", "")
         if not self.key:
             raise RuntimeError("QANOUN_JINA_KEY is not set (needed for the Jina reranker)")
         self.client = client or httpx.Client(timeout=30)
+        # A question can't wait out a rate limit: by default a 429 fails fast and search()
+        # keeps the fused order. Batch jobs (the eval) pass more attempts.
+        self.attempts, self.sleep = attempts, sleep
         self.tokens = 0  # used so far, as the API reports it
 
     def predict(self, pairs: list[tuple[str, str]]) -> list[float]:
@@ -201,7 +209,12 @@ class JinaReranker:
             return []
         body = {"model": self.model, "query": pairs[0][0], "return_documents": False,
                 "documents": [passage[: self.MAX_CHARS] for _, passage in pairs]}  # fmt: skip
-        response = self.client.post(self.URL, json=body, headers={"Authorization": f"Bearer {self.key}"})
+        for attempt in range(self.attempts):
+            response = self.client.post(self.URL, json=body, headers={"Authorization": f"Bearer {self.key}"})
+            if response.status_code != 429 or attempt == self.attempts - 1:
+                break
+            retry_after = response.headers.get("retry-after", "")
+            self.sleep(float(retry_after) if retry_after.isdigit() else min(2.0**attempt, 60.0))
         response.raise_for_status()
         data = response.json()
         self.tokens += (data.get("usage") or {}).get("total_tokens", 0)
@@ -231,7 +244,11 @@ def rerank(query: str, hits: list[Hit], k: int) -> list[Hit]:
     """Re-order fused candidates by a cross-encoder reading question and article together:
     fusion ranks by overlap, the reranker by whether the passage actually answers."""
     pairs = [(query, f"{hit.law_title} — {hit.article_number}: {hit.text}") for hit in hits]
-    scores = get_reranker().predict(pairs)
+    try:
+        scores = get_reranker().predict(pairs)
+    except (httpx.HTTPError, RuntimeError) as exc:  # rate limit, quota, network: answer anyway
+        log.warning("reranker failed, keeping the fused order: %s", exc)
+        return hits[:k]
     ranked = sorted(zip(scores, hits, strict=True), key=lambda pair: -float(pair[0]))
     return [hit for _, hit in ranked[:k]]
 
