@@ -47,7 +47,8 @@
           ]
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "./plugins/with-release-signing"
     ],
     "experiments": {
       "typedRoutes": true,
