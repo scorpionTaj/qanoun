@@ -10,9 +10,9 @@ candidates:
 
 - `fused`: today's order (the baseline);
 - `replace@N`: the fused top N re-ordered by the reranker alone;
-- `blend@N/k/w`: the fused top N re-ordered by a weighted reciprocal-rank fusion of the fused
-  rank and the reranker's rank, w on the reranker. A reranker that is right most of the time
-  but sometimes buries an exact match then only moves good candidates up, not bad ones.
+- `blend@N/k/w`: the fused top N re-ordered by retrieval.blend, a weighted reciprocal-rank
+  fusion of the fused rank and the reranker's rank, w on the reranker (what search() does
+  when a reranker is set, with the constants this study picked).
 
 Prints one table row per strategy (law / article / page hit@10 and MRR) and the API tokens
 used, which is what the reranker would cost per question in production.
@@ -25,7 +25,7 @@ from pathlib import Path
 
 from qanoun_api.db import close_pool
 from qanoun_api.eval.run import evaluate_retrieval, load_questions, retrieval_metrics
-from qanoun_api.rag.retrieval import JinaReranker, RetrievalResult, search
+from qanoun_api.rag.retrieval import JinaReranker, RetrievalResult, blend, search
 
 SETS = ("data/eval/questions.jsonl", "data/eval/articles.jsonl", "data/eval/pages.jsonl")
 K = 10
@@ -40,15 +40,6 @@ def save(path: Path, cache: dict) -> None:
     path.write_text(json.dumps(cache, ensure_ascii=False), encoding="utf-8")
 
 
-def blend(order: list[int], scores: list[float], k: float, weight: float) -> list[int]:
-    """Indexes of `order` (fused ranking) re-ranked by weighted RRF with the reranker's ranks."""
-    by_score = sorted(order, key=lambda i: -scores[i])
-    rr_rank = {i: r for r, i in enumerate(by_score, start=1)}
-    fused_rank = {i: r for r, i in enumerate(order, start=1)}
-    value = {i: (1 - weight) / (k + fused_rank[i]) + weight / (k + rr_rank[i]) for i in order}
-    return sorted(order, key=lambda i: -value[i])
-
-
 def strategies(pools: list[int]) -> dict[str, callable]:
     out = {"fused": lambda n, scores: list(range(n))}
     for size in pools:
@@ -58,7 +49,7 @@ def strategies(pools: list[int]) -> dict[str, callable]:
         for k in (2, 10, 60):
             for weight in (0.5, 0.7):
                 out[f"blend@{size}/k{k}/w{weight}"] = lambda n, scores, size=size, k=k, weight=weight: (
-                    blend(list(range(min(size, n))), scores, k, weight) + list(range(min(size, n), n))
+                    blend(scores[: min(size, n)], k, weight) + list(range(min(size, n), n))
                 )
     return out
 

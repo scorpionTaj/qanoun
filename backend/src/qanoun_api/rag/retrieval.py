@@ -31,7 +31,16 @@ CANDIDATES = 50  # per-channel candidate pool before fusion
 # against an exact scan / median query time: 0.63 / 1 ms at 40, 0.91 / 3 ms at 200,
 # 1.00 / 5 ms at 400, and the exact scan itself takes 93 ms.
 HNSW_EF_SEARCH = 400
-RERANK_POOL = 30  # fused candidates the cross-encoder re-scores (when enabled)
+# Reranking (QANOUN_RERANKER): the fused top RERANK_POOL are re-ordered by a weighted
+# reciprocal-rank fusion of their fused rank and the reranker's rank, RERANK_WEIGHT on the
+# reranker. Measured on the 323 eval questions as typed against the demo (Jina's
+# jina-reranker-v2-base-multilingual, eval/rerank_study.py), MRR law / article / page:
+# fused 0.837 / 0.583 / 0.604; reranker order alone 0.851 / 0.617 / 0.624; this blend
+# 0.864 / 0.669 / 0.635, and article hit@10 0.778 → 0.833. The reranker alone sometimes buries
+# an exact match the fusion had right; blended, it mostly moves good candidates up.
+RERANK_POOL = 20
+RERANK_RRF_K = 60
+RERANK_WEIGHT = 0.7
 
 
 @dataclass(frozen=True)
@@ -240,17 +249,26 @@ def get_reranker():
         return _reranker
 
 
+def blend(scores: list[float], k: float = RERANK_RRF_K, weight: float = RERANK_WEIGHT) -> list[int]:
+    """Positions 0..n-1 (the fused order) re-ordered by weighted reciprocal-rank fusion of
+    the fused rank and the rank by `scores` (the reranker's)."""
+    positions = range(len(scores))
+    by_score = {i: rank for rank, i in enumerate(sorted(positions, key=lambda i: -scores[i]), start=1)}
+    value = {i: (1 - weight) / (k + i + 1) + weight / (k + by_score[i]) for i in positions}
+    return sorted(positions, key=lambda i: -value[i])
+
+
 def rerank(query: str, hits: list[Hit], k: int) -> list[Hit]:
-    """Re-order fused candidates by a cross-encoder reading question and article together:
-    fusion ranks by overlap, the reranker by whether the passage actually answers."""
-    pairs = [(query, f"{hit.law_title} — {hit.article_number}: {hit.text}") for hit in hits]
+    """Re-order the fused top RERANK_POOL with a reranker reading question and article
+    together: fusion ranks by overlap, the reranker by whether the passage answers."""
+    pool = hits[:RERANK_POOL]
+    pairs = [(query, f"{hit.law_title} — {hit.article_number}: {hit.text}") for hit in pool]
     try:
-        scores = get_reranker().predict(pairs)
+        scores = [float(score) for score in get_reranker().predict(pairs)]
     except (httpx.HTTPError, RuntimeError) as exc:  # rate limit, quota, network: answer anyway
         log.warning("reranker failed, keeping the fused order: %s", exc)
         return hits[:k]
-    ranked = sorted(zip(scores, hits, strict=True), key=lambda pair: -float(pair[0]))
-    return [hit for _, hit in ranked[:k]]
+    return ([pool[i] for i in blend(scores)] + hits[RERANK_POOL:])[:k]
 
 
 def _run(conn: psycopg.Connection, query: str, effective: str, params: dict) -> RetrievalResult:

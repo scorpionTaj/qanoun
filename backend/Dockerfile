@@ -1,7 +1,7 @@
 # Build from the repo root (the API depends on the pipeline package next to it):
 #   docker build -f backend/Dockerfile .                           # slim: remote embeddings (Jina)
 #   docker build -f backend/Dockerfile --build-arg EXTRAS=models . # + PyTorch for local BGE-M3
-FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
+FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim
 
 ARG EXTRAS=""
 
