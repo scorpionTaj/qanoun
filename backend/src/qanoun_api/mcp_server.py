@@ -10,6 +10,7 @@ tool: the calling agent is itself a language model and composes the answer from 
 which keeps the server free of LLM costs.
 """
 
+from contextlib import asynccontextmanager
 from typing import TypedDict
 
 from fastapi import HTTPException
@@ -157,8 +158,34 @@ def list_laws(domain: str | None = None) -> list[Law]:
     ]
 
 
-# The ASGI endpoint main.py mounts at /mcp. Stateless JSON: no session survives between
-# requests, which a serverless function could not keep anyway. No DNS-rebinding host check:
-# the server is public and read-only, and it reads no cookie or credential.
-http_app = server.streamable_http_app(streamable_http_path="/mcp", stateless_http=True, json_response=True,
-                                      host="0.0.0.0")
+class _Endpoint:
+    """The ASGI app main.py routes /mcp to. It forwards to the transport of the running app
+    lifespan: the SDK's session manager runs once per instance, and an app can be started more
+    than once in one process (tests, reloads), so each start builds its own (see `running`)."""
+
+    transport = None
+
+    async def __call__(self, scope, receive, send):
+        if self.transport is None:
+            raise RuntimeError("the MCP endpoint is served only while the app's lifespan runs")
+        await self.transport(scope, receive, send)
+
+
+endpoint = _Endpoint()
+
+
+@asynccontextmanager
+async def running():
+    """Start the MCP transport for one app lifespan.
+
+    Stateless with JSON responses: no session survives between requests, which a serverless
+    function could not keep anyway. No DNS-rebinding host check: the server is public and
+    read-only, and it reads no cookie or credential."""
+    app = server.streamable_http_app(streamable_http_path="/mcp", stateless_http=True, json_response=True,
+                                     host="0.0.0.0")
+    endpoint.transport = app.routes[0].endpoint
+    try:
+        async with server.session_manager.run():
+            yield
+    finally:
+        endpoint.transport = None

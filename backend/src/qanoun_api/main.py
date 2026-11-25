@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
     # Load the embedding model in the background: the API is up immediately, and the
     # first question no longer waits ~10-30 s for BGE-M3 to load.
     threading.Thread(target=_warm_up, name="embedder-warmup", daemon=True).start()
-    async with mcp_server.server.session_manager.run():  # the MCP endpoint's task group
+    async with mcp_server.running():  # the MCP endpoint's transport, one per lifespan
         yield
     close_pool()
 
@@ -78,7 +78,7 @@ app.include_router(llm.router)
 app.include_router(auth.router)
 app.include_router(conversations.router)
 # MCP for AI agents (streamable HTTP at /mcp), see qanoun_api.mcp_server.
-app.router.routes.extend(mcp_server.http_app.routes)
+app.add_route("/mcp", mcp_server.endpoint, methods=["GET", "POST", "DELETE"], include_in_schema=False)
 
 
 @app.get("/docs", include_in_schema=False)

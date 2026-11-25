@@ -13,10 +13,10 @@ from qanoun_api.rag.retrieval import RetrievalResult
 HEADERS = {"Accept": "application/json, text/event-stream", "Content-Type": "application/json"}
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def client():
-    """One app lifespan for the module (it starts the MCP task group, which runs once per
-    process, as in production), without a database."""
+    """A fresh app lifespan per test, without a database. Starting the app many times in one
+    process is itself under test: the SDK's session manager runs only once per instance."""
 
     @contextmanager
     def no_db():
@@ -106,3 +106,8 @@ def test_list_laws(mcp, fake_db):
     assert data == [{"slug": "minimum-wage-decree-ar", "title_ar": "مرسوم الحد الأدنى للأجر", "title_fr": None,
                      "number": "2.24.1122", "year": 2024, "domain": "labour", "language": "ar",
                      "articles": 4, "implements": "labour-code"}]
+
+
+def test_endpoint_is_closed_outside_the_lifespan():
+    with pytest.raises(RuntimeError, match="lifespan"):
+        TestClient(main.app).post("/mcp", json={}, headers=HEADERS)
