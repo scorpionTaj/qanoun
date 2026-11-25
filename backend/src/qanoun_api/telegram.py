@@ -73,8 +73,10 @@ def _source_line(n: int, source: dict) -> str:
 def format_answer(text: str, sources: list[dict], cited: list[int]) -> str:
     """The answer (HTML-escaped) and the sources it cites, as links into the reader.
 
+    `cited` holds 0-based source indexes (answer.parse_citations): «[2]» in the text is 1.
+
     The sources go first in the budget: an answer cut short keeps its citations."""
-    lines = [_source_line(n, sources[n - 1]) for n in cited if 1 <= n <= len(sources)]
+    lines = [_source_line(i + 1, sources[i]) for i in cited if 0 <= i < len(sources)]
     footer = ("\n\n📚 " + "\n".join(lines)) if lines else ""
     body = html.escape(text)
     room = MAX_MESSAGE - len(footer) - 1

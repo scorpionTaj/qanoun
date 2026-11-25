@@ -59,15 +59,16 @@ def test_a_question_gets_a_cited_answer_with_links(bot, monkeypatch):
 
     def events(req):
         seen["question"] = req.question
-        yield ("sources", {"sources": [SOURCE, {**SOURCE, "article_number": "20"}]})
-        yield ("done", {"abstained": False, "cited": [1], "text": "سن الزواج 18 سنة <b> [1]"})
+        yield ("sources", {"sources": [{**SOURCE, "article_number": "20"}, SOURCE]})
+        # «[2]» in the text; `cited` is 0-based (answer.parse_citations), as /api/chat sends it
+        yield ("done", {"abstained": False, "cited": [1], "text": "سن الزواج 18 سنة <b> [2]"})
 
     monkeypatch.setattr(webhook, "_chat_events", events)
     client.post("/api/telegram/webhook", json=update("شحال خاص يكون العمر باش تزوج؟"), headers=SECRET)
     chat_id, text = bot[0][0]
     assert chat_id == 42 and seen["question"] == "شحال خاص يكون العمر باش تزوج؟"
-    assert text.startswith("سن الزواج 18 سنة &lt;b&gt; [1]")  # model text is escaped for HTML mode
-    assert '[1] <a href="https://qanoun.example/ar/laws/family-code-ar#article-19">مدونة الأسرة — المادة 19</a>' in text
+    assert text.startswith("سن الزواج 18 سنة &lt;b&gt; [2]")  # model text is escaped for HTML mode
+    assert '[2] <a href="https://qanoun.example/ar/laws/family-code-ar#article-19">مدونة الأسرة — المادة 19</a>' in text
     assert "article-20" not in text  # only what the answer cites
     assert len(bot[1]) == 1  # logged like a web question
 
@@ -105,7 +106,7 @@ def test_groups_and_non_text_messages(bot):
 
 
 def test_long_answers_keep_their_sources():
-    text = telegram.format_answer("كلمة " * 2000, [SOURCE], [1])
+    text = telegram.format_answer("كلمة " * 2000, [SOURCE], [0])
     assert len(text) <= telegram.MAX_MESSAGE and text.endswith("المادة 19")
 
 
