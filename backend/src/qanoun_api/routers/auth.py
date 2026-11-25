@@ -1,11 +1,14 @@
-"""Optional accounts: sign up, sign in, sign out, who am I.
+"""Optional accounts: sign up, sign in, sign out, who am I, and settings that follow the account.
 
-Cookie session (httpOnly, SameSite=Lax). State-changing requests must be JSON from an
-allowed origin: with SameSite=Lax that blocks cross-site request forgery.
+The web app holds the session in a cookie (httpOnly, SameSite=Lax); state-changing requests
+must be JSON from an allowed origin, which with SameSite=Lax blocks cross-site request forgery.
+The mobile app signs in with `"client": "app"`: it gets the session token in the response
+body and sends it back in the X-Qanoun-Session header (a header no other site can make a
+browser send). Same sessions, same expiry, same sign-out.
 """
 
 import re
-from typing import Annotated
+from typing import Annotated, Literal
 
 import psycopg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -38,9 +41,19 @@ def _same_origin(origin: str, request: Request) -> bool:
     return origin.rstrip("/").split("://", 1)[-1] == request.headers.get("host", "")
 
 
+SESSION_HEADER = "x-qanoun-session"
+
+
+def session_token(request: Request) -> str | None:
+    return request.cookies.get(COOKIE) or request.headers.get(SESSION_HEADER) or None
+
+
 def current_user(request: Request) -> dict | None:
+    token = session_token(request)
+    if not token:
+        return None
     with db() as conn:
-        return accounts.session_user(conn, request.cookies.get(COOKIE))
+        return accounts.session_user(conn, token)
 
 
 OptionalUser = Annotated[dict | None, Depends(current_user)]
@@ -64,15 +77,30 @@ def require_admin(user: User) -> dict:
 class Credentials(BaseModel):
     email: str = Field(min_length=3, max_length=254)
     password: str = Field(min_length=accounts.MIN_PASSWORD, max_length=200)
+    client: Literal["web", "app"] = "web"  # app: the token in the body, not in a cookie
 
 
-def _start_session(response: Response, user_id: int) -> None:
+class AccountSettings(BaseModel):
+    """What follows the account across devices; unset fields keep the client's defaults."""
+
+    provider: str | None = Field(default=None, pattern=r"^[a-z]{0,20}$")
+    model: str | None = Field(default=None, max_length=200)
+    style: Literal["concise", "detailed"] | None = None
+    answer_language: Literal["auto", "ar", "fr", "en"] | None = None
+    ui_language: Literal["ar", "fr", "en"] | None = None
+    theme: Literal["system", "light", "dark"] | None = None
+
+
+def _start_session(response: Response, user_id: int, client: str) -> dict:
     with db() as conn:
         token = accounts.create_session(conn, user_id)
+    if client == "app":
+        return {"ok": True, "token": token}
     response.set_cookie(
         COOKIE, token, max_age=accounts.SESSION_DAYS * 86400, httponly=True,
         samesite="lax", secure=SETTINGS.cookie_secure, path="/",
     )
+    return {"ok": True}
 
 
 @router.get("/me")
@@ -91,8 +119,7 @@ def signup(body: Credentials, response: Response):
             user_id = accounts.create_user(conn, body.email, body.password)
     except psycopg.errors.UniqueViolation as exc:
         raise HTTPException(409, "an account with this email already exists") from exc
-    _start_session(response, user_id)
-    return {"ok": True}
+    return _start_session(response, user_id, body.client)
 
 
 @router.post("/login", dependencies=[Depends(same_origin_json), Depends(auth_limit)])
@@ -101,13 +128,26 @@ def login(body: Credentials, response: Response):
         user_id = accounts.authenticate(conn, body.email, body.password)
     if user_id is None:
         raise HTTPException(401, "wrong email or password")
-    _start_session(response, user_id)
-    return {"ok": True}
+    return _start_session(response, user_id, body.client)
 
 
 @router.post("/logout", dependencies=[Depends(same_origin_json)])
 def logout(request: Request, response: Response):
     with db() as conn:
-        accounts.delete_session(conn, request.cookies.get(COOKIE))
+        accounts.delete_session(conn, session_token(request))
     response.delete_cookie(COOKIE, path="/")
     return {"ok": True}
+
+
+@router.get("/settings")
+def get_settings(user: User):
+    with db() as conn:
+        return accounts.get_settings(conn, user["id"])
+
+
+@router.put("/settings", dependencies=[Depends(same_origin_json)])
+def put_settings(body: AccountSettings, user: User):
+    settings = body.model_dump(exclude_none=True)
+    with db() as conn:
+        accounts.put_settings(conn, user["id"], settings)
+    return settings

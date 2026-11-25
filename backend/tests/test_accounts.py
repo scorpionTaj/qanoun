@@ -93,3 +93,53 @@ def test_full_account_flow(monkeypatch):
         with db() as conn:
             conn.execute("DELETE FROM users WHERE email = %s", (email,))
             conn.commit()
+
+
+@pytest.mark.skipif(not os.environ.get("QANOUN_TEST_DB_URL"), reason="QANOUN_TEST_DB_URL not set")
+def test_app_session_by_header_and_account_settings(monkeypatch):
+    """The mobile app: token in the body, sent back in a header; settings follow the account."""
+    from dataclasses import replace
+
+    from fastapi.testclient import TestClient
+
+    from qanoun_api import db as db_module
+    from qanoun_api.main import app
+
+    db_module.close_pool()
+    monkeypatch.setattr(db_module, "SETTINGS", replace(db_module.SETTINGS, db_url=os.environ["QANOUN_TEST_DB_URL"]))
+    email = "app-flow@example.com"
+    with TestClient(app) as client:  # no Origin header, like a native app
+        from qanoun_api.db import db
+
+        with db() as conn:
+            conn.execute("DELETE FROM users WHERE email = %s", (email,))
+            conn.commit()
+        body = {"email": email, "password": "long-enough", "client": "app"}
+        signed_up = client.post("/api/auth/signup", json=body)
+        assert signed_up.status_code == 200 and "qanoun_session" not in signed_up.cookies
+        token = signed_up.json()["token"]
+        auth = {"X-Qanoun-Session": token}
+
+        assert client.get("/api/auth/me").json()["user"] is None  # no cookie: anonymous
+        assert client.get("/api/auth/me", headers=auth).json()["user"]["email"] == email
+        assert client.get("/api/auth/settings", headers=auth).json() == {}
+        saved = {"provider": "gemini", "style": "detailed", "ui_language": "fr", "theme": "dark"}
+        assert client.put("/api/auth/settings", json=saved, headers=auth).json() == saved
+        assert client.get("/api/auth/settings", headers=auth).json() == saved
+        assert client.put("/api/auth/settings", json={"theme": "neon"}, headers=auth).status_code == 422
+        assert client.get("/api/auth/settings").status_code == 401
+
+        conv = {"title": "t", "updated_at": 1, "messages": [{"role": "user", "text": "q"}]}
+        assert client.put("/api/conversations/m1", json=conv, headers=auth).status_code == 200
+        assert [c["id"] for c in client.get("/api/conversations", headers=auth).json()] == ["m1"]
+
+        login = client.post("/api/auth/login", json=body).json()
+        assert login["token"] != token  # a second device gets its own session
+        client.post("/api/auth/logout", json={}, headers=auth)
+        assert client.get("/api/auth/me", headers=auth).json()["user"] is None  # this session ended
+        assert client.get("/api/auth/me", headers={"X-Qanoun-Session": login["token"]}).json()["user"] is not None
+
+        with db() as conn:
+            conn.execute("DELETE FROM users WHERE email = %s", (email,))
+            conn.commit()
+    db_module.close_pool()

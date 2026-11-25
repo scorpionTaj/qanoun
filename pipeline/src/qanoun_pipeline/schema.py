@@ -191,6 +191,12 @@ MIGRATIONS: list[tuple[int, str, str]] = [
         CREATE INDEX api_keys_user_idx ON api_keys (user_id);
         """,
     ),
+    (
+        7,
+        "account settings",
+        # Preferences that follow the account across devices (validated by the API).
+        "ALTER TABLE users ADD COLUMN settings JSONB NOT NULL DEFAULT '{}'::jsonb;",
+    ),
 ]
 
 # Arbitrary constant: serialises schema changes (and extension creation) across processes.
