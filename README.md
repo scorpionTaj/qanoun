@@ -82,6 +82,20 @@ claude mcp add --transport http qanoun https://qanoun-api.vercel.app/mcp
 It is read-only and has no `ask` tool: the agent writes the answer from the articles, so the
 server spends no LLM quota. Set `QANOUN_WEB_URL` to your web app's address for the links.
 
+### Telegram bot
+
+Ask in a private chat with [@QanounMABot](https://t.me/QanounMABot), in Arabic, Darija,
+French or English: the answer comes from the same retrieval and citation checks as the web
+app, followed by the cited articles as links into the reader. It is off unless
+`QANOUN_TELEGRAM_TOKEN` is set; after deploying, register the webhook once:
+
+```bash
+uv run --project backend python -m qanoun_api.telegram set-webhook https://<api-host>/api/telegram/webhook
+```
+
+Only Telegram can call the webhook (a secret derived from the token is checked on every call).
+Each question stands alone (no follow-ups yet), and the chat limit applies per Telegram chat.
+
 ### API keys
 
 Reading laws and articles needs nothing. Search and the MCP server are rate-limited per address
@@ -392,6 +406,7 @@ container healthchecks.
 - [x] Opt-in cross-encoder reranker, measured against the eval before deciding
 - [x] MCP server at `/mcp` (streamable HTTP, stateless): `search_laws`, `get_article`,
       `list_laws` for AI agents, reusing the REST handlers
+- [x] Telegram bot (@QanounMABot): cited answers with links into the reader, per-chat limit
 - [x] API keys (Settings page): hashed, shown once, revocable, at most 10 per account; a key
       lifts the search and MCP limits per account
 
