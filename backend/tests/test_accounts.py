@@ -39,6 +39,16 @@ def test_csrf_guard_requires_json_from_allowed_origin():
     assert foreign.value.status_code == 403
 
 
+
+def test_csrf_guard_lets_the_apis_own_pages_write():
+    # the Swagger UI is served by the API itself: same host, not a cross-site request
+    own = {"content-type": "application/json", "origin": "https://qanoun-api.example", "host": "qanoun-api.example"}
+    same_origin_json(_request("POST", own))
+    with pytest.raises(HTTPException) as other:
+        same_origin_json(_request("POST", {**own, "origin": "https://qanoun-api.example.evil.test"}))
+    assert other.value.status_code == 403
+
+
 @pytest.mark.skipif(not os.environ.get("QANOUN_TEST_DB_URL"), reason="QANOUN_TEST_DB_URL not set")
 def test_full_account_flow(monkeypatch):
     from dataclasses import replace

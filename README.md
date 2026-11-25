@@ -99,6 +99,10 @@ claude mcp add --transport http qanoun https://qanoun-api.vercel.app/mcp \
 A key is shown once, stored only as a hash, and can be revoked at any time; a revoked or
 unknown key gets `401` rather than the anonymous limit. A key never opens the account itself.
 
+In the Swagger UI (the API's home page) everything above can be tried directly: sign up or
+sign in and create a key under *auth* / *api keys*, paste it in **Authorize**, then run
+`/api/search` or `/mcp` (examples for each MCP tool are in its request body menu).
+
 ## The corpus
 
 Ingested from the Ministry of Justice's official legal portal ([adala.justice.gov.ma](https://adala.justice.gov.ma)),

@@ -201,3 +201,48 @@ async def running():
             yield
     finally:
         endpoint.transport = None
+
+
+def _rpc(method: str, params: dict | None = None) -> dict:
+    return {"jsonrpc": "2.0", "id": 1, "method": method, **({"params": params} if params else {})}
+
+
+# How /mcp appears in the OpenAPI schema (added by main._openapi), with ready-to-run examples.
+OPENAPI_PATH = {
+    "post": {
+        "tags": ["mcp"],
+        "summary": "MCP endpoint (JSON-RPC 2.0) for AI agents",
+        "description": (
+            "Model Context Protocol over streamable HTTP, stateless with JSON responses. Agents "
+            "connect with `claude mcp add --transport http qanoun <this host>/mcp`; here, each "
+            "call is one JSON-RPC request. Tools: `search_laws`, `get_article`, `list_laws`. "
+            "An API key (Authorize) raises the limit from 60 to 240 requests a minute."
+        ),
+        "security": [{}, {"APIKey": []}],
+        "requestBody": {
+            "required": True,
+            "content": {"application/json": {
+                "schema": {"type": "object", "required": ["jsonrpc", "id", "method"], "properties": {
+                    "jsonrpc": {"type": "string", "enum": ["2.0"]},
+                    "id": {"type": "integer"},
+                    "method": {"type": "string"},
+                    "params": {"type": "object"},
+                }},
+                "examples": {
+                    "list tools": {"value": _rpc("tools/list")},
+                    "search_laws": {"value": _rpc("tools/call", {"name": "search_laws", "arguments": {
+                        "query": "ما هو الحد الأدنى للأجر؟", "k": 3}})},
+                    "get_article": {"value": _rpc("tools/call", {"name": "get_article", "arguments": {
+                        "law": "family-code-ar", "article": "19"}})},
+                    "list_laws": {"value": _rpc("tools/call", {"name": "list_laws", "arguments": {"domain": "labour"}})},
+                },
+            }},
+        },
+        "responses": {
+            "200": {"description": "JSON-RPC result (tool output in `result.structuredContent`)",
+                    "content": {"application/json": {"schema": {"type": "object"}}}},
+            "401": {"description": "Invalid or revoked API key"},
+            "429": {"description": "Too many requests (see Retry-After)"},
+        },
+    }
+}

@@ -29,8 +29,13 @@ def same_origin_json(request: Request) -> None:
     if not request.headers.get("content-type", "").startswith("application/json"):
         raise HTTPException(415, "JSON required")
     origin = request.headers.get("origin")
-    if origin and origin.rstrip("/") not in SETTINGS.cors_origins:
+    if origin and origin.rstrip("/") not in SETTINGS.cors_origins and not _same_origin(origin, request):
         raise HTTPException(403, "origin not allowed")
+
+
+def _same_origin(origin: str, request: Request) -> bool:
+    """The API's own pages (the Swagger UI at /) are not a cross-site request."""
+    return origin.rstrip("/").split("://", 1)[-1] == request.headers.get("host", "")
 
 
 def current_user(request: Request) -> dict | None:
