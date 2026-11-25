@@ -14,3 +14,7 @@ export function readJson<T>(key: string, fallback: T): T {
 export function writeJson(key: string, value: unknown): void {
   Storage.setItemSync(key, JSON.stringify(value));
 }
+
+export function removeKey(key: string): void {
+  Storage.removeItemSync(key);
+}

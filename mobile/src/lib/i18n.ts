@@ -31,6 +31,9 @@ const messages = {
     system: "النظام", light: "فاتح", dark: "داكن", history: "المحادثات", noConversations: "لا محادثات محفوظة بعد.",
     deleteAll: "حذف كل المحادثات", deleteConfirm: "حذف كل المحادثات المحفوظة؟", cancel: "إلغاء", delete: "حذف",
     version: "الإصدار", answeredBy: "أجاب",
+    saveOffline: "حفظ", savedOffline: "محفوظ ✓", all: "الكل", saved: "المحفوظة", share: "مشاركة",
+    offlineCopy: "نسخة محفوظة، بدون اتصال.", offlineList: "بدون اتصال: آخر قائمة محفوظة.",
+    noSaved: "لا قوانين محفوظة. افتح قانونا واضغط «حفظ» لقراءته بدون إنترنت.", shareHint: "اضغط مطولا على مادة لمشاركتها.",
   },
   fr: {
     ask: "Demander", laws: "Lois", settings: "Réglages",
@@ -58,6 +61,9 @@ const messages = {
     system: "Système", light: "Clair", dark: "Sombre", history: "Conversations", noConversations: "Aucune conversation enregistrée.",
     deleteAll: "Supprimer toutes les conversations", deleteConfirm: "Supprimer toutes les conversations enregistrées ?",
     cancel: "Annuler", delete: "Supprimer", version: "Version", answeredBy: "Réponse de",
+    saveOffline: "Enregistrer", savedOffline: "Enregistrée ✓", all: "Toutes", saved: "Enregistrées", share: "Partager",
+    offlineCopy: "Copie enregistrée, hors connexion.", offlineList: "Hors connexion : dernière liste enregistrée.",
+    noSaved: "Aucune loi enregistrée. Ouvrez une loi et touchez « Enregistrer » pour la lire hors connexion.", shareHint: "Appui long sur un article pour le partager.",
   },
   en: {
     ask: "Ask", laws: "Laws", settings: "Settings",
@@ -85,6 +91,9 @@ const messages = {
     system: "System", light: "Light", dark: "Dark", history: "Conversations", noConversations: "No saved conversations yet.",
     deleteAll: "Delete all conversations", deleteConfirm: "Delete all saved conversations?",
     cancel: "Cancel", delete: "Delete", version: "Version", answeredBy: "Answered by",
+    saveOffline: "Save", savedOffline: "Saved ✓", all: "All", saved: "Saved", share: "Share",
+    offlineCopy: "Saved copy, offline.", offlineList: "Offline: the last list saved.",
+    noSaved: "No saved laws. Open a law and tap Save to read it offline.", shareHint: "Long-press an article to share it.",
   },
 };
 
