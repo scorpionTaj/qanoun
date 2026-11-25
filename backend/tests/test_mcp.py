@@ -58,6 +58,8 @@ def test_initialize_and_list_tools(mcp):
     assert set(tools) == {"search_laws", "get_article", "list_laws"}
     assert all(t["annotations"]["readOnlyHint"] for t in tools.values())
     assert tools["search_laws"]["inputSchema"]["required"] == ["query"]
+    # the search does not translate: the agent is told to rewrite Darija/Arabizi into MSA
+    assert "Rewrite Darija" in tools["search_laws"]["description"]
 
 
 def test_search_laws_returns_articles_with_links(mcp, monkeypatch):
