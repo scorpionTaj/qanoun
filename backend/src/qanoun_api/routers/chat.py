@@ -31,7 +31,14 @@ from qanoun_api import querylog
 from qanoun_api.config import SETTINGS
 from qanoun_api.rag import answer as answer_mod
 from qanoun_api.rag import retrieval
-from qanoun_api.rag.answer import ABSTENTION, DISCLAIMER, NO_ANSWER, build_messages, parse_citations
+from qanoun_api.rag.answer import (
+    ABSTENTION,
+    DISCLAIMER,
+    NO_ANSWER,
+    build_messages,
+    notice_key,
+    parse_citations,
+)
 from qanoun_api.rag.llm import LLMError, strip_reasoning
 from qanoun_api.rag.providers import ProviderUnavailable, get_router
 from qanoun_api.rag.rewrite import QueryRewriter, condense, detect_variety
@@ -99,6 +106,7 @@ def _sse(event: str, data: dict) -> str:
 def _chat_events(req: ChatRequest) -> Iterator[tuple[str, dict]]:
     question = req.question.strip()
     variety = detect_variety(question)
+    notice = notice_key(variety, question, req.answer_language)  # language of the fixed notices
     if _llm_override is not None:
         llm = _llm_override
     else:
@@ -143,7 +151,7 @@ def _chat_events(req: ChatRequest) -> Iterator[tuple[str, dict]]:
         except Exception:  # noqa: BLE001 — rewriting is an optimization; never block answering
             rewritten = standalone
         lap("rewrite")
-        yield ("meta", {"variety": variety, "rewritten": rewritten, "disclaimer": DISCLAIMER[variety]})
+        yield ("meta", {"variety": variety, "rewritten": rewritten, "disclaimer": DISCLAIMER[notice]})
         if needs_rewrite:
             yield ("status", {"stage": "searching"})
         try:
@@ -159,7 +167,7 @@ def _chat_events(req: ChatRequest) -> Iterator[tuple[str, dict]]:
 
     yield ("sources", {"sources": [hit.as_dict() for hit in result.hits]})
     if not result.hits:
-        yield ("done", {"abstained": True, "cited": [], "text": ABSTENTION[variety]})
+        yield ("done", {"abstained": True, "cited": [], "text": ABSTENTION[notice]})
         return
 
     yield ("status", {"stage": "answering"})
@@ -195,7 +203,7 @@ def _chat_events(req: ChatRequest) -> Iterator[tuple[str, dict]]:
         yield ("error", {"code": "empty", "message": "the model returned an empty answer"})
         return
     if NO_ANSWER in text:
-        yield ("done", {"abstained": True, "cited": [], "text": ABSTENTION[variety],
+        yield ("done", {"abstained": True, "cited": [], "text": ABSTENTION[notice],
                             "timings": timings, **answered_by})
         return
     yield (

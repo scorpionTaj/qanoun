@@ -75,3 +75,15 @@ def test_answers_are_plain_with_numbers_in_digits():
     assert "in digits" in system and "not a lawyer" in system  # the direct answer first, plainly
     assert "never Arabic legal phrases spelled out in Latin letters" in system
     assert user.rstrip().endswith("Numbers in digits. Cite sources as [n].")  # repeated last: models follow it best
+
+
+def test_notices_follow_the_question_or_the_chosen_language():
+    from qanoun_api.rag.answer import notice_key
+
+    assert notice_key("other", "How long is maternity leave?") == "en"
+    assert notice_key("other", "Quelle est la durée du congé de maternité ?") == "other"  # French
+    assert notice_key("other", "Combien de jours de congé") == "other"
+    assert notice_key("msa", "ما هي شروط الزواج؟") == "msa"
+    assert notice_key("arabizi", "ch7al l3mr") == "arabizi"
+    assert notice_key("msa", "ما هي شروط الزواج؟", "en") == "en"  # the user's answer language wins
+    assert notice_key("other", "How long?", "ar") == "msa"
