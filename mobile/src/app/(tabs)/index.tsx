@@ -14,41 +14,50 @@ import { t } from "@/lib/i18n";
 
 const STAGE: Record<string, string> = { rewriting: t.rewriting, searching: t.searching, answering: t.answering };
 
+/** One chat per conversation: opening another (?id= from Conversations) or starting a new one
+ * mounts a fresh chat from it, so no state has to follow the parameter. */
 export default function AskScreen() {
+  const { conversations } = useApp();
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const [fresh, setFresh] = useState(0);
+  const saved = id ? conversations.find((c) => c.id === id) : undefined;
+  const startNew = () => {
+    router.setParams({ id: undefined });
+    setFresh((n) => n + 1);
+  };
+  return <Chat key={saved?.id ?? `new-${fresh}`} initial={saved ?? newConversation()} onNew={startNew} />;
+}
+
+function Chat({ initial, onNew }: { initial: Conversation; onNew: () => void }) {
   const colors = useTheme();
-  const { settings, conversations, saveConversation } = useApp();
-  const { id } = useLocalSearchParams<{ id?: string }>(); // opened from Conversations
-  const [conversation, setConversation] = useState<Conversation>(newConversation);
+  const { settings, saveConversation } = useApp();
+  const [conversation, setConversation] = useState<Conversation>(initial);
+  // The latest conversation, for the code that runs across a streamed answer.
+  const current = useRef<Conversation>(initial);
   const [question, setQuestion] = useState("");
   const abort = useRef<AbortController | null>(null);
   const scroll = useRef<ScrollViewInstance>(null);
   const messages = conversation.messages;
   const busy = messages.at(-1)?.streaming ?? false;
 
-  // Opened from Conversations (?id=…): switch to it when the parameter changes, during render
-  // (React's pattern for state that follows a prop), not on every save of the list.
-  const [openedId, setOpenedId] = useState(id);
-  if (id !== openedId) {
-    setOpenedId(id);
-    const saved = id ? conversations.find((c) => c.id === id) : undefined;
-    if (saved) setConversation(saved);
-  }
+  const setConv = (next: Conversation) => {
+    current.current = next;
+    setConversation(next);
+  };
 
-  const updateLast = (patch: Partial<Message> | ((m: Message) => Partial<Message>)) =>
-    setConversation((c) => {
-      const last = c.messages[c.messages.length - 1];
-      const next = { ...last, ...(typeof patch === "function" ? patch(last) : patch) };
-      return { ...c, messages: [...c.messages.slice(0, -1), next] };
-    });
+  const updateLast = (patch: Partial<Message> | ((m: Message) => Partial<Message>)) => {
+    const c = current.current;
+    const last = c.messages[c.messages.length - 1];
+    const next = { ...last, ...(typeof patch === "function" ? patch(last) : patch) };
+    setConv({ ...c, messages: [...c.messages.slice(0, -1), next] });
+  };
 
   const send = async (text: string) => {
     const q = text.trim();
     if (!q || busy) return;
     const history: Turn[] = messages.filter((m) => !m.error && m.text).map(({ role, text }) => ({ role, text }));
-    setConversation((c) => ({
-      ...c,
-      messages: [...c.messages, { role: "user", text: q }, { role: "assistant", text: "", streaming: true }],
-    }));
+    const c = current.current;
+    setConv({ ...c, messages: [...c.messages, { role: "user", text: q }, { role: "assistant", text: "", streaming: true }] });
     setQuestion("");
     abort.current = new AbortController();
     try {
@@ -65,14 +74,10 @@ export default function AskScreen() {
     } catch {
       updateLast((m) => (abort.current?.signal.aborted ? {} : { text: t.failed, error: true }));
     } finally {
-      // Save the finished exchange (state is read back through the setter: it is up to date there).
-      setConversation((c) => {
-        const last = c.messages[c.messages.length - 1];
-        const done = { ...c, messages: [...c.messages.slice(0, -1), { ...last, streaming: false, stage: undefined }] };
-        const saved = { ...done, title: titleFor(done.messages), updatedAt: Date.now() };
-        saveConversation(saved);
-        return saved;
-      });
+      updateLast({ streaming: false, stage: undefined });
+      const done = { ...current.current, title: titleFor(current.current.messages), updatedAt: Date.now() };
+      setConv(done);
+      saveConversation(done);
     }
   };
 
@@ -86,7 +91,7 @@ export default function AskScreen() {
           <Text style={[styles.brand, { color: colors.text }]}>قانون · Qanoun</Text>
           <View style={styles.headerActions}>
             {messages.length > 0 && !busy && (
-              <Pressable onPress={() => { router.setParams({ id: undefined }); setConversation(newConversation()); }}
+              <Pressable onPress={onNew}
                 accessibilityRole="button" hitSlop={8}>
                 <Text style={{ color: colors.accent }}>{t.newChat}</Text>
               </Pressable>
