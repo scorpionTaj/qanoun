@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useRef, useState } from "react";
 import {
   ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, type ScrollViewInstance, StyleSheet, Text,
@@ -8,56 +8,76 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useTheme } from "@/hooks/use-theme";
 import { ask, type Source, type Turn } from "@/lib/api";
+import { useApp } from "@/lib/app-state";
+import { type Conversation, type Message, newConversation, titleFor } from "@/lib/conversations";
 import { t } from "@/lib/i18n";
-
-interface Message {
-  role: "user" | "assistant";
-  text: string;
-  stage?: string;
-  sources?: Source[];
-  cited?: number[]; // 0-based indexes into sources: «[2]» in the text is 1
-  disclaimer?: string;
-  error?: boolean;
-  streaming?: boolean;
-}
 
 const STAGE: Record<string, string> = { rewriting: t.rewriting, searching: t.searching, answering: t.answering };
 
+/** One chat per conversation: opening another (?id= from Conversations) or starting a new one
+ * mounts a fresh chat from it, so no state has to follow the parameter. */
 export default function AskScreen() {
+  const { conversations } = useApp();
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const [fresh, setFresh] = useState(0);
+  const saved = id ? conversations.find((c) => c.id === id) : undefined;
+  const startNew = () => {
+    router.setParams({ id: undefined });
+    setFresh((n) => n + 1);
+  };
+  return <Chat key={saved?.id ?? `new-${fresh}`} initial={saved ?? newConversation()} onNew={startNew} />;
+}
+
+function Chat({ initial, onNew }: { initial: Conversation; onNew: () => void }) {
   const colors = useTheme();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const { settings, saveConversation } = useApp();
+  const [conversation, setConversation] = useState<Conversation>(initial);
+  // The latest conversation, for the code that runs across a streamed answer.
+  const current = useRef<Conversation>(initial);
   const [question, setQuestion] = useState("");
   const abort = useRef<AbortController | null>(null);
   const scroll = useRef<ScrollViewInstance>(null);
+  const messages = conversation.messages;
   const busy = messages.at(-1)?.streaming ?? false;
 
-  const update = (patch: Partial<Message> | ((m: Message) => Partial<Message>)) =>
-    setMessages((list) => {
-      const last = list[list.length - 1];
-      return [...list.slice(0, -1), { ...last, ...(typeof patch === "function" ? patch(last) : patch) }];
-    });
+  const setConv = (next: Conversation) => {
+    current.current = next;
+    setConversation(next);
+  };
+
+  const updateLast = (patch: Partial<Message> | ((m: Message) => Partial<Message>)) => {
+    const c = current.current;
+    const last = c.messages[c.messages.length - 1];
+    const next = { ...last, ...(typeof patch === "function" ? patch(last) : patch) };
+    setConv({ ...c, messages: [...c.messages.slice(0, -1), next] });
+  };
 
   const send = async (text: string) => {
     const q = text.trim();
     if (!q || busy) return;
     const history: Turn[] = messages.filter((m) => !m.error && m.text).map(({ role, text }) => ({ role, text }));
-    setMessages((list) => [...list, { role: "user", text: q }, { role: "assistant", text: "", streaming: true }]);
+    const c = current.current;
+    setConv({ ...c, messages: [...c.messages, { role: "user", text: q }, { role: "assistant", text: "", streaming: true }] });
     setQuestion("");
     abort.current = new AbortController();
     try {
-      for await (const u of ask(q, history, "auto", abort.current.signal)) {
-        if (u.kind === "stage") update({ stage: u.stage });
-        else if (u.kind === "meta") update({ disclaimer: u.disclaimer });
-        else if (u.kind === "sources") update({ sources: u.sources });
-        else if (u.kind === "token") update((m) => ({ text: m.text + u.text, stage: undefined }));
-        else if (u.kind === "done") update({ text: u.text, cited: u.cited, streaming: false, stage: undefined });
+      for await (const u of ask(q, history, settings, abort.current.signal)) {
+        if (u.kind === "stage") updateLast({ stage: u.stage });
+        else if (u.kind === "meta") updateLast({ disclaimer: u.disclaimer });
+        else if (u.kind === "sources") updateLast({ sources: u.sources });
+        else if (u.kind === "model") updateLast({ answeredBy: u.label });
+        else if (u.kind === "token") updateLast((m) => ({ text: m.text + u.text, stage: undefined }));
+        else if (u.kind === "done") updateLast({ text: u.text, cited: u.cited, streaming: false, stage: undefined });
         else if (u.kind === "error")
-          update({ text: u.code === "rate_limited" ? t.rateLimited : t.failed, error: true, streaming: false });
+          updateLast({ text: u.code === "rate_limited" ? t.rateLimited : t.failed, error: true, streaming: false });
       }
     } catch {
-      update((m) => (abort.current?.signal.aborted ? { streaming: false } : { text: t.failed, error: true, streaming: false }));
+      updateLast((m) => (abort.current?.signal.aborted ? {} : { text: t.failed, error: true }));
     } finally {
-      update({ streaming: false, stage: undefined });
+      updateLast({ streaming: false, stage: undefined });
+      const done = { ...current.current, title: titleFor(current.current.messages), updatedAt: Date.now() };
+      setConv(done);
+      saveConversation(done);
     }
   };
 
@@ -69,11 +89,17 @@ export default function AskScreen() {
       <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <View style={styles.header}>
           <Text style={[styles.brand, { color: colors.text }]}>قانون · Qanoun</Text>
-          {messages.length > 0 && !busy && (
-            <Pressable onPress={() => setMessages([])} accessibilityRole="button">
-              <Text style={{ color: colors.accent }}>{t.newChat}</Text>
+          <View style={styles.headerActions}>
+            {messages.length > 0 && !busy && (
+              <Pressable onPress={onNew}
+                accessibilityRole="button" hitSlop={8}>
+                <Text style={{ color: colors.accent }}>{t.newChat}</Text>
+              </Pressable>
+            )}
+            <Pressable onPress={() => router.push("/conversations")} accessibilityRole="button" hitSlop={8}>
+              <Text style={{ color: colors.accent }}>{t.history}</Text>
             </Pressable>
-          )}
+          </View>
         </View>
         <ScrollView
           ref={scroll}
@@ -91,9 +117,7 @@ export default function AskScreen() {
               ))}
             </View>
           ) : (
-            messages.map((m, i) => (
-              <Bubble key={i} message={m} onSource={openSource} />
-            ))
+            messages.map((m, i) => <Bubble key={i} message={m} onSource={openSource} />)
           )}
         </ScrollView>
         <View style={[styles.composer, { borderColor: colors.backgroundSelected, backgroundColor: colors.background }]}>
@@ -139,7 +163,7 @@ function Bubble({ message: m, onSource }: { message: Message; onSource: (s: Sour
       {!!m.text && <Text selectable style={{ color: m.error ? colors.danger : colors.text, lineHeight: 22 }}>{m.text}</Text>}
       {cited.length > 0 && (
         <View style={styles.sources}>
-          <Text style={[styles.sourcesTitle, { color: colors.textSecondary }]}>{t.sources}</Text>
+          <Text style={[styles.small, { color: colors.textSecondary, fontWeight: "600" }]}>{t.sources}</Text>
           {cited.map(({ n, source }) => (
             <Pressable key={n} onPress={() => onSource(source)} accessibilityRole="link"
               style={[styles.source, { borderColor: colors.backgroundSelected }]}>
@@ -151,8 +175,10 @@ function Bubble({ message: m, onSource }: { message: Message; onSource: (s: Sour
           ))}
         </View>
       )}
-      {!m.streaming && !m.error && !!m.disclaimer && (
-        <Text style={[styles.disclaimer, { color: colors.textSecondary }]}>{m.disclaimer}</Text>
+      {!m.streaming && !m.error && (!!m.disclaimer || !!m.answeredBy) && (
+        <Text style={[styles.small, { color: colors.textSecondary }]}>
+          {[m.disclaimer, m.answeredBy ? `${t.answeredBy}: ${m.answeredBy}` : null].filter(Boolean).join("\n")}
+        </Text>
       )}
     </View>
   );
@@ -161,6 +187,7 @@ function Bubble({ message: m, onSource }: { message: Message; onSource: (s: Sour
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingVertical: 10 },
+  headerActions: { flexDirection: "row", gap: 16 },
   brand: { fontSize: 20, fontWeight: "700" },
   thread: { padding: 16, gap: 12, flexGrow: 1 },
   empty: { flex: 1, justifyContent: "center", gap: 10 },
@@ -170,9 +197,8 @@ const styles = StyleSheet.create({
   answer: { alignSelf: "stretch", padding: 14, borderRadius: 16, gap: 10 },
   stage: { flexDirection: "row", gap: 8, alignItems: "center" },
   sources: { gap: 6 },
-  sourcesTitle: { fontSize: 12, fontWeight: "600" },
+  small: { fontSize: 12 },
   source: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 10, padding: 10 },
-  disclaimer: { fontSize: 12 },
   composer: { flexDirection: "row", gap: 8, padding: 12, borderTopWidth: StyleSheet.hairlineWidth, alignItems: "flex-end" },
   input: { flex: 1, minHeight: 44, maxHeight: 140, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, fontSize: 16 },
   send: { height: 44, paddingHorizontal: 16, borderRadius: 14, justifyContent: "center" },

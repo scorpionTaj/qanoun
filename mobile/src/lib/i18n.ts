@@ -1,10 +1,8 @@
-/** Arabic (default, right to left), French and English, like the web app.
- * The language follows the device unless chosen in Settings (stored on the device). */
-import { getLocales } from "expo-localization";
-import * as SecureStore from "expo-secure-store";
+/** Arabic (default, right to left), French and English, like the web app. The language is
+ * a setting (settings.ts): the device language unless chosen. */
+import { type Lang, loadSettings } from "./settings";
 
-export type Lang = "ar" | "fr" | "en";
-const KEY = "qanoun.language";
+export type { Lang };
 
 const messages = {
   ar: {
@@ -20,6 +18,19 @@ const messages = {
     language: "اللغة", languageHint: "تغيير اللغة يعيد تشغيل التطبيق لقلب اتجاه الكتابة.",
     about: "حول قانون", disclaimer: "معلومات قانونية وليست استشارة قانونية. الجريدة الرسمية هي المرجع.",
     openWeb: "فتح الموقع", implements: "مرسوم تطبيقي",
+    account: "الحساب", accountHint: "اختياري: سجل الدخول لحفظ إعداداتك ومحادثاتك على كل أجهزتك.",
+    syncedHint: "إعداداتك ومحادثاتك محفوظة في حسابك.", email: "البريد الإلكتروني", password: "كلمة المرور",
+    passwordHint: "8 أحرف على الأقل.", signIn: "تسجيل الدخول", signUp: "إنشاء حساب", signOut: "تسجيل الخروج",
+    signupClosed: "إنشاء الحسابات مغلق حاليا على هذا الخادم.", wrongCredentials: "البريد أو كلمة المرور غير صحيحة.",
+    emailTaken: "يوجد حساب بهذا البريد.", invalid: "تحقق من البريد واستعمل 8 أحرف على الأقل لكلمة المرور.",
+    tooMany: "محاولات كثيرة. انتظر دقيقة ثم أعد المحاولة.",
+    aiSection: "الذكاء الاصطناعي", aiHint: "المزود والنموذج اللذان يكتبان الجواب. المفاتيح على الخادم فقط.",
+    provider: "المزود", serverDefault: "افتراضي الخادم", model: "النموذج", recommended: "الموصى به",
+    notConfigured: "غير مهيأ", answersSection: "الأجوبة", length: "الطول", concise: "مختصر", detailed: "مفصل",
+    answerLanguage: "لغة الجواب", sameAsQuestion: "نفس لغة السؤال", appearance: "المظهر",
+    system: "النظام", light: "فاتح", dark: "داكن", history: "المحادثات", noConversations: "لا محادثات محفوظة بعد.",
+    deleteAll: "حذف كل المحادثات", deleteConfirm: "حذف كل المحادثات المحفوظة؟", cancel: "إلغاء", delete: "حذف",
+    version: "الإصدار", answeredBy: "أجاب",
   },
   fr: {
     ask: "Demander", laws: "Lois", settings: "Réglages",
@@ -34,6 +45,19 @@ const messages = {
     language: "Langue", languageHint: "Changer de langue redémarre l'application pour changer le sens d'écriture.",
     about: "À propos", disclaimer: "Information juridique, pas un conseil juridique. Le Bulletin officiel fait foi.",
     openWeb: "Ouvrir le site", implements: "Décret d'application",
+    account: "Compte", accountHint: "Facultatif : connectez-vous pour garder vos réglages et vos conversations sur tous vos appareils.",
+    syncedHint: "Vos réglages et conversations sont enregistrés dans votre compte.", email: "E-mail", password: "Mot de passe",
+    passwordHint: "Au moins 8 caractères.", signIn: "Se connecter", signUp: "Créer un compte", signOut: "Se déconnecter",
+    signupClosed: "La création de comptes est fermée sur ce serveur.", wrongCredentials: "E-mail ou mot de passe incorrect.",
+    emailTaken: "Un compte existe déjà avec cet e-mail.", invalid: "Vérifiez l'e-mail et utilisez au moins 8 caractères.",
+    tooMany: "Trop de tentatives. Attendez une minute.",
+    aiSection: "IA", aiHint: "Le fournisseur et le modèle qui rédigent la réponse. Les clés restent sur le serveur.",
+    provider: "Fournisseur", serverDefault: "Par défaut du serveur", model: "Modèle", recommended: "Recommandé",
+    notConfigured: "non configuré", answersSection: "Réponses", length: "Longueur", concise: "Concise", detailed: "Détaillée",
+    answerLanguage: "Langue de la réponse", sameAsQuestion: "Celle de la question", appearance: "Apparence",
+    system: "Système", light: "Clair", dark: "Sombre", history: "Conversations", noConversations: "Aucune conversation enregistrée.",
+    deleteAll: "Supprimer toutes les conversations", deleteConfirm: "Supprimer toutes les conversations enregistrées ?",
+    cancel: "Annuler", delete: "Supprimer", version: "Version", answeredBy: "Réponse de",
   },
   en: {
     ask: "Ask", laws: "Laws", settings: "Settings",
@@ -48,25 +72,24 @@ const messages = {
     language: "Language", languageHint: "Changing the language restarts the app to switch the writing direction.",
     about: "About", disclaimer: "Legal information, not legal advice. The Official Bulletin is the reference.",
     openWeb: "Open the website", implements: "Implementing decree",
+    account: "Account", accountHint: "Optional: sign in to keep your settings and conversations on all your devices.",
+    syncedHint: "Your settings and conversations are saved to your account.", email: "Email", password: "Password",
+    passwordHint: "At least 8 characters.", signIn: "Sign in", signUp: "Create account", signOut: "Sign out",
+    signupClosed: "New accounts are closed on this server.", wrongCredentials: "Wrong email or password.",
+    emailTaken: "An account with this email already exists.", invalid: "Check the email and use at least 8 characters.",
+    tooMany: "Too many attempts. Wait a minute.",
+    aiSection: "AI", aiHint: "The provider and model that write the answer. Keys stay on the server.",
+    provider: "Provider", serverDefault: "Server default", model: "Model", recommended: "Recommended",
+    notConfigured: "not configured", answersSection: "Answers", length: "Length", concise: "Concise", detailed: "Detailed",
+    answerLanguage: "Answer language", sameAsQuestion: "Same as the question", appearance: "Appearance",
+    system: "System", light: "Light", dark: "Dark", history: "Conversations", noConversations: "No saved conversations yet.",
+    deleteAll: "Delete all conversations", deleteConfirm: "Delete all saved conversations?",
+    cancel: "Cancel", delete: "Delete", version: "Version", answeredBy: "Answered by",
   },
 };
 
 export type Messages = (typeof messages)["ar"];
 
-function deviceLanguage(): Lang {
-  const code = getLocales()[0]?.languageCode;
-  return code === "fr" || code === "en" ? code : "ar"; // Arabic for any other language, like the web
-}
-
-export function storedLanguage(): Lang {
-  const saved = SecureStore.getItem(KEY);
-  return saved === "ar" || saved === "fr" || saved === "en" ? saved : deviceLanguage();
-}
-
-export function saveLanguage(lang: Lang): void {
-  SecureStore.setItem(KEY, lang);
-}
-
-export const LANG: Lang = storedLanguage();
+export const LANG: Lang = loadSettings().ui_language;
 export const t: Messages = messages[LANG];
 export const isRtl = (lang: Lang) => lang === "ar";

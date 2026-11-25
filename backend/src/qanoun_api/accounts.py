@@ -10,6 +10,7 @@ it. Their DDL is a migration in qanoun_pipeline.schema, like every other table.
 
 import hashlib
 import hmac
+import json
 import secrets
 from datetime import UTC, datetime, timedelta
 
@@ -156,3 +157,13 @@ def api_key_owner(conn: psycopg.Connection, key: str) -> int | None:
     ).fetchone()
     conn.commit()
     return row[0] if row else None
+
+
+def get_settings(conn: psycopg.Connection, user_id: int) -> dict:
+    row = conn.execute("SELECT settings FROM users WHERE id = %s", (user_id,)).fetchone()
+    return row[0] if row else {}
+
+
+def put_settings(conn: psycopg.Connection, user_id: int, settings: dict) -> None:
+    conn.execute("UPDATE users SET settings = %s::jsonb WHERE id = %s", (json.dumps(settings), user_id))
+    conn.commit()
