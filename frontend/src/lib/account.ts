@@ -19,7 +19,18 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
     const body = await response.json().catch(() => ({}));
     throw Object.assign(new Error(body.detail ?? `HTTP ${response.status}`), { status: response.status });
   }
+  if (response.status === 204) return null as T; // no body (e.g. a revoked key)
   return response.json() as Promise<T>;
+}
+
+/** An API key as listed; `key` itself is only present in the create response. */
+export interface ApiKey {
+  id: number;
+  name: string;
+  prefix: string;
+  created_at: string;
+  last_used_at: string | null;
+  key?: string;
 }
 
 export const accountApi = {
@@ -37,6 +48,9 @@ export const accountApi = {
     }),
   remove: (id: string) => call(`/api/conversations/${encodeURIComponent(id)}`, { method: "DELETE" }),
   removeAll: () => call("/api/conversations", { method: "DELETE" }),
+  keys: () => call<ApiKey[]>("/api/keys"),
+  createKey: (name: string) => call<ApiKey>("/api/keys", { method: "POST", body: JSON.stringify({ name }) }),
+  revokeKey: (id: number) => call<null>(`/api/keys/${id}`, { method: "DELETE" }),
 };
 
 /** Union of local and server conversations by id; the newer copy wins. */

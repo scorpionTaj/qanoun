@@ -12,6 +12,11 @@ Client identity: `request.client.host`. Behind uvicorn's --proxy-headers (docker
 that is already the real client. On hosts where the app sees only the platform's proxy
 (Vercel), set QANOUN_TRUST_PROXY=true to use the first X-Forwarded-For address instead. Only
 do that behind a proxy that overwrites the header, or clients could pick their own key.
+
+API keys (`Authorization: Bearer qk_…`, created on the Settings page): a valid key is counted
+per owner instead of per address, with the limiter's `key_limit`; all of a user's keys share
+one count, so more keys do not mean more quota. An unknown or revoked key is refused (401)
+rather than silently counted as anonymous, so a client learns its key stopped working.
 """
 
 import logging
@@ -19,6 +24,7 @@ import random
 
 from fastapi import HTTPException, Request
 
+from qanoun_api import accounts
 from qanoun_api.config import SETTINGS
 from qanoun_api.db import db
 
@@ -46,12 +52,20 @@ def client_key(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
+def bearer_key(request: Request) -> str | None:
+    scheme, _, token = request.headers.get("authorization", "").partition(" ")
+    if scheme.lower() != "bearer" or not token.strip():
+        return None
+    return token.strip()
+
+
 class RateLimit:
-    def __init__(self, name: str, limit: int, window: int = 60, connect=db):
+    def __init__(self, name: str, limit: int, window: int = 60, key_limit: int | None = None, connect=db):
         self.name, self.limit, self.window = name, limit, window
+        self.key_limit = limit if key_limit is None else key_limit
         self._connect = connect
 
-    def check(self, key: str) -> float | None:
+    def check(self, key: str, limit: int | None = None) -> float | None:
         """Record a hit; return seconds to wait if over the limit, else None."""
         params = {"bucket": self.name, "key": key, "window": self.window}
         try:
@@ -62,13 +76,31 @@ class RateLimit:
         except Exception:
             log.warning("rate limit %s unavailable; letting the request through", self.name, exc_info=True)
             return None
-        return max(float(remaining), 0.0) if count > self.limit else None
+        return max(float(remaining), 0.0) if count > (self.limit if limit is None else limit) else None
+
+    def identity(self, request: Request) -> tuple[str, int]:
+        """(counter key, limit) for this request: the key's owner, or the client address."""
+        token = bearer_key(request)
+        if token is None:
+            return client_key(request), self.limit
+        try:
+            with self._connect() as conn:
+                owner = accounts.api_key_owner(conn, token)
+        except Exception:
+            log.warning("API key check unavailable; counting the request by address", exc_info=True)
+            return client_key(request), self.limit
+        if owner is None:
+            raise HTTPException(401, "invalid or revoked API key", headers={"WWW-Authenticate": "Bearer"})
+        return f"user:{owner}", self.key_limit
 
     def __call__(self, request: Request) -> None:
-        wait = self.check(client_key(request))
+        key, limit = self.identity(request)
+        wait = self.check(key, limit)
         if wait is not None:
             raise HTTPException(429, "Too many requests", headers={"Retry-After": str(int(wait) + 1)})
 
 
-chat_limit = RateLimit("chat", limit=20)  # LLM calls cost money / quota
+chat_limit = RateLimit("chat", limit=20)  # LLM calls cost money / quota (keys: same, per owner)
+search_limit = RateLimit("search", limit=30, key_limit=120)  # each search embeds the query
+mcp_limit = RateLimit("mcp", limit=60, key_limit=240)  # per MCP request (an agent sends several)
 auth_limit = RateLimit("auth", limit=10)  # slows password guessing

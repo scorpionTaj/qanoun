@@ -1,10 +1,11 @@
 """Hybrid search endpoint: pgvector + Arabic FTS, fused, with citation-ready results."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from qanoun_api.rag import retrieval
 from qanoun_api.rag.rewrite import detect_variety
+from qanoun_api.ratelimit import search_limit
 
 router = APIRouter(prefix="/api", tags=["search"])
 
@@ -16,7 +17,7 @@ class SearchRequest(BaseModel):
     k: int = Field(default=8, ge=1, le=50)
 
 
-@router.post("/search")
+@router.post("/search", dependencies=[Depends(search_limit)])
 def search(req: SearchRequest):
     result = retrieval.search(req.q, k=req.k, domain=req.domain, law_slug=req.law_slug)
     return {

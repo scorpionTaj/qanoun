@@ -6,6 +6,7 @@ import { Alert, Button, Input, Label, TextField, ToggleButton, ToggleButtonGroup
 import { CloudCheck, LogOut, UserRound } from "lucide-react";
 import { accountApi, mergeConversations, type Me } from "@/lib/account";
 import { loadConversations, saveConversations } from "@/lib/conversations";
+import { ApiKeys } from "./api-keys";
 
 /** Optional account: sign in to sync conversations across devices. The app works without it. */
 export function AccountCard({ onSynced }: { onSynced?: (count: number) => void }) {
@@ -87,6 +88,9 @@ export function AccountCard({ onSynced }: { onSynced?: (count: number) => void }
             {t("logout")}
           </Button>
         </div>
+      ) : null}
+      {me.user ? (
+        <ApiKeys />
       ) : (
         <form onSubmit={submit} className="mt-5 flex flex-col gap-4 border-t border-separator pt-5">
           {me.signup_allowed && (

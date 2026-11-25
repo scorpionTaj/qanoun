@@ -94,3 +94,65 @@ def delete_session(conn: psycopg.Connection, token: str | None) -> None:
     if token:
         conn.execute("DELETE FROM sessions WHERE token_hash = %s", (_token_hash(token),))
         conn.commit()
+
+
+# API keys: «qk_» + 43 random URL-safe characters. Stored as a sha256, like session tokens:
+# a key is a 256-bit random secret, so a fast hash is enough (no password stretching).
+KEY_PREFIX = "qk_"
+MAX_KEYS = 10  # active keys per user
+
+
+def _key_row(row) -> dict:
+    return {"id": row[0], "name": row[1], "prefix": row[2], "created_at": row[3].isoformat(),
+            "last_used_at": row[4].isoformat() if row[4] else None}
+
+
+def create_api_key(conn: psycopg.Connection, user_id: int, name: str) -> dict | None:
+    """A new key for the user (the only time the key itself is returned), or None at the cap."""
+    active = conn.execute(
+        "SELECT count(*) FROM api_keys WHERE user_id = %s AND revoked_at IS NULL", (user_id,)
+    ).fetchone()[0]
+    if active >= MAX_KEYS:
+        return None
+    key = KEY_PREFIX + secrets.token_urlsafe(32)
+    row = conn.execute(
+        """
+        INSERT INTO api_keys (user_id, name, prefix, key_hash) VALUES (%s, %s, %s, %s)
+        RETURNING id, name, prefix, created_at, last_used_at
+        """,
+        (user_id, name, key[:7], _token_hash(key)),
+    ).fetchone()
+    conn.commit()
+    return {**_key_row(row), "key": key}
+
+
+def list_api_keys(conn: psycopg.Connection, user_id: int) -> list[dict]:
+    rows = conn.execute(
+        """
+        SELECT id, name, prefix, created_at, last_used_at FROM api_keys
+        WHERE user_id = %s AND revoked_at IS NULL ORDER BY created_at DESC
+        """,
+        (user_id,),
+    ).fetchall()
+    return [_key_row(r) for r in rows]
+
+
+def revoke_api_key(conn: psycopg.Connection, user_id: int, key_id: int) -> bool:
+    row = conn.execute(
+        "UPDATE api_keys SET revoked_at = now() WHERE id = %s AND user_id = %s AND revoked_at IS NULL RETURNING id",
+        (key_id, user_id),
+    ).fetchone()
+    conn.commit()
+    return row is not None
+
+
+def api_key_owner(conn: psycopg.Connection, key: str) -> int | None:
+    """The user id behind an active key (and record its use), or None."""
+    if not key.startswith(KEY_PREFIX):
+        return None
+    row = conn.execute(
+        "UPDATE api_keys SET last_used_at = now() WHERE key_hash = %s AND revoked_at IS NULL RETURNING user_id",
+        (_token_hash(key),),
+    ).fetchone()
+    conn.commit()
+    return row[0] if row else None

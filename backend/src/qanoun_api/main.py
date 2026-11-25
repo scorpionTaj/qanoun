@@ -16,7 +16,7 @@ from qanoun_api import __version__, mcp_server
 from qanoun_api.config import SETTINGS
 from qanoun_api.db import close_pool, db
 from qanoun_api.rag.retrieval import get_embedder
-from qanoun_api.routers import analytics, auth, chat, conversations, laws, llm, search
+from qanoun_api.routers import analytics, auth, chat, conversations, keys, laws, llm, search
 
 
 def _warm_up() -> None:
@@ -77,6 +77,7 @@ app.include_router(analytics.router)
 app.include_router(llm.router)
 app.include_router(auth.router)
 app.include_router(conversations.router)
+app.include_router(keys.router)
 # MCP for AI agents (streamable HTTP at /mcp), see qanoun_api.mcp_server.
 app.add_route("/mcp", mcp_server.endpoint, methods=["GET", "POST", "DELETE"], include_in_schema=False)
 

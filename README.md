@@ -82,6 +82,23 @@ claude mcp add --transport http qanoun https://qanoun-api.vercel.app/mcp
 It is read-only and has no `ask` tool: the agent writes the answer from the articles, so the
 server spends no LLM quota. Set `QANOUN_WEB_URL` to your web app's address for the links.
 
+### API keys
+
+Reading laws and articles needs nothing. Search and the MCP server are rate-limited per address
+(30 searches and 60 MCP requests a minute, 20 questions a minute for `/api/chat`); signed-in
+users can create keys on the Settings page for a higher limit, counted per account (120
+searches and 240 MCP requests a minute; questions stay at 20):
+
+```bash
+curl -H "Authorization: Bearer qk_…" -H "Content-Type: application/json" \
+     -d '{"q": "مدة الرخصة السنوية"}' https://qanoun-api.vercel.app/api/search
+claude mcp add --transport http qanoun https://qanoun-api.vercel.app/mcp \
+     --header "Authorization: Bearer qk_…"
+```
+
+A key is shown once, stored only as a hash, and can be revoked at any time; a revoked or
+unknown key gets `401` rather than the anonymous limit. A key never opens the account itself.
+
 ## The corpus
 
 Ingested from the Ministry of Justice's official legal portal ([adala.justice.gov.ma](https://adala.justice.gov.ma)),
@@ -371,6 +388,8 @@ container healthchecks.
 - [x] Opt-in cross-encoder reranker, measured against the eval before deciding
 - [x] MCP server at `/mcp` (streamable HTTP, stateless): `search_laws`, `get_article`,
       `list_laws` for AI agents, reusing the REST handlers
+- [x] API keys (Settings page): hashed, shown once, revocable, at most 10 per account; a key
+      lifts the search and MCP limits per account
 
 ### Known limitations
 
