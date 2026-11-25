@@ -134,6 +134,15 @@ CANDIDATES = [
      "uploads/2025/10/27/Dahir n° 1-18-15 portant promulgation de la loi n° 31-13 relative au droit d'accès à l'information-1761558922160.pdf"),
     ("legal-profession-ar", "legal-profession", "قانون تنظيم مهنة المحاماة", "Loi organisant la profession d'avocat", "66-23", 2026, "justice", "ar",
      "uploads/2026/09/22/ظهير شريف رقم 1.26.75 بتنفيذ القانون رقم 66.23 المتعلق بتنظيم مهنة المحاماة-1790070416475.pdf"),
+    # ── on the portal since 2026 (missing when searched in Nov 2026 by text; found by number) ──
+    ("civil-status-ar", "civil-status", "قانون الحالة المدنية", "Loi relative à l'état civil", "36-21", 2021, "family", "ar",
+     "uploads/2026/04/16/ظهير شريف رقم 1.21.81 بتنفيذ القانون رقم 36.21 المتعلق بالحالة المدنية (1)-1776328405081.pdf"),
+    ("kafala-ar", "kafala", "قانون كفالة الأطفال المهملين", "Loi relative à la kafala des enfants abandonnés", "15-01", 2002, "family", "ar",
+     "uploads/2026/07/29/ظهير شريف رقم 1.02.172 بتنفيذ القانون رقم 15.01 المتعلق بكفالة الأطفال المهملين-1785317078022.pdf"),
+    ("health-coverage-ar", "health-coverage", "مدونة التغطية الصحية الأساسية", "Code de la couverture médicale de base", "65-00", 2002, "social", "ar",
+     "uploads/2026/03/06/ظهير شريف رقم 1.02.296 صادر في (2)-1772789292321.pdf"),
+    ("elections-code-ar", "elections-code", "مدونة الانتخابات", "Code électoral", "9-97", 1997, "governance", "ar",
+     "uploads/2026/07/29/ظهير شريف رقم 1.97.83 بتنفيذ القانون رقم 9.97 المتعلق بمدونة الانتخابات-1785320564115.pdf"),
     # ── implementing decrees (catalog `parent`: the law each one applies), added 2026-11-24 ──
     ("working-hours-decree-ar", "working-hours-decree", "مرسوم تحديد إجراءات تطبيق المادة 184 من مدونة الشغل (مدة العمل)", "Décret fixant les modalités d'application de l'article 184 du Code du travail (durée du travail)", "2.04.569", 2004, "labour", "ar",
      "uploads/2024/09/09/مرسوم رقم  2.04.569  صادر في 16 من ذي القعدة  1425 -1725875800223.pdf"),

@@ -189,3 +189,33 @@ def test_wrapped_reference_in_the_preamble_is_not_the_first_article():
     # minimum-wage decree: «… بمقتضى المادة» / «356 من القانون …» then «المادة الثانيـة» (tatweel)
     text = "بناء على\nالمادة\n356 من القانون رقم 65.99؛\nالمادة األولى\nأ.\nالمادة الثانيـة\nب."
     assert [a.number for a in segment(pages(text)).articles] == ["1", "2"]
+
+
+# Consolidated texts (seen in kafala 15.01, health coverage 65.00, the elections code, civil
+# status 36.21): footnotes and amendment notes start lines with «المادة N» too.
+CONSOLIDATED = """المادة 1
+تحدث منظومة رقمية وطنية للحالة المدنية.
+المادة 2
+يعهد بمهام ضابط الحالة المدنية إلى رؤساء المجالس طبقا لمقتضيات
+المادة 109 من نفس القانون التنظيمي.
+المادة209
+من القانون رقم70.03 بمثابة مدونة الأسرة
+المادة19
+:
+"يدخل هذا القانون حيز التنفيذ"
+المادة 3 من الظهير الشريف السالف الذكر
+المادة 3
+"الكفالة" هي الالتزام برعاية طفل مهمل.
+Article 4 de la loi n° 65-00
+Article 4
+Texte de l'article 4."""
+
+
+def test_citations_and_quoted_notes_are_not_headers():
+    report = segment(pages(CONSOLIDATED))
+    assert [a.number for a in report.articles] == ["1", "2", "3", "4"]
+    second = report.articles[1].text
+    assert "المادة 109 من نفس" in second and "المادة209 من القانون" in second and '"يدخل' in second
+    # a definition opening with a quote on the next line is a real article
+    assert report.articles[2].text.startswith('المادة 3 "الكفالة"')
+    assert not report.warnings
