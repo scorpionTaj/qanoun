@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from qanoun_pipeline.load_db import ensure_schema
 
-from qanoun_api import __version__
+from qanoun_api import __version__, mcp_server
 from qanoun_api.config import SETTINGS
 from qanoun_api.db import close_pool, db
 from qanoun_api.rag.retrieval import get_embedder
@@ -36,7 +36,8 @@ async def lifespan(app: FastAPI):
     # Load the embedding model in the background: the API is up immediately, and the
     # first question no longer waits ~10-30 s for BGE-M3 to load.
     threading.Thread(target=_warm_up, name="embedder-warmup", daemon=True).start()
-    yield
+    async with mcp_server.server.session_manager.run():  # the MCP endpoint's task group
+        yield
     close_pool()
 
 
@@ -76,6 +77,8 @@ app.include_router(analytics.router)
 app.include_router(llm.router)
 app.include_router(auth.router)
 app.include_router(conversations.router)
+# MCP for AI agents (streamable HTTP at /mcp), see qanoun_api.mcp_server.
+app.router.routes.extend(mcp_server.http_app.routes)
 
 
 @app.get("/docs", include_in_schema=False)

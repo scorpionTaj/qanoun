@@ -25,6 +25,7 @@ class Settings:
     trust_proxy: bool = False  # rate-limit by X-Forwarded-For (only behind a proxy that sets it)
     log_questions: bool = False  # keep question text in query_log (tell your users if on)
     cors_origins: tuple[str, ...] = ("http://localhost:3000", "http://127.0.0.1:3000")
+    web_url: str = ""  # the web app's address: MCP results link to its reader (empty: no links)
     rewrite_cache: Path = Path("data/processed/rewrites.json")
 
     @classmethod
@@ -40,6 +41,7 @@ class Settings:
             cookie_secure=_flag("QANOUN_COOKIE_SECURE", False),
             trust_proxy=_flag("QANOUN_TRUST_PROXY", False),
             log_questions=_flag("QANOUN_LOG_QUESTIONS", False),
+            web_url=os.environ.get("QANOUN_WEB_URL", "").strip().rstrip("/"),
             cors_origins=tuple(
                 o.strip().rstrip("/")
                 for o in os.environ.get(
