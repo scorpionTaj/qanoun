@@ -94,3 +94,31 @@ test("a law lists its implementing decrees, and a decree links back", async ({ p
   await page.getByRole("link", { name: TITLE }).click();
   await expect(page).toHaveURL(new RegExp(`/ar/laws/${LAW}$`));
 });
+
+test("a signed-in user creates an API key, uses it, and revokes it", async ({ page, request }) => {
+  const api = process.env.E2E_PUBLIC_API_URL;
+  test.skip(!api, "set E2E_PUBLIC_API_URL to call the API with the key");
+  await page.goto("/en/settings");
+  await page.getByRole("radio", { name: "Create account" }).click();
+  await page.getByLabel("Email").fill(`keys-${Date.now()}@example.com`);
+  await page.getByLabel("Password").fill("long-enough");
+  await page.getByRole("button", { name: "Create account" }).click();
+
+  await page.getByLabel("Key name").fill("e2e script");
+  await page.getByRole("button", { name: "Create key" }).click();
+  const key = (await page.getByTestId("new-api-key").textContent())?.trim() ?? "";
+  expect(key).toMatch(/^qk_/);
+  await expect(page.getByText("never used")).toBeVisible();
+
+  // From a script: the MCP endpoint accepts the key (no embedding model needed for tools/list).
+  const mcp = (authorization: string) =>
+    request.post(`${api}/mcp`, {
+      headers: { Authorization: authorization, Accept: "application/json, text/event-stream" },
+      data: { jsonrpc: "2.0", id: 1, method: "tools/list" },
+    });
+  expect((await mcp(`Bearer ${key}`)).status()).toBe(200);
+
+  await page.getByRole("button", { name: "Revoke the key «e2e script»" }).click();
+  await expect(page.getByText("e2e script")).toHaveCount(0);
+  expect((await mcp(`Bearer ${key}`)).status()).toBe(401);
+});

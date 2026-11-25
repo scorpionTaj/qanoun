@@ -8,7 +8,7 @@ import pytest
 from fastapi import HTTPException
 from starlette.requests import Request
 
-from qanoun_api import ratelimit
+from qanoun_api import accounts, ratelimit
 from qanoun_api.ratelimit import RateLimit, client_key
 
 
@@ -105,3 +105,54 @@ def test_counts_are_shared_in_postgres():
     assert b.check("other-ip") is None
     with psycopg.connect(url) as conn:
         conn.execute("DELETE FROM rate_hits WHERE bucket = %s", (bucket,))
+
+
+class FakeKeysAndCounter(FakeCounter):
+    """FakeCounter that also answers the API-key lookup: one valid key, owned by user 7."""
+
+    def execute(self, sql, params=None):
+        if "api_keys" in sql:
+            owner = [(7,)] if params[0] == accounts._token_hash("qk_valid") else []
+
+            class Result:
+                def fetchone(self):
+                    return owner[0] if owner else None
+
+            return Result()
+        return super().execute(sql, params)
+
+    def commit(self):
+        pass
+
+
+def test_api_key_counts_per_owner_with_the_key_limit():
+    counter = FakeKeysAndCounter()
+    limit = RateLimit("t", limit=1, key_limit=3, connect=_connect_to(counter))
+    keyed = _request("1.2.3.4", {"Authorization": "Bearer qk_valid"})
+    for _ in range(3):
+        limit(keyed)  # three hits allowed with the key, though the anonymous limit is 1
+    with pytest.raises(HTTPException) as exc:
+        limit(keyed)
+    assert exc.value.status_code == 429
+    assert counter.counts[("t", "user:7")] == 4  # counted per owner, not per address
+    limit(_request("1.2.3.4"))  # the same address without the key has its own count
+
+
+def test_unknown_or_revoked_key_is_refused():
+    limit = RateLimit("t", limit=5, connect=_connect_to(FakeKeysAndCounter()))
+    for header in ("Bearer qk_revoked", "Bearer not-a-qanoun-key"):
+        with pytest.raises(HTTPException) as exc:
+            limit(_request(headers={"Authorization": header}))
+        assert exc.value.status_code == 401 and exc.value.headers["WWW-Authenticate"] == "Bearer"
+    limit(_request(headers={"Authorization": "Basic abc"}))  # not a bearer token: anonymous
+
+
+def test_key_check_fails_open_to_the_address():
+    @contextmanager
+    def broken():
+        raise OSError("connection refused")
+        yield
+
+    assert RateLimit("t", limit=4, key_limit=9, connect=broken).identity(
+        _request("1.2.3.4", {"Authorization": "Bearer qk_valid"})
+    ) == ("1.2.3.4", 4)

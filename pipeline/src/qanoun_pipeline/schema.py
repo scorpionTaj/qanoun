@@ -172,6 +172,25 @@ MIGRATIONS: list[tuple[int, str, str]] = [
         CREATE INDEX laws_parent_group_idx ON laws (parent_group);
         """,
     ),
+    (
+        6,
+        "API keys",
+        # Only a hash of each key is stored (the key is shown once); the prefix tells keys
+        # apart in the owner's list. Revoked keys stay, so their use can be told apart.
+        """
+        CREATE TABLE api_keys (
+            id            SERIAL PRIMARY KEY,
+            user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            name          TEXT NOT NULL,
+            prefix        TEXT NOT NULL,
+            key_hash      TEXT NOT NULL UNIQUE,
+            created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+            last_used_at  TIMESTAMPTZ,
+            revoked_at    TIMESTAMPTZ
+        );
+        CREATE INDEX api_keys_user_idx ON api_keys (user_id);
+        """,
+    ),
 ]
 
 # Arbitrary constant: serialises schema changes (and extension creation) across processes.

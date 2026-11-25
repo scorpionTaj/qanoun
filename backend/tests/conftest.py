@@ -120,8 +120,8 @@ def _no_rate_limits(monkeypatch):
     """The app-wide limiters count in Postgres; API tests run without a database."""
     from qanoun_api import ratelimit
 
-    for limiter in (ratelimit.chat_limit, ratelimit.auth_limit):
-        monkeypatch.setattr(limiter, "check", lambda key: None)
+    for limiter in (ratelimit.chat_limit, ratelimit.auth_limit, ratelimit.search_limit, ratelimit.mcp_limit):
+        monkeypatch.setattr(limiter, "check", lambda key, limit=None: None)
 
 
 @pytest.fixture(autouse=True)

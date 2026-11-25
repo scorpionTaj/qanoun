@@ -269,5 +269,23 @@
     "invalid": "Vérifiez l'e-mail et utilisez au moins 8 caractères pour le mot de passe.",
     "tooMany": "Trop de tentatives. Patientez une minute puis réessayez.",
     "failed": "Impossible de joindre le serveur. Réessayez."
+  },
+  "apiKeys": {
+    "title": "Clés d'API",
+    "hint": "Pour les scripts et les agents IA qui utilisent l'API de Qanoun ou son serveur MCP : une clé donne une limite de recherche plus élevée, comptée par compte. Lire les lois ne demande aucune clé.",
+    "name": "Nom de la clé",
+    "namePlaceholder": "ex. mon script",
+    "create": "Créer une clé",
+    "createdTitle": "Clé « {name} » créée",
+    "createdHint": "Copiez-la maintenant : elle ne sera plus affichée. Envoyez-la dans l'en-tête Authorization :",
+    "copy": "Copier",
+    "copied": "Copiée",
+    "created": "créée le {date}",
+    "lastUsed": "utilisée le {date}",
+    "neverUsed": "jamais utilisée",
+    "revoke": "Révoquer",
+    "revokeNamed": "Révoquer la clé « {name} »",
+    "tooMany": "Vous avez atteint le nombre maximal de clés : révoquez-en une d'abord.",
+    "failed": "Impossible de joindre le serveur. Réessayez."
   }
 }

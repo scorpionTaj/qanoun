@@ -269,5 +269,23 @@
     "invalid": "Check the email and use at least 8 characters for the password.",
     "tooMany": "Too many attempts. Wait a minute and try again.",
     "failed": "Couldn't reach the server. Try again."
+  },
+  "apiKeys": {
+    "title": "API keys",
+    "hint": "For scripts and AI agents using the Qanoun API or its MCP server: a key gives you a higher search limit, counted per account. Reading laws needs no key.",
+    "name": "Key name",
+    "namePlaceholder": "e.g. my script",
+    "create": "Create key",
+    "createdTitle": "Key «{name}» created",
+    "createdHint": "Copy it now: it won't be shown again. Send it as an Authorization header:",
+    "copy": "Copy",
+    "copied": "Copied",
+    "created": "created {date}",
+    "lastUsed": "last used {date}",
+    "neverUsed": "never used",
+    "revoke": "Revoke",
+    "revokeNamed": "Revoke the key «{name}»",
+    "tooMany": "You have the maximum number of keys: revoke one first.",
+    "failed": "Couldn't reach the server. Try again."
   }
 }

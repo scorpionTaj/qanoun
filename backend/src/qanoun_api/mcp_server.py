@@ -17,10 +17,14 @@ from fastapi import HTTPException
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
+from starlette.concurrency import run_in_threadpool
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from qanoun_api import __version__
 from qanoun_api.config import SETTINGS
 from qanoun_api.rag import retrieval
+from qanoun_api.ratelimit import mcp_limit
 from qanoun_api.routers import laws
 
 server = MCPServer(
@@ -168,6 +172,11 @@ class _Endpoint:
     async def __call__(self, scope, receive, send):
         if self.transport is None:
             raise RuntimeError("the MCP endpoint is served only while the app's lifespan runs")
+        try:  # same limits and API keys as the REST API (the limiter is synchronous)
+            await run_in_threadpool(mcp_limit, Request(scope))
+        except HTTPException as exc:
+            await JSONResponse({"detail": exc.detail}, exc.status_code, exc.headers)(scope, receive, send)
+            return
         await self.transport(scope, receive, send)
 
 
