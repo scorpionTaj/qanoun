@@ -18,8 +18,11 @@ NO_ANSWER = "NO_ANSWER"
 
 _LANGUAGE_RULE = {
     "msa": "Answer in Modern Standard Arabic.",
-    "darija": "Answer in simple Moroccan Darija written in Arabic script.",
-    "arabizi": "Answer in Moroccan Darija written in Latin letters (Arabizi), like the question.",
+    "darija": "Answer in simple, everyday Moroccan Darija written in Arabic script, not in formal Arabic.",
+    "arabizi": (
+        "Answer in everyday Moroccan Darija written in Latin letters (Arabizi), like the question: "
+        "spoken Darija words, never Arabic legal phrases spelled out in Latin letters."
+    ),
     "other": "Answer in the language of the question.",
 }
 
@@ -56,11 +59,18 @@ _STYLE = {
         "deadlines as short bullet points, each with its citation."
     ),
 }
+# Readers are not lawyers: the answer comes first in plain words, then its legal basis.
+_PLAIN = (
+    "Write for someone who is not a lawyer: start with the direct answer to the question (the "
+    "number, the duration, yes or no), then its legal basis. Explain in plain words instead of "
+    "copying the legal wording. Write every number, age, amount, duration and date in digits "
+    "(18, 14 weeks, 93 dirhams, 2025), never in words."
+)
 _SYSTEM = (
     "You are a careful assistant for Moroccan law. Answer ONLY with facts stated in the "
     "numbered sources. After each fact, cite its source like [1] or [2][3]. Mention article "
-    "numbers when the source gives them. {style} If the sources do not contain the answer, "
-    f"reply with exactly {NO_ANSWER} and nothing else. Never use outside knowledge."
+    "numbers when the source gives them. " + _PLAIN + " {style} If the sources do not contain "
+    f"the answer, reply with exactly {NO_ANSWER} and nothing else. Never use outside knowledge."
 )
 
 
@@ -104,7 +114,7 @@ def build_messages(
     # and otherwise drift into the (MSA) language of the sources.
     user = (
         context + "Sources:\n\n" + "\n\n".join(blocks) + f"\n\nQuestion: {question}\n\n"
-        f"{rule} Cite sources as [n]."
+        f"{rule} Numbers in digits. Cite sources as [n]."
     )
     system = f"{_SYSTEM.format(style=_STYLE.get(style, _STYLE['concise']))} {rule}"
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]

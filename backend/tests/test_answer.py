@@ -66,3 +66,12 @@ def test_style_and_fixed_language_reach_the_prompt():
     custom = build_messages("q", [make_hit()], "darija", style="detailed", language="fr")
     assert "bullet points" in custom[0]["content"]
     assert "Answer in French." in custom[1]["content"] and "Darija" not in custom[1]["content"]
+
+
+def test_answers_are_plain_with_numbers_in_digits():
+    from qanoun_api.rag.answer import build_messages
+
+    system, user = (m["content"] for m in build_messages("ch7al l3mr bach tzwj?", [make_hit()], "arabizi"))
+    assert "in digits" in system and "not a lawyer" in system  # the direct answer first, plainly
+    assert "never Arabic legal phrases spelled out in Latin letters" in system
+    assert user.rstrip().endswith("Numbers in digits. Cite sources as [n].")  # repeated last: models follow it best
