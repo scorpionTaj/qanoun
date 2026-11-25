@@ -113,3 +113,8 @@ def test_list_laws(mcp, fake_db):
 def test_endpoint_is_closed_outside_the_lifespan():
     with pytest.raises(RuntimeError, match="lifespan"):
         TestClient(main.app).post("/mcp", json={}, headers=HEADERS)
+
+
+def test_get_is_refused_at_once(client):
+    # stateless: no server-to-client stream; a GET must not hang until the function times out
+    assert client.get("/mcp", headers={"Accept": "text/event-stream"}).status_code == 405

@@ -5,7 +5,7 @@ from contextlib import contextmanager
 
 from pgvector.psycopg import register_vector  # noqa: F401  (re-exported for pool configure)
 from psycopg_pool import ConnectionPool
-from qanoun_pipeline.load_db import db_url, prepare_connection
+from qanoun_pipeline.load_db import CONNECT_KWARGS, db_url, prepare_connection
 
 from qanoun_api.config import SETTINGS
 
@@ -20,6 +20,7 @@ def get_pool() -> ConnectionPool:
             min_size=1,
             max_size=8,
             open=True,
+            kwargs=CONNECT_KWARGS,  # safe behind a transaction-mode pooler (see load_db)
             # extension bootstrap + pgvector adapters on every pooled connection
             configure=prepare_connection,
         )
