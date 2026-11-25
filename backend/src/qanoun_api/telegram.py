@@ -14,6 +14,8 @@ import argparse
 import hashlib
 import hmac
 import html
+import logging
+import re
 import sys
 
 import httpx
@@ -21,6 +23,21 @@ import httpx
 from qanoun_api.config import SETTINGS
 
 API = "https://api.telegram.org/bot{token}/{method}"
+_TOKEN_IN_URL = re.compile(r"/bot\d+:[A-Za-z0-9_-]+/")
+
+
+class _RedactToken(logging.Filter):
+    """Telegram puts the bot token in the URL, and httpx logs every request URL at INFO:
+    mask it, or the token ends up in the host's logs."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        message = record.getMessage()
+        if "/bot" in message:
+            record.msg, record.args = _TOKEN_IN_URL.sub("/bot<redacted>/", message), ()
+        return True
+
+
+logging.getLogger("httpx").addFilter(_RedactToken())
 MAX_MESSAGE = 4096  # Telegram's limit, in characters
 
 

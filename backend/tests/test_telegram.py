@@ -107,3 +107,13 @@ def test_groups_and_non_text_messages(bot):
 def test_long_answers_keep_their_sources():
     text = telegram.format_answer("كلمة " * 2000, [SOURCE], [1])
     assert len(text) <= telegram.MAX_MESSAGE and text.endswith("المادة 19")
+
+
+def test_the_token_never_reaches_the_logs(caplog):
+    import logging
+
+    url = "https://api.telegram.org/bot123456:AAH-secret_token/sendMessage"
+    with caplog.at_level(logging.INFO, logger="httpx"):
+        logging.getLogger("httpx").info('HTTP Request: %s %s "%s"', "POST", url, "HTTP/1.1 200 OK")
+    assert "secret_token" not in caplog.text and "123456" not in caplog.text
+    assert "/bot<redacted>/sendMessage" in caplog.text
