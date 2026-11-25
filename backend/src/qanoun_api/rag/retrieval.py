@@ -10,6 +10,7 @@ import os
 import threading
 from dataclasses import dataclass, field
 
+import httpx
 import numpy as np
 import psycopg
 from qanoun_pipeline.embed import Embedder, fake_embedder, spec_for
@@ -178,15 +179,51 @@ _reranker = None
 _reranker_lock = threading.Lock()
 
 
+class JinaReranker:
+    """Jina's rerank API (key in QANOUN_JINA_KEY), shaped like a CrossEncoder: no model on the
+    server, so it runs where the API does (Vercel). Billed per token of question + passages,
+    so passages are cut to MAX_CHARS (an article's opening says what it is about)."""
+
+    URL = "https://api.jina.ai/v1/rerank"
+    MAX_CHARS = 600
+
+    def __init__(self, model: str, key: str | None = None, client: httpx.Client | None = None):
+        self.model = model
+        self.key = key or os.environ.get("QANOUN_JINA_KEY", "")
+        if not self.key:
+            raise RuntimeError("QANOUN_JINA_KEY is not set (needed for the Jina reranker)")
+        self.client = client or httpx.Client(timeout=30)
+        self.tokens = 0  # used so far, as the API reports it
+
+    def predict(self, pairs: list[tuple[str, str]]) -> list[float]:
+        """One request per call: every pair must share the question (as rerank() sends them)."""
+        if not pairs:
+            return []
+        body = {"model": self.model, "query": pairs[0][0], "return_documents": False,
+                "documents": [passage[: self.MAX_CHARS] for _, passage in pairs]}  # fmt: skip
+        response = self.client.post(self.URL, json=body, headers={"Authorization": f"Bearer {self.key}"})
+        response.raise_for_status()
+        data = response.json()
+        self.tokens += (data.get("usage") or {}).get("total_tokens", 0)
+        scores = [0.0] * len(pairs)
+        for item in data["results"]:
+            scores[item["index"]] = float(item["relevance_score"])
+        return scores
+
+
 def get_reranker():
-    """The cross-encoder from QANOUN_RERANKER, loaded once (a one-time model download)."""
+    """The reranker named by QANOUN_RERANKER, built once: Jina's API for a `jina-reranker…`
+    model, otherwise a local cross-encoder (a one-time model download)."""
     global _reranker
     with _reranker_lock:
         if _reranker is None:
-            from qanoun_pipeline.embed import torch_device
-            from sentence_transformers import CrossEncoder
+            if SETTINGS.reranker.startswith("jina-reranker"):
+                _reranker = JinaReranker(SETTINGS.reranker)
+            else:
+                from qanoun_pipeline.embed import torch_device
+                from sentence_transformers import CrossEncoder
 
-            _reranker = CrossEncoder(SETTINGS.reranker, device=torch_device(), max_length=512)
+                _reranker = CrossEncoder(SETTINGS.reranker, device=torch_device(), max_length=512)
         return _reranker
 
 
