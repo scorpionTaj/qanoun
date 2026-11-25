@@ -18,7 +18,9 @@ French — answered only from the retrieved sources, with citations to the exact
 app and the API on Vercel, the database on Supabase. To fit a serverless function, the demo
 embeds with Jina's API instead of running BGE-M3; its retrieval scores are measured below.
 The API's interactive documentation (Swagger UI) is at
-[qanoun-api.vercel.app](https://qanoun-api.vercel.app).
+[qanoun-api.vercel.app](https://qanoun-api.vercel.app). The same answers are in an
+**Android app** ([latest release](https://github.com/scorpionTaj/qanoun/releases/latest)), a
+**Telegram bot** ([@QanounMABot](https://t.me/QanounMABot)) and an **MCP server** for AI agents.
 
 <p align="center">
   <img src="docs/figures/demo.gif" alt="Qanoun demo: asking a question in English, the cited Labour Code article opening beside the answer, browsing laws, the amendments panel, a Darija question answered from the rental law in Arabic (RTL), and the settings page" width="800">
@@ -32,6 +34,25 @@ The API's interactive documentation (Swagger UI) is at
 | **Data engineering** | fetch (sha256-verified) → Arabic PDF parse + OCR fallback → article segmentation (footnote-glue repair, sub-numbers, sequence checks) → chunking → BGE-M3 embeddings → Postgres/pgvector | `pipeline/` |
 | **AI** | hybrid retrieval (pgvector cosine + Arabic FTS, RRF fusion), Darija/Arabizi query rewriting via glossary + LLM, grounded answering with `[n]` citations and explicit abstention, streaming SSE | `backend/src/qanoun_api/rag/` |
 | **Data science** | corpus EDA, keyword-domain classification experiments, embedding-space map, retrieval + LLM-as-judge evaluation | `notebooks/`, `backend/src/qanoun_api/eval/` |
+
+## What it does
+
+- **Ask** in Arabic, Darija, Arabizi, French or English. Dialect questions are rewritten to
+  Arabic before searching, and follow-ups («and for women?») keep the conversation. The answer
+  streams in, cites the exact articles as `[n]`, and says «not found» rather than guess when the
+  texts don't answer.
+- **Read** every law article by article: in-law search, deep links to `#article-N`, the
+  amendments each article went through (from the official footnotes), and its
+  cross-references, both the articles it cites and those that cite it (about 7,300 links).
+- **Choose the AI**: Gemini, OpenRouter, NVIDIA NIM, LM Studio or Ollama, configured on the
+  server only. A busy or out-of-quota model falls back to the next one automatically.
+- **Keep your work**: conversations are saved in the browser or, with an optional account,
+  synced across the web app and the phone app together with your settings. Answers print or
+  save as PDF with their cited articles.
+- **Use it elsewhere**: the Android app (also offline reading of saved laws), the Telegram
+  bot, the MCP server, and a REST API with optional keys.
+- **Trust the numbers**: retrieval is measured on 326 labelled questions, and a weekly CI job
+  fails if the live demo gets worse.
 
 ## Quick start
 
@@ -96,6 +117,19 @@ uv run --project backend python -m qanoun_api.telegram set-webhook https://<api-
 Only Telegram can call the webhook (a secret derived from the token is checked on every call).
 Each question stands alone (no follow-ups yet), and the chat limit applies per Telegram chat.
 
+### Mobile app
+
+`mobile/` is an Expo (React Native) app for Android and iOS on the same API: streamed answers
+with tappable citations, the laws and the reader, laws saved for offline reading, sharing an
+article, the same settings as the web app (AI provider and model, answer length and language,
+theme, app language), and an optional account that syncs settings and conversations.
+
+Each release tag builds the Android app in GitHub Actions and attaches `qanoun-<version>.apk`
+(install it directly) and `.aab` (Play Store) to the
+[GitHub release](https://github.com/scorpionTaj/qanoun/releases). To run it from source:
+`cd mobile && npm ci && npx expo start`. Details, including release signing, are in
+[mobile/README.md](mobile/README.md).
+
 ### API keys
 
 Reading laws and articles needs nothing. Search and the MCP server are rate-limited per address
@@ -120,33 +154,33 @@ sign in and create a key under *auth* / *api keys*, paste it in **Authorize**, t
 ## The corpus
 
 Ingested from the Ministry of Justice's official legal portal ([adala.justice.gov.ma](https://adala.justice.gov.ma)),
-**55 laws + 8 implementing decrees / 14,312 articles across 13 domains**, each verified by sha256
+**59 laws + 8 implementing decrees / 14,696 articles across 13 domains**, each verified by sha256
 (see `data/catalog/laws.yaml`):
 
 | Domain | Laws (examples) |
 |---|---|
 | civil | قانون الالتزامات والعقود (D.O.C., ar+fr) |
-| family | مدونة الأسرة (ar+fr), صندوق التكافل العائلي |
+| family | مدونة الأسرة (ar+fr), الحالة المدنية (36.21), كفالة الأطفال المهملين (15.01), صندوق التكافل العائلي |
 | penal | مجموعة القانون الجنائي (ar+fr), مكافحة غسل الأموال, محاربة العنف ضد النساء (103.13) |
 | justice | المسطرة المدنية (ar+fr), المسطرة الجنائية, التنظيم القضائي, قضاء القرب, المحاكم المالية, مهنة المحاماة (66.23) |
 | labour | مدونة الشغل (ar+fr), العمال المنزليين, حوادث الشغل |
 | commercial | مدونة التجارة (ar+fr), شركات المساهمة, الشركات الأخرى (5.96, ar+fr), حماية المستهلك (31.08, ar+fr), المنافسة, المقاول الذاتي, ميثاق الاستثمار (03.22) |
 | education | التعليم العالي, التعليم المدرسي الخصوصي (06.00), دور الحضانة الخاصة |
 | nationality | قانون الجنسية (ar+fr) |
-| social | مدونة التأمينات |
+| social | مدونة التغطية الصحية الأساسية (65.00, AMO), مدونة التأمينات |
 | housing | القانون 67.12 المتعلق بالكراء, كراء المحلات التجارية |
 | transport | مدونة السير على الطرق (52.05) |
 | property | الحقوق العينية, التعمير, الملكية المشتركة, ظهير التحفيظ العقاري (1913, consolidated) |
-| governance | الدستور (2011, ar+fr), الحق في الحصول على المعلومات (31.13, ar+fr), الجمعيات, الصحافة والنشر, النقابات, حماية المعطيات الشخصية, الأوقاف, الأجانب, تحصيل الديون العمومية |
+| governance | الدستور (2011, ar+fr), مدونة الانتخابات (9.97), الحق في الحصول على المعلومات (31.13, ar+fr), الجمعيات, الصحافة والنشر, النقابات, حماية المعطيات الشخصية, الأوقاف, الأجانب, تحصيل الديون العمومية |
 
 Bilingual laws carry both AR and FR editions as separate documents (`group` links them in
 the UI). Scanned PDFs (الجنسية، الجمعيات، النقابات، التنظيم القضائي) are OCR'd
 automatically at ingest. To add more laws: search the portal
 (`adala.justice.gov.ma/search?term=…`), download the PDF into `data/raw/`, and add one YAML
 entry — the pipeline handles fetch/verify/OCR/segmentation (`scripts/expand_catalog.py
---slugs …` adds candidates). Not on the portal as a law text (searched November 2026):
-child *kafala* 15.01 (only a ministry circular), الحالة المدنية 37.10, مدونة التغطية الصحية
-65.00, مدونة الانتخابات.
+--slugs …` adds candidates). The portal publishes consolidated texts with footnotes and
+amendment notes that also start lines with «المادة N»; segmentation keeps those in the
+article body when they cite another text or quote a former wording.
 
 ## Architecture
 
@@ -166,7 +200,7 @@ child *kafala* 15.01 (only a ministry circular), الحالة المدنية 37.
    while the first search is already running. It embeds the question with the same BGE-M3
    model and runs **one SQL query with two channels**: cosine search over the HNSW vector
    index and Arabic-normalized full-text search. The two are fused with reciprocal rank
-   fusion (and optionally reranked by a cross-encoder). The top articles go to the LLM as
+   fusion (and optionally reranked, blended with that order). The top articles go to the LLM as
    numbered sources, and the answer streams back over SSE (`meta → sources → token* → done`)
    with `[n]` citations — or an explicit «not found» when the sources don't answer.
 
@@ -181,6 +215,7 @@ child *kafala* 15.01 (only a ministry circular), الحالة المدنية 37.
 | API | <img src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white&style=flat-square" alt="FastAPI"> <img src="https://img.shields.io/badge/Uvicorn-499848?logo=python&logoColor=white&style=flat-square" alt="Uvicorn"> <img src="https://img.shields.io/badge/Pydantic-E92063?logo=pydantic&logoColor=white&style=flat-square" alt="Pydantic"> <img src="https://img.shields.io/badge/psycopg_3-336791?logo=postgresql&logoColor=white&style=flat-square" alt="psycopg 3"> <img src="https://img.shields.io/badge/httpx-3776AB?logo=python&logoColor=white&style=flat-square" alt="httpx"> | REST + SSE streaming, RAG, auth, rate limits, security headers |
 | LLMs | <img src="https://img.shields.io/badge/Google_Gemini-8E75B2?logo=googlegemini&logoColor=white&style=flat-square" alt="Google Gemini"> <img src="https://img.shields.io/badge/OpenRouter-6467F2?logo=openrouter&logoColor=white&style=flat-square" alt="OpenRouter"> <img src="https://img.shields.io/badge/NVIDIA_NIM-76B900?logo=nvidia&logoColor=white&style=flat-square" alt="NVIDIA NIM"> <img src="https://img.shields.io/badge/Ollama-000000?logo=ollama&logoColor=white&style=flat-square" alt="Ollama"> <img src="https://img.shields.io/badge/LM_Studio-4338CA?logo=lmstudio&logoColor=white&style=flat-square" alt="LM Studio"> | any OpenAI-compatible provider; keys only in `.env`; automatic fallback across models and providers |
 | Web app | <img src="https://img.shields.io/badge/Next.js_16-000000?logo=nextdotjs&logoColor=white&style=flat-square" alt="Next.js 16"> <img src="https://img.shields.io/badge/React_19-149ECA?logo=react&logoColor=white&style=flat-square" alt="React 19"> <img src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white&style=flat-square" alt="TypeScript"> <img src="https://img.shields.io/badge/HeroUI_v3-000000?logo=heroui&logoColor=white&style=flat-square" alt="HeroUI v3"> <img src="https://img.shields.io/badge/Tailwind_CSS_4-06B6D4?logo=tailwindcss&logoColor=white&style=flat-square" alt="Tailwind CSS 4"> <img src="https://img.shields.io/badge/next--intl-26A69A?logo=i18next&logoColor=white&style=flat-square" alt="next-intl"> <img src="https://img.shields.io/badge/Recharts-22B5BF?logo=chartdotjs&logoColor=white&style=flat-square" alt="Recharts"> | trilingual UI (Arabic RTL, French, English), Ask workspace, law reader, insights, settings |
+| Mobile app | <img src="https://img.shields.io/badge/Expo_SDK_58-000020?logo=expo&logoColor=white&style=flat-square" alt="Expo SDK 58"> <img src="https://img.shields.io/badge/React_Native-149ECA?logo=react&logoColor=white&style=flat-square" alt="React Native"> <img src="https://img.shields.io/badge/expo--router-000020?logo=expo&logoColor=white&style=flat-square" alt="expo-router"> | Android and iOS app on the same API: streaming answers, reader, offline saved laws, synced account |
 | Quality | <img src="https://img.shields.io/badge/pytest-0A9EDC?logo=pytest&logoColor=white&style=flat-square" alt="pytest"> <img src="https://img.shields.io/badge/Ruff-D7FF64?logo=ruff&logoColor=black&style=flat-square" alt="Ruff"> <img src="https://img.shields.io/badge/node:test-5FA04E?logo=nodedotjs&logoColor=white&style=flat-square" alt="node:test"> <img src="https://img.shields.io/badge/GitHub_Actions-2088FF?logo=githubactions&logoColor=white&style=flat-square" alt="GitHub Actions"> | offline tests (models faked), lint, strict typecheck, build on every push; retrieval + LLM-judge eval |
 | Deploy | <img src="https://img.shields.io/badge/Docker_Compose-2496ED?logo=docker&logoColor=white&style=flat-square" alt="Docker Compose"> <img src="https://img.shields.io/badge/Caddy-1F88C0?logo=caddy&logoColor=white&style=flat-square" alt="Caddy"> | db · api · web containers with healthchecks; production override behind a TLS proxy |
 
@@ -192,6 +227,9 @@ child *kafala* 15.01 (only a ministry circular), الحالة المدنية 37.
 | `pipeline/` | fetch → parse (OCR fallback) → split into articles → chunk → embed → load; owns the DB schema |
 | `backend/` | FastAPI: `/api/laws` (+ amendments), `/api/search`, `/api/chat` (SSE), `/api/auth`, `/api/conversations`, `/api/analytics` (+ admin `usage` from the query log); RAG in `rag/`, eval in `eval/` |
 | `frontend/` | Next.js 16 + HeroUI v3 + Tailwind 4 + next-intl (ar RTL default, fr, en) |
+| `mobile/` | Expo app (Android, iOS); the Android build runs in `.github/workflows/release.yml` |
+| `deploy/` | the Vercel function that serves the API on the demo |
+| `scripts/` | catalog expansion, portal watcher, re-embedding, eval set port, test fixture |
 | `data/eval/`, `docs/eval-report.md` | question sets (law- and article-level), run history, latest report |
 | `notebooks/` | EDA, classification, embedding map |
 | `docker-compose*.yml` | local stack and production override |
@@ -239,8 +277,8 @@ Arabizi 0.774 → 0.871 and Darija 0.864 → 0.898 page-level; the exact-article
 two Darija questions that sit near rank 10, 0.833 → 0.778.)
 
 The same questions scored 0.93 in [darija-rag](https://github.com/scorpionTaj/darija-rag)
-(Darija 0.95, Arabizi 0.90), on 8 documents and with a reranker. Here they compete with 45
-documents and no reranker; `scripts/port_darija_rag_eval.py` explains the port.
+(Darija 0.95, Arabizi 0.90), on 8 documents and with a reranker. Here they compete with 67
+documents and no reranker by default; `scripts/port_darija_rag_eval.py` explains the port.
 
 **Answers** (29 seed questions, generated by the default provider, graded by a different
 one, OpenRouter): faithfulness 4.58, grounding 4.74, completeness 3.95 out of 5 over the 19
@@ -253,10 +291,21 @@ it exits 1 when a metric falls more than 0.02 below the previous run of the same
 `.github/workflows/eval.yml` runs that gate on the live demo weekly, on demand, and on pull
 requests that touch retrieval, through a read-only database role.
 
-The opt-in reranker (`QANOUN_RERANKER=BAAI/bge-reranker-v2-m3`) was measured on the seed
-sets, as typed, at an earlier commit: article-level hit@10 0.833 → 0.889, MRR 0.668 → 0.623.
-It finds more right articles but ranks them lower on average and adds latency, so it stays
-off by default.
+**Reranker** (opt-in, `QANOUN_RERANKER`): the fused top 20 are re-scored by a reranker and
+re-ordered by blending its ranking with the fused one, which raises MRR, not only hit@10.
+Measured on the 323 questions as typed against the demo, with Jina's
+`jina-reranker-v2-base-multilingual` ([`eval/rerank_study.py`](backend/src/qanoun_api/eval/rerank_study.py)):
+
+| | law hit / MRR | article hit / MRR | page hit / MRR |
+|---|---|---|---|
+| fused (default) | 0.923 / 0.837 | 0.778 / 0.583 | 0.742 / 0.604 |
+| reranker order alone | 0.923 / 0.851 | 0.833 / 0.617 | 0.758 / 0.624 |
+| **blended (what `QANOUN_RERANKER` does)** | 0.923 / **0.864** | **0.833 / 0.669** | **0.758 / 0.635** |
+
+Replacing the fused order with the reranker's sometimes buried an exact match; blended, it
+mostly moves good candidates up. Jina's reranker runs anywhere but costs about 3,000 tokens
+per question, so it is off on the free demo; a local cross-encoder
+(`BAAI/bge-reranker-v2-m3`) costs nothing per call. A failed rerank keeps the fused order.
 
 ## Common tasks
 
@@ -341,102 +390,29 @@ the corpus could not answer at `GET /api/analytics/usage`); scrypt password hash
 CSRF guard (JSON-only writes from allowed origins), security headers on API and web, and
 container healthchecks.
 
-## Status & roadmap
+## Known limitations
 
-### Done (November 2026)
-
-**Corpus & pipeline**
-- [x] 63 documents (55 laws, 8 implementing decrees) · 14,312 articles · 16,132 indexed passages · 13 domains · 1913–2026
-- [x] 11 laws in both Arabic and French (44 AR + 11 FR documents), linked as one law in the UI
-- [x] sha256-verified fetch, OCR fallback for scanned PDFs, article segmentation with
-      footnote/sub-article repair, BGE-M3 embeddings, Postgres/pgvector load
-
-**Search & answers**
-- [x] Hybrid retrieval (vectors + Arabic full-text, RRF fusion), scoped to a domain or a law
-- [x] Darija / Arabizi detection and rewriting to MSA, run in parallel with the first search
-- [x] Grounded answers with `[n]` citations to the exact article, explicit abstention
-- [x] LLM providers configured in `.env` (Gemini, OpenRouter, NVIDIA NIM, LM Studio/Ollama):
-      keys never reach the browser, `.env` changes apply without restart, current models
-      picked from each provider's live list, automatic fallback across models and providers,
-      busy / out-of-quota / unavailable models remembered and skipped
-- [x] ~1.5 s per answer end to end with Gemini flash-lite (progress stages + timings shown)
-- [x] Follow-up questions: recent turns are sent with each question; a follow-up («and for
-      women?») is rewritten into a standalone question for search, and the answer prompt sees
-      the conversation
-
-**Web app** (Next.js 16 · React 19 · HeroUI v3 · Tailwind 4 · TypeScript 7)
-- [x] Arabic (RTL) / French / English, light and dark Majorelle theme
-- [x] Ask workspace: saved conversations (in the browser), clickable citations opening the
-      full article beside the answer, Stop, mobile drawers
-- [x] Composer controls: «Search in» (searchable list of 13 domains and 24 laws with article
-      counts, Arabic-normalized filtering, one-click reset) and «AI» (Automatic or any
-      provider configured in `.env`; unconfigured ones show the key they need)
-- [x] Laws: one card per law with its editions, sticky filters; reader with Arabic-normalized
-      in-law search, text size, deep links to `#article-N`, copy citation
-- [x] Amendments: each law lists the amending texts named in its official footnotes, with
-      their year and links to the changed articles; each amended article shows its history
-      (year, amending text, amended / supplemented / repealed / replaced / added), and the
-      reader filters to «articles amended since <year>»
-- [x] Cross-references: under each article, the articles it cites and those that cite it,
-      within the law or in another one («المادة 53 أعلاه», «l'article 12 de la loi n° 70-03»);
-      about 7,340 links, rebuilt from the article text with `cli refs`
-- [x] Print / save as PDF: an answer with its question, cited articles and disclaimer
-- [x] Settings page: AI model, answer length and language, sources per answer, default
-      search scope, export or delete conversations, optional account
-- [x] Optional accounts (email + password) with conversations synced across devices
-- [x] Insights: corpus statistics and keyword frequencies per domain
-- [x] Phone layout with bottom tab bar; skip link, labelled controls, reduced-motion support
-
-**Quality**
-- [x] 81 backend + 47 pipeline + frontend unit tests (offline, models faked), ruff clean,
-      strict typecheck
-- [x] CI on every push / pull request: ruff, both test suites (database tests against a
-      real Postgres + pgvector), typecheck, production build, and a Playwright smoke test of
-      the running API + web app (`.github/workflows/ci.yml`)
-- [x] Weekly retrieval regression gate on the live demo (`.github/workflows/eval.yml`)
-- [x] Weekly portal watcher (`.github/workflows/watch-portal.yml`): finds newer uploads of the
-      catalog's laws on adala.justice.gov.ma, keeps one only if it changed and still segments
-      into 80% of the current articles (counted with OCR, as ingestion does), and opens a pull
-      request updating `data/catalog/laws.yaml`, listing new texts that cite our laws
-- [x] API and web images on GHCR for each release tag, amd64 + arm64; the web image takes
-      the API's address at runtime (`.github/workflows/release.yml`)
-- [x] Eval harness: 29 + 36 seed questions and the 264-question darija-rag set — hit@k / MRR
-      per law, per article and per language, as typed and as /chat retrieves, run history,
-      answers graded by a second provider
-- [x] Opt-in cross-encoder reranker, measured against the eval before deciding
-- [x] MCP server at `/mcp` (streamable HTTP, stateless): `search_laws`, `get_article`,
-      `list_laws` for AI agents, reusing the REST handlers
-- [x] Telegram bot (@QanounMABot): cited answers with links into the reader, per-chat limit
-- [x] API keys (Settings page): hashed, shown once, revocable, at most 10 per account; a key
-      lifts the search and MCP limits per account
-
-### Known limitations
-
-- **Missing texts answer «not found»**: e.g. child *kafala* (law 15.01) is not on the portal
-  as a law text, so such questions abstain rather than guess.
+- **Only what the portal publishes as text.** Laws missing from
+  [adala.justice.gov.ma](https://adala.justice.gov.ma) as a law text are missing here, and
+  questions about them get «not found» rather than a guess. The weekly portal watcher
+  (`.github/workflows/watch-portal.yml`) proposes updated uploads of the catalog's laws.
 - **Homonyms** (كفالة = guarantee in the D.O.C. vs. child kafala) can pull the wrong articles
   unless the question is scoped to a domain or law.
 - **Amendments are what the footnotes say**, not past wording: the portal publishes only the
   current consolidated text, so the history lists what changed and when, not what the article
   said before. The year is the one in the amending text's number («12.18» → 2018); its
   promulgation can be a year later. A few footnotes name no article.
-- **Dialect questions are still the weak spot**: with rewriting, Darija reaches 0.83 and
-  Arabizi 0.74 page-level hit@10 against 0.97 for MSA; without it Arabizi is at 0.10.
+- **Dialect questions are the weak spot**: with rewriting, Darija reaches 0.83 and Arabizi
+  0.74 page-level hit@10 against 0.97 for MSA; without it Arabizi is at 0.10.
 - **Retrieval misses some short exact articles**: «and for a pregnant woman?» is understood
-  correctly, but المادة 133 («تنتهي عدة الحامل بوضع حملها») ranks 20th. Tried and measured on
-  `data/eval`: OR-ing keywords (alone, length-normalized, or as a third fused channel) lowers
-  hit@10 from 0.923 to 0.846, so it was not shipped. The opt-in reranker raises article-level
-  hit@10 (0.833 → 0.889) but not MRR.
+  correctly, but المادة 133 («تنتهي عدة الحامل بوضع حملها») ranks 20th. OR-ing keywords lowered
+  hit@10 (0.923 → 0.846), so it was not shipped.
+- **Text-layer artifacts**: most Arabic PDFs swap the لا ligature («األولى» for «الأولى»). The
+  vector search copes, but full-text search misses those words and the reader shows them as
+  extracted. A few old or OCR'd PDFs carry digit or
+  text-direction artifacts in their preambles.
 - **Free cloud tiers** have daily per-model quotas; fallback absorbs them, heavy use needs a
   paid key or a local model.
-- A few old or OCR'd PDFs carry digit / text-direction artifacts in their preambles.
-
-### Roadmap
-
-- [ ] Corpus: الحالة المدنية (37.10), مدونة التغطية الصحية (65.00), مدونة الانتخابات, child
-      *kafala* (15.01) — when published as texts on the portal or another official source
-- [ ] Reranker that improves MRR, not just hit@10 (fine-tune, or rerank only the top 10)
-- [ ] Password reset by email
 
 Built by [scorpiontaj](https://github.com/scorpiontaj) — retrieval/eval patterns inherited
 from [darija-rag](https://github.com/scorpiontaj/darija-rag).
