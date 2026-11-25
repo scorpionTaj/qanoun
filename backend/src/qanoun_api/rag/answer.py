@@ -36,6 +36,8 @@ ABSTENTION = {
     "so2al b tari9a okhra wla tsurf l9awanin lli kaynin.",
     "other": "Je ne trouve pas la réponse dans les textes juridiques actuellement disponibles. "
     "Essayez de reformuler ou parcourez les lois disponibles.",
+    "en": "I can't find the answer in the legal texts available right now. Try rephrasing the "
+    "question or browse the available laws.",
 }
 
 DISCLAIMER = {
@@ -44,7 +46,27 @@ DISCLAIMER = {
     "arabizi": "Had lma3lomat ghir l-ma3loumatiya, machi istichara qanouniya.",
     "other": "Ces informations sont fournies à titre informatif uniquement et ne constituent "
     "pas un avis juridique.",
+    "en": "This information is for guidance only and is not legal advice.",
 }
+
+# French markers in a Latin-script question that is not Arabizi («other»): without any, the
+# question is taken as English, so an English question no longer gets French notices.
+_FRENCH = re.compile(
+    r"[éèêëàâçîïôûùœ]|\b(le|la|les|des|du|est|quel|quelle|quels|quelles|comment|combien|pour|une|"
+    r"droit|loi|code|travail|mariage|divorce)\b",
+    re.IGNORECASE,
+)
+_NOTICE_FOR = {"ar": "msa", "fr": "other", "en": "en"}
+
+
+def notice_key(variety: str, question: str, answer_language: str = "auto") -> str:
+    """Which ABSTENTION / DISCLAIMER text to show: the chosen answer language if any, else
+    the question's (an «other» question is French or English)."""
+    if answer_language in _NOTICE_FOR:
+        return _NOTICE_FOR[answer_language]
+    if variety == "other" and not _FRENCH.search(question):
+        return "en"
+    return variety
 
 # A fixed answer language (user setting) instead of following the question's variety.
 _FIXED_LANGUAGE = {
@@ -152,7 +174,7 @@ class Answer:
             "variety": self.variety,
             "cited": self.cited,
             "retrieval_query": self.retrieval_query,
-            "disclaimer": self.disclaimer or DISCLAIMER[self.variety],
+            "disclaimer": self.disclaimer or DISCLAIMER[notice_key(self.variety, self.question)],
             "sources": [hit.as_dict() for hit in self.sources],
         }
 
@@ -188,23 +210,24 @@ class Answerer:
         if not question:
             raise ValueError("empty question")
         variety = detect_variety(question)
+        notice = notice_key(variety, question)
         result = self.retrieve(question)
         sources = result.hits
         if not sources:
             return Answer(
-                question, ABSTENTION[variety], True, variety, [], [], result.search_query,
-                DISCLAIMER[variety],
+                question, ABSTENTION[notice], True, variety, [], [], result.search_query,
+                DISCLAIMER[notice],
             )
         reply = strip_reasoning(self.llm.chat(build_messages(question, sources, variety)))
         if NO_ANSWER in reply or not reply:
             return Answer(
-                question, ABSTENTION[variety], True, variety, sources, [], result.search_query,
-                DISCLAIMER[variety],
+                question, ABSTENTION[notice], True, variety, sources, [], result.search_query,
+                DISCLAIMER[notice],
             )
         cited = parse_citations(reply, len(sources))
         return Answer(
             question, reply, False, variety, sources, cited, result.search_query,
-            DISCLAIMER[variety],
+            DISCLAIMER[notice],
         )
 
 
