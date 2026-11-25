@@ -64,6 +64,24 @@ Open http://localhost:3000 → you land on `/ar` (RTL). Switch to FR/EN in the h
 - **Browse**: filter by domain (family, labour, housing…), read any law article-by-article.
 - **Insights**: corpus statistics and keyword frequencies per domain.
 
+### Use it from an AI agent (MCP)
+
+The API is also an [MCP](https://modelcontextprotocol.io) server, so Claude, Cursor and other
+agents can search and read the corpus and cite it:
+
+```bash
+claude mcp add --transport http qanoun https://qanoun-api.vercel.app/mcp
+```
+
+| tool | what it returns |
+|---|---|
+| `search_laws(query, domain?, law?, k?)` | the best-matching articles (MSA, French, Darija or Arabizi queries), with a link into the reader |
+| `get_article(law, article)` | one article in full, the articles it cites and those that cite it |
+| `list_laws(domain?)` | the laws and implementing decrees: slug, titles, number, year, domain |
+
+It is read-only and has no `ask` tool: the agent writes the answer from the articles, so the
+server spends no LLM quota. Set `QANOUN_WEB_URL` to your web app's address for the links.
+
 ## The corpus
 
 Ingested from the Ministry of Justice's official legal portal ([adala.justice.gov.ma](https://adala.justice.gov.ma)),
@@ -351,6 +369,8 @@ container healthchecks.
       per law, per article and per language, as typed and as /chat retrieves, run history,
       answers graded by a second provider
 - [x] Opt-in cross-encoder reranker, measured against the eval before deciding
+- [x] MCP server at `/mcp` (streamable HTTP, stateless): `search_laws`, `get_article`,
+      `list_laws` for AI agents, reusing the REST handlers
 
 ### Known limitations
 
