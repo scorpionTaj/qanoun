@@ -6,10 +6,13 @@ pipeline normalizer (same letter folding, same digit mapping) for FTS, and embed
 the same model and prefixes for the vector search.
 """
 
+import logging
 import os
 import threading
+import time
 from dataclasses import dataclass, field
 
+import httpx
 import numpy as np
 import psycopg
 from qanoun_pipeline.embed import Embedder, fake_embedder, spec_for
@@ -17,6 +20,8 @@ from qanoun_pipeline.normalize import normalize
 
 from qanoun_api.config import SETTINGS
 from qanoun_api.db import db
+
+log = logging.getLogger(__name__)
 
 RRF_K = 60
 CANDIDATES = 50  # per-channel candidate pool before fusion
@@ -26,7 +31,16 @@ CANDIDATES = 50  # per-channel candidate pool before fusion
 # against an exact scan / median query time: 0.63 / 1 ms at 40, 0.91 / 3 ms at 200,
 # 1.00 / 5 ms at 400, and the exact scan itself takes 93 ms.
 HNSW_EF_SEARCH = 400
-RERANK_POOL = 30  # fused candidates the cross-encoder re-scores (when enabled)
+# Reranking (QANOUN_RERANKER): the fused top RERANK_POOL are re-ordered by a weighted
+# reciprocal-rank fusion of their fused rank and the reranker's rank, RERANK_WEIGHT on the
+# reranker. Measured on the 323 eval questions as typed against the demo (Jina's
+# jina-reranker-v2-base-multilingual, eval/rerank_study.py), MRR law / article / page:
+# fused 0.837 / 0.583 / 0.604; reranker order alone 0.851 / 0.617 / 0.624; this blend
+# 0.864 / 0.669 / 0.635, and article hit@10 0.778 → 0.833. The reranker alone sometimes buries
+# an exact match the fusion had right; blended, it mostly moves good candidates up.
+RERANK_POOL = 20
+RERANK_RRF_K = 60
+RERANK_WEIGHT = 0.7
 
 
 @dataclass(frozen=True)
@@ -178,25 +192,83 @@ _reranker = None
 _reranker_lock = threading.Lock()
 
 
+class JinaReranker:
+    """Jina's rerank API (key in QANOUN_JINA_KEY), shaped like a CrossEncoder: no model on the
+    server, so it runs where the API does (Vercel). Billed per token of question + passages,
+    so passages are cut to MAX_CHARS (an article's opening says what it is about)."""
+
+    URL = "https://api.jina.ai/v1/rerank"
+    MAX_CHARS = 600
+
+    def __init__(self, model: str, key: str | None = None, client: httpx.Client | None = None,
+                 attempts: int = 1, sleep=time.sleep):  # fmt: skip
+        self.model = model
+        self.key = key or os.environ.get("QANOUN_JINA_KEY", "")
+        if not self.key:
+            raise RuntimeError("QANOUN_JINA_KEY is not set (needed for the Jina reranker)")
+        self.client = client or httpx.Client(timeout=30)
+        # A question can't wait out a rate limit: by default a 429 fails fast and search()
+        # keeps the fused order. Batch jobs (the eval) pass more attempts.
+        self.attempts, self.sleep = attempts, sleep
+        self.tokens = 0  # used so far, as the API reports it
+
+    def predict(self, pairs: list[tuple[str, str]]) -> list[float]:
+        """One request per call: every pair must share the question (as rerank() sends them)."""
+        if not pairs:
+            return []
+        body = {"model": self.model, "query": pairs[0][0], "return_documents": False,
+                "documents": [passage[: self.MAX_CHARS] for _, passage in pairs]}  # fmt: skip
+        for attempt in range(self.attempts):
+            response = self.client.post(self.URL, json=body, headers={"Authorization": f"Bearer {self.key}"})
+            if response.status_code != 429 or attempt == self.attempts - 1:
+                break
+            retry_after = response.headers.get("retry-after", "")
+            self.sleep(float(retry_after) if retry_after.isdigit() else min(2.0**attempt, 60.0))
+        response.raise_for_status()
+        data = response.json()
+        self.tokens += (data.get("usage") or {}).get("total_tokens", 0)
+        scores = [0.0] * len(pairs)
+        for item in data["results"]:
+            scores[item["index"]] = float(item["relevance_score"])
+        return scores
+
+
 def get_reranker():
-    """The cross-encoder from QANOUN_RERANKER, loaded once (a one-time model download)."""
+    """The reranker named by QANOUN_RERANKER, built once: Jina's API for a `jina-reranker…`
+    model, otherwise a local cross-encoder (a one-time model download)."""
     global _reranker
     with _reranker_lock:
         if _reranker is None:
-            from qanoun_pipeline.embed import torch_device
-            from sentence_transformers import CrossEncoder
+            if SETTINGS.reranker.startswith("jina-reranker"):
+                _reranker = JinaReranker(SETTINGS.reranker)
+            else:
+                from qanoun_pipeline.embed import torch_device
+                from sentence_transformers import CrossEncoder
 
-            _reranker = CrossEncoder(SETTINGS.reranker, device=torch_device(), max_length=512)
+                _reranker = CrossEncoder(SETTINGS.reranker, device=torch_device(), max_length=512)
         return _reranker
 
 
+def blend(scores: list[float], k: float = RERANK_RRF_K, weight: float = RERANK_WEIGHT) -> list[int]:
+    """Positions 0..n-1 (the fused order) re-ordered by weighted reciprocal-rank fusion of
+    the fused rank and the rank by `scores` (the reranker's)."""
+    positions = range(len(scores))
+    by_score = {i: rank for rank, i in enumerate(sorted(positions, key=lambda i: -scores[i]), start=1)}
+    value = {i: (1 - weight) / (k + i + 1) + weight / (k + by_score[i]) for i in positions}
+    return sorted(positions, key=lambda i: -value[i])
+
+
 def rerank(query: str, hits: list[Hit], k: int) -> list[Hit]:
-    """Re-order fused candidates by a cross-encoder reading question and article together:
-    fusion ranks by overlap, the reranker by whether the passage actually answers."""
-    pairs = [(query, f"{hit.law_title} — {hit.article_number}: {hit.text}") for hit in hits]
-    scores = get_reranker().predict(pairs)
-    ranked = sorted(zip(scores, hits, strict=True), key=lambda pair: -float(pair[0]))
-    return [hit for _, hit in ranked[:k]]
+    """Re-order the fused top RERANK_POOL with a reranker reading question and article
+    together: fusion ranks by overlap, the reranker by whether the passage answers."""
+    pool = hits[:RERANK_POOL]
+    pairs = [(query, f"{hit.law_title} — {hit.article_number}: {hit.text}") for hit in pool]
+    try:
+        scores = [float(score) for score in get_reranker().predict(pairs)]
+    except (httpx.HTTPError, RuntimeError) as exc:  # rate limit, quota, network: answer anyway
+        log.warning("reranker failed, keeping the fused order: %s", exc)
+        return hits[:k]
+    return ([pool[i] for i in blend(scores)] + hits[RERANK_POOL:])[:k]
 
 
 def _run(conn: psycopg.Connection, query: str, effective: str, params: dict) -> RetrievalResult:

@@ -31,3 +31,6 @@ next-env.d.ts
 .DS_Store
 .coverage
 .ipynb_checkpoints/
+
+# eval/rerank_study.py score cache (re-runs cost no API tokens)
+data/eval/rerank-cache.json
