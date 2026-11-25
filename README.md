@@ -75,7 +75,7 @@ claude mcp add --transport http qanoun https://qanoun-api.vercel.app/mcp
 
 | tool | what it returns |
 |---|---|
-| `search_laws(query, domain?, law?, k?)` | the best-matching articles (MSA, French, Darija or Arabizi queries), with a link into the reader |
+| `search_laws(query, domain?, law?, k?)` | the best-matching articles for an MSA or French query (the agent rewrites Darija/Arabizi first, as told by the tool), with a link into the reader |
 | `get_article(law, article)` | one article in full, the articles it cites and those that cite it |
 | `list_laws(domain?)` | the laws and implementing decrees: slug, titles, number, year, domain |
 

@@ -29,8 +29,9 @@ server = MCPServer(
     version=__version__,
     instructions=(
         "Official Moroccan legal texts (codes, laws, implementing decrees) in Arabic and French, "
-        "split into articles. Use search_laws to find the articles that answer a question (MSA, "
-        "French, Darija or Arabizi all work), get_article to read one in full with the articles "
+        "split into articles. Use search_laws to find the articles that answer a question; search "
+        "in Modern Standard Arabic or French (rewrite a Darija or Arabizi question into MSA "
+        "first: the texts are written in MSA), get_article to read one in full with the articles "
         "it cites and that cite it, and list_laws to see what the corpus covers. Base answers on "
         "the returned text and cite the law and article number; say so when nothing relevant is "
         "found rather than answering from memory. This is legal information, not legal advice."
@@ -51,7 +52,7 @@ class Passage(TypedDict):
 
 
 class SearchResult(TypedDict):
-    searched_for: str  # the query actually searched, after Darija/Arabizi rewriting
+    searched_for: str  # the query actually searched
     results: list[Passage]
 
 
@@ -98,7 +99,9 @@ def search_laws(query: str, domain: str | None = None, law: str | None = None, k
     """Search Moroccan legal texts; return the best-matching articles with their text.
 
     Args:
-        query: the question or keywords, in Arabic, French, Darija or Arabizi.
+        query: the question or keywords in Modern Standard Arabic or French. Rewrite Darija
+            or Arabizi into MSA first («ch7al l3mr bach tzwj» → «ما هو السن القانوني للزواج»):
+            the texts are in MSA, and this search does not translate.
         domain: restrict to one domain (see list_laws), e.g. "family", "labour", "criminal".
         law: restrict to one law by its slug (see list_laws), e.g. "labour-code-ar".
         k: number of articles to return (1-20).
