@@ -21,8 +21,10 @@ rather than silently counted as anonymous, so a client learns its key stopped wo
 
 import logging
 import random
+from typing import Annotated
 
-from fastapi import HTTPException, Request
+from fastapi import HTTPException, Request, Security
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from qanoun_api import accounts
 from qanoun_api.config import SETTINGS
@@ -50,6 +52,16 @@ def client_key(request: Request) -> str:
         if forwarded:
             return forwarded
     return request.client.host if request.client else "unknown"
+
+
+# Declares the key in the OpenAPI schema, so the Swagger UI shows «Authorize» and sends it.
+# Optional (auto_error=False): without a key, requests are counted by address.
+api_key = HTTPBearer(
+    auto_error=False,
+    scheme_name="APIKey",
+    bearerFormat="qk_…",
+    description="Optional API key (Settings page of the web app): higher limits per account.",
+)
 
 
 def bearer_key(request: Request) -> str | None:
@@ -93,8 +105,8 @@ class RateLimit:
             raise HTTPException(401, "invalid or revoked API key", headers={"WWW-Authenticate": "Bearer"})
         return f"user:{owner}", self.key_limit
 
-    def __call__(self, request: Request) -> None:
-        key, limit = self.identity(request)
+    def __call__(self, request: Request, _: Annotated[HTTPAuthorizationCredentials | None, Security(api_key)] = None) -> None:
+        key, limit = self.identity(request)  # reads the header itself: /mcp has no FastAPI dependencies
         wait = self.check(key, limit)
         if wait is not None:
             raise HTTPException(429, "Too many requests", headers={"Retry-After": str(int(wait) + 1)})

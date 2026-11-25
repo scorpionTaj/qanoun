@@ -47,6 +47,7 @@ app = FastAPI(
     version=__version__,
     lifespan=lifespan,
     docs_url="/",  # the API's home page is its interactive documentation (Swagger UI)
+    swagger_ui_parameters={"persistAuthorization": True},  # keep an entered API key on reload
 )
 
 app.add_middleware(
@@ -93,3 +94,18 @@ def docs_redirect():
 @app.get("/api/health")
 def health():
     return {"status": "ok", "version": __version__}
+
+
+def _openapi() -> dict:
+    """The generated schema plus /mcp, a raw ASGI route FastAPI cannot describe itself, so the
+    Swagger UI can call the MCP tools too (JSON-RPC 2.0, one request per call)."""
+    if app.openapi_schema is None:
+        from fastapi.openapi.utils import get_openapi
+
+        schema = get_openapi(title=app.title, version=app.version, description=app.description, routes=app.routes)
+        schema["paths"]["/mcp"] = mcp_server.OPENAPI_PATH
+        app.openapi_schema = schema
+    return app.openapi_schema
+
+
+app.openapi = _openapi

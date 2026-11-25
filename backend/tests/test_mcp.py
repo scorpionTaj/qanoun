@@ -118,3 +118,13 @@ def test_endpoint_is_closed_outside_the_lifespan():
 def test_get_is_refused_at_once(client):
     # stateless: no server-to-client stream; a GET must not hang until the function times out
     assert client.get("/mcp", headers={"Accept": "text/event-stream"}).status_code == 405
+
+
+def test_swagger_ui_can_authorize_and_call_mcp():
+    schema = main.app.openapi()
+    assert schema["components"]["securitySchemes"]["APIKey"]["scheme"] == "bearer"
+    assert schema["paths"]["/api/search"]["post"]["security"] == [{"APIKey": []}]  # «Authorize» applies
+    assert "security" not in schema["paths"]["/api/laws"]["get"]  # reading stays open
+    mcp = schema["paths"]["/mcp"]["post"]
+    assert {"APIKey": []} in mcp["security"] and {} in mcp["security"]  # key optional
+    assert set(mcp["requestBody"]["content"]["application/json"]["examples"]) >= {"list tools", "search_laws"}
