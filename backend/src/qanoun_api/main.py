@@ -16,7 +16,17 @@ from qanoun_api import __version__, mcp_server
 from qanoun_api.config import SETTINGS
 from qanoun_api.db import close_pool, db
 from qanoun_api.rag.retrieval import get_embedder
-from qanoun_api.routers import analytics, auth, chat, conversations, keys, laws, llm, search
+from qanoun_api.routers import (
+    analytics,
+    auth,
+    chat,
+    conversations,
+    keys,
+    laws,
+    llm,
+    search,
+    telegram,
+)
 
 
 def _warm_up() -> None:
@@ -79,6 +89,7 @@ app.include_router(llm.router)
 app.include_router(auth.router)
 app.include_router(conversations.router)
 app.include_router(keys.router)
+app.include_router(telegram.router)
 # MCP for AI agents (streamable HTTP at /mcp), see qanoun_api.mcp_server.
 # POST only: stateless, there is no server stream to GET (a 405 tells clients so at once;
 # a GET used to stay open until the function timed out) and no session to DELETE.
