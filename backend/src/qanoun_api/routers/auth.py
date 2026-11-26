@@ -12,6 +12,7 @@ from typing import Annotated, Literal
 
 import psycopg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from qanoun_api import accounts
@@ -80,6 +81,14 @@ class Credentials(BaseModel):
     client: Literal["web", "app"] = "web"  # app: the token in the body, not in a cookie
 
 
+class SignUp(Credentials):
+    accept_privacy: bool = False  # law 09-08: consent to the privacy notice, required
+
+
+class Password(BaseModel):
+    password: str = Field(min_length=1, max_length=200)
+
+
 class AccountSettings(BaseModel):
     """What follows the account across devices; unset fields keep the client's defaults."""
 
@@ -109,14 +118,16 @@ def me(user: OptionalUser):
 
 
 @router.post("/signup", dependencies=[Depends(same_origin_json), Depends(auth_limit)])
-def signup(body: Credentials, response: Response):
+def signup(body: SignUp, response: Response):
     if not SETTINGS.allow_signup:
         raise HTTPException(403, "sign-up is disabled on this server")
+    if not body.accept_privacy:
+        raise HTTPException(422, "accepting the privacy notice is required")
     if not _EMAIL.match(body.email.strip()):
         raise HTTPException(422, "invalid email")
     try:
         with db() as conn:
-            user_id = accounts.create_user(conn, body.email, body.password)
+            user_id = accounts.create_user(conn, body.email, body.password, consented=True)
     except psycopg.errors.UniqueViolation as exc:
         raise HTTPException(409, "an account with this email already exists") from exc
     return _start_session(response, user_id, body.client)
@@ -151,3 +162,24 @@ def put_settings(body: AccountSettings, user: User):
     with db() as conn:
         accounts.put_settings(conn, user["id"], settings)
     return settings
+
+
+@router.get("/export")
+def export(user: User):
+    """Right of access (law 09-08, art. 7): everything the server keeps about the account."""
+    with db() as conn:
+        data = accounts.export_user_data(conn, user["id"])
+    return JSONResponse(data, headers={"Content-Disposition": 'attachment; filename="qanoun-my-data.json"'})
+
+
+@router.post("/delete-account", dependencies=[Depends(same_origin_json), Depends(auth_limit)])
+def delete_account(body: Password, user: User, response: Response):
+    """Right of deletion (law 09-08, art. 8). The password is asked again: a stolen session
+    alone must not be able to erase an account."""
+    with db() as conn:
+        if accounts.authenticate(conn, user["email"], body.password) != user["id"]:
+            raise HTTPException(401, "wrong password")
+        accounts.delete_user(conn, user["id"])
+    response.delete_cookie(COOKIE, path="/")
+    return {"ok": True}
+

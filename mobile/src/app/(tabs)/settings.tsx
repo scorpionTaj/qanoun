@@ -64,6 +64,9 @@ export default function SettingsScreen() {
           <Pressable onPress={() => WebBrowser.openBrowserAsync(`${WEB_URL}/${LANG}`)} accessibilityRole="link">
             <Text style={{ color: colors.accent }}>{t.openWeb}</Text>
           </Pressable>
+          <Pressable onPress={() => WebBrowser.openBrowserAsync(`${WEB_URL}/${LANG}/privacy`)} accessibilityRole="link">
+            <Text style={{ color: colors.accent }}>{t.privacy}</Text>
+          </Pressable>
           <Text style={[styles.hint, { color: colors.textSecondary }]}>
             {t.version} {Constants.expoConfig?.version}
           </Text>
@@ -81,6 +84,8 @@ function AccountCard() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [consent, setConsent] = useState(false);
+  const blocked = busy || !email || password.length < 8 || (mode === "signup" && !consent);
 
   const submit = async () => {
     setBusy(true);
@@ -119,9 +124,21 @@ function AccountCard() {
       <Field value={password} onChange={setPassword} placeholder={t.password} secure
         autoComplete={mode === "signup" ? "new-password" : "current-password"} />
       {mode === "signup" && <Text style={[styles.hint, { color: colors.textSecondary }]}>{t.passwordHint}</Text>}
+      {mode === "signup" && (
+        <View style={{ gap: 6 }}>
+          <Pressable onPress={() => setConsent((c) => !c)} accessibilityRole="checkbox" accessibilityState={{ checked: consent }}
+            style={{ flexDirection: "row", gap: 10, alignItems: "flex-start" }}>
+            <Text style={{ color: colors.accent, fontSize: 18 }}>{consent ? "☑" : "☐"}</Text>
+            <Text style={{ color: colors.text, flex: 1, lineHeight: 20 }}>{t.consent}</Text>
+          </Pressable>
+          <Pressable onPress={() => WebBrowser.openBrowserAsync(`${WEB_URL}/${LANG}/privacy`)} accessibilityRole="link">
+            <Text style={{ color: colors.accent }}>{t.privacy}</Text>
+          </Pressable>
+        </View>
+      )}
       {error && <Text style={{ color: colors.danger }}>{error}</Text>}
-      <Pressable onPress={submit} disabled={busy || !email || password.length < 8} accessibilityRole="button"
-        style={[styles.primary, { backgroundColor: colors.accent, opacity: busy || !email || password.length < 8 ? 0.5 : 1 }]}>
+      <Pressable onPress={submit} disabled={blocked} accessibilityRole="button"
+        style={[styles.primary, { backgroundColor: colors.accent, opacity: blocked ? 0.5 : 1 }]}>
         {busy ? <ActivityIndicator color={colors.onAccent} />
           : <Text style={{ color: colors.onAccent, fontWeight: "600" }}>{mode === "signup" ? t.signUp : t.signIn}</Text>}
       </Pressable>

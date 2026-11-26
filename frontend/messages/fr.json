@@ -15,7 +15,8 @@
     "skipToContent": "Aller au contenu",
     "lightMode": "Mode clair",
     "darkMode": "Mode sombre",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "privacy": "Confidentialité (loi 09-08)"
   },
   "home": {
     "heroTitle": "Les lois marocaines, à portée de main",
@@ -70,7 +71,7 @@
     "sources": "Sources",
     "cited": "Articles cités",
     "abstained": "Réponse introuvable dans les textes disponibles.",
-    "disclaimer": "Informatif uniquement — pas un avis juridique.",
+    "disclaimer": "Informatif uniquement — pas un avis juridique. N'indiquez ni noms ni données personnelles dans vos questions.",
     "rewritten": "Question reformulée",
     "suggestionsTitle": "Essayez de demander",
     "suggestions": [
@@ -268,7 +269,17 @@
     "signupClosed": "La création de comptes est fermée sur ce serveur.",
     "invalid": "Vérifiez l'e-mail et utilisez au moins 8 caractères pour le mot de passe.",
     "tooMany": "Trop de tentatives. Patientez une minute puis réessayez.",
-    "failed": "Impossible de joindre le serveur. Réessayez."
+    "failed": "Impossible de joindre le serveur. Réessayez.",
+    "consent": "J'ai lu la <privacy></privacy> et j'accepte le traitement de mes données conformément à la loi 09-08.",
+    "privacyLink": "politique de confidentialité",
+    "consentRequired": "Veuillez accepter la politique de confidentialité pour créer un compte.",
+    "myData": "Vos données",
+    "download": "Télécharger mes données",
+    "delete": "Supprimer mon compte",
+    "deleteConfirm": "Cela supprime définitivement votre compte, vos conversations synchronisées, vos réglages et vos clés d'API. Saisissez votre mot de passe pour confirmer.",
+    "deleteAction": "Supprimer définitivement",
+    "cancel": "Annuler",
+    "wrongPassword": "Mot de passe incorrect."
   },
   "apiKeys": {
     "title": "Clés d'API",
@@ -287,5 +298,37 @@
     "revokeNamed": "Révoquer la clé « {name} »",
     "tooMany": "Vous avez atteint le nombre maximal de clés : révoquez-en une d'abord.",
     "failed": "Impossible de joindre le serveur. Réessayez."
+  },
+  "privacy": {
+    "title": "Politique de confidentialité",
+    "updated": "Dernière mise à jour : novembre 2026",
+    "intro": "Qanoun traite les données personnelles conformément à la loi n° 09-08 relative à la protection des personnes physiques à l'égard du traitement des données à caractère personnel, et aux règles de la CNDP (Commission nationale de contrôle de la protection des données à caractère personnel).",
+    "controllerTitle": "Responsable du traitement",
+    "controllerUnset": "L'exploitant de ce serveur n'a pas encore publié son identité.",
+    "contact": "Contact",
+    "cndpReceipt": "Récépissé de déclaration CNDP",
+    "cndpPending": "Pas encore publié par l'exploitant de ce serveur.",
+    "collectTitle": "Ce que nous collectons, et pourquoi",
+    "collectNoAccount": "Sans compte : rien n'est rattaché à vous. Vos questions sont traitées uniquement pour y répondre, et vos conversations restent dans votre navigateur ou votre téléphone.",
+    "collectAccount": "Avec un compte (facultatif) : votre e-mail, votre mot de passe (conservé uniquement sous forme d'empreinte salée), les conversations et réglages que vous choisissez de synchroniser, vos clés d'API (empreintes uniquement) et vos sessions de connexion ({days} jours). Finalité : synchroniser vos conversations et réglages entre vos appareils.",
+    "collectLogs": "Statistiques d'usage : une ligne anonyme par question (durées, résultat, sources utilisées), sans adresse IP ni compte. Le texte de la question est {logged}. Ces lignes sont supprimées après {days} jours.",
+    "logged": "conservé",
+    "notLogged": "non conservé (seulement une empreinte pour compter les répétitions)",
+    "collectAbuse": "Prévention des abus : votre adresse IP (ou numéro de discussion Telegram) sert quelques minutes à limiter le nombre de requêtes, puis est effacée.",
+    "transferTitle": "Qui reçoit vos questions — y compris hors du Maroc",
+    "transferIntro": "Pour rédiger une réponse, le texte de votre question et les articles retrouvés sont envoyés à un service d'IA. Sur ce serveur, ces services sont :",
+    "transferNone": "Aucun service d'IA externe n'est configuré : les questions sont traitées sur ce serveur.",
+    "transferLocal": "Un modèle local peut aussi être utilisé ; la question ne quitte alors pas le serveur.",
+    "transferWarning": "Ces services sont situés hors du Maroc (art. 43 et 44 de la loi 09-08). N'indiquez ni noms, ni numéros d'identité, ni adresses, ni autres données personnelles dans vos questions.",
+    "noSale": "Vos données ne sont jamais vendues ni utilisées à des fins publicitaires.",
+    "retentionTitle": "Durée de conservation",
+    "retention": "Données du compte : jusqu'à la suppression du compte. Sessions : {days} jours. Statistiques d'usage : {logDays} jours. Compteurs anti-abus : quelques minutes.",
+    "rightsTitle": "Vos droits",
+    "rights": "La loi 09-08 vous garantit le droit d'être informé, d'accéder à vos données (art. 7), de les faire rectifier ou effacer (art. 8) et de vous opposer à leur traitement (art. 9).",
+    "rightsHow": "Dans les Réglages, une fois connecté : « Télécharger mes données » vous remet tout ce que nous conservons sur votre compte, et « Supprimer mon compte » l'efface immédiatement. Pour toute autre demande, écrivez au contact ci-dessus.",
+    "complaint": "Vous pouvez aussi saisir la CNDP : www.cndp.ma.",
+    "securityTitle": "Sécurité",
+    "security": "Les mots de passe sont stockés avec scrypt ; les sessions et clés d'API uniquement sous forme d'empreintes SHA-256 ; le cookie de session est httpOnly ; les requêtes sont protégées contre la falsification intersite et limitées en nombre.",
+    "unavailable": "Les informations du serveur sont momentanément indisponibles ; les règles générales ci-dessus s'appliquent."
   }
 }

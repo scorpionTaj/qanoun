@@ -36,7 +36,12 @@ export interface ApiKey {
 export const accountApi = {
   me: () => call<Me>("/api/auth/me"),
   signup: (email: string, password: string) =>
-    call("/api/auth/signup", { method: "POST", body: JSON.stringify({ email, password }) }),
+    call("/api/auth/signup", { method: "POST", body: JSON.stringify({ email, password, accept_privacy: true }) }),
+  /** Law 09-08 right of access: everything the server keeps about the account, as JSON. */
+  exportData: () => call<unknown>("/api/auth/export"),
+  /** Law 09-08 right of deletion; the password is asked again. */
+  deleteAccount: (password: string) =>
+    call("/api/auth/delete-account", { method: "POST", body: JSON.stringify({ password }) }),
   login: (email: string, password: string) =>
     call("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   logout: () => call("/api/auth/logout", { method: "POST", body: "{}" }),

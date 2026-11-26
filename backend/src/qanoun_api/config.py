@@ -28,6 +28,10 @@ class Settings:
     telegram_token: str = ""  # @BotFather token: turns the Telegram bot on
     web_url: str = ""  # the web app's address: MCP results link to its reader (empty: no links)
     rewrite_cache: Path = Path("data/processed/rewrites.json")
+    # Law 09-08 privacy notice: who runs this server, how to reach them, the CNDP receipt
+    privacy_controller: str = ""
+    privacy_contact: str = ""
+    cndp_receipt: str = ""
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -44,6 +48,9 @@ class Settings:
             log_questions=_flag("QANOUN_LOG_QUESTIONS", False),
             web_url=os.environ.get("QANOUN_WEB_URL", "").strip().rstrip("/"),
             telegram_token=os.environ.get("QANOUN_TELEGRAM_TOKEN", "").strip(),
+            privacy_controller=os.environ.get("QANOUN_PRIVACY_CONTROLLER", "").strip(),
+            privacy_contact=os.environ.get("QANOUN_PRIVACY_CONTACT", "").strip(),
+            cndp_receipt=os.environ.get("QANOUN_CNDP_RECEIPT", "").strip(),
             cors_origins=tuple(
                 o.strip().rstrip("/")
                 for o in os.environ.get(

@@ -102,6 +102,7 @@ test("a signed-in user creates an API key, uses it, and revokes it", async ({ pa
   await page.getByRole("radio", { name: "Create account" }).click();
   await page.getByLabel("Email").fill(`keys-${Date.now()}@example.com`);
   await page.getByLabel("Password").fill("long-enough");
+  await page.getByRole("checkbox", { name: /privacy notice/ }).check(); // Law 09-08 consent
   await page.getByRole("button", { name: "Create account" }).click();
 
   await page.getByLabel("Key name").fill("e2e script");
@@ -122,3 +123,12 @@ test("a signed-in user creates an API key, uses it, and revokes it", async ({ pa
   await expect(page.getByText("e2e script")).toHaveCount(0);
   expect((await mcp(`Bearer ${key}`)).status()).toBe(401);
 });
+
+test("the privacy notice (Law 09-08) is linked from every page", async ({ page }) => {
+  await page.goto("/fr");
+  await page.getByRole("link", { name: /Confidentialité/ }).click();
+  await expect(page).toHaveURL(/\/fr\/privacy$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Politique de confidentialité");
+  await expect(page.getByText(/loi n° 09-08/)).toBeVisible();
+});
+

@@ -96,7 +96,10 @@ export const models = (provider: string) =>
 export const accountApi = {
   me: () => call<{ user: User | null; signup_allowed: boolean }>("/api/auth/me"),
   signIn: (mode: "login" | "signup", email: string, password: string) =>
-    call<{ ok: boolean; token: string }>(`/api/auth/${mode}`, { method: "POST", body: { email, password, client: "app" } }),
+    // accept_privacy: the user ticked the Law 09-08 consent box (sign-up refuses without it)
+    call<{ ok: boolean; token: string }>(`/api/auth/${mode}`, {
+      method: "POST", body: { email, password, client: "app", ...(mode === "signup" ? { accept_privacy: true } : {}) },
+    }),
   signOut: () => call("/api/auth/logout", { method: "POST", body: {} }),
   settings: () => call<Partial<Settings>>("/api/auth/settings"),
   saveSettings: (settings: Settings) => call("/api/auth/settings", { method: "PUT", body: settings }),

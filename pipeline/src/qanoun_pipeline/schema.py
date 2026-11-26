@@ -197,6 +197,13 @@ MIGRATIONS: list[tuple[int, str, str]] = [
         # Preferences that follow the account across devices (validated by the API).
         "ALTER TABLE users ADD COLUMN settings JSONB NOT NULL DEFAULT '{}'::jsonb;",
     ),
+    (
+        8,
+        "privacy-notice consent",
+        # Law 09-08 (art. 4): when the user agreed to the privacy notice at sign-up. NULL for
+        # accounts made before, or by an admin with `make user`.
+        "ALTER TABLE users ADD COLUMN privacy_accepted_at TIMESTAMPTZ;",
+    ),
 ]
 
 # Arbitrary constant: serialises schema changes (and extension creation) across processes.

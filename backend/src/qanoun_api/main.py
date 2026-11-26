@@ -24,6 +24,7 @@ from qanoun_api.routers import (
     keys,
     laws,
     llm,
+    privacy,
     search,
     telegram,
 )
@@ -90,6 +91,7 @@ app.include_router(auth.router)
 app.include_router(conversations.router)
 app.include_router(keys.router)
 app.include_router(telegram.router)
+app.include_router(privacy.router)
 # MCP for AI agents (streamable HTTP at /mcp), see qanoun_api.mcp_server.
 # POST only: stateless, there is no server stream to GET (a 405 tells clients so at once;
 # a GET used to stay open until the function timed out) and no session to DELETE.

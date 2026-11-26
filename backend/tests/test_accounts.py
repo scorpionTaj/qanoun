@@ -75,9 +75,9 @@ def test_full_account_flow(monkeypatch):
             conn.commit()
 
         assert client.get("/api/auth/me").json()["user"] is None
-        assert client.post("/api/auth/signup", json={"email": email, "password": "long-enough"}).status_code == 200
+        assert client.post("/api/auth/signup", json={"email": email, "password": "long-enough", "accept_privacy": True}).status_code == 200
         assert client.get("/api/auth/me").json()["user"]["email"] == email
-        assert client.post("/api/auth/signup", json={"email": email, "password": "long-enough"}).status_code == 409
+        assert client.post("/api/auth/signup", json={"email": email, "password": "long-enough", "accept_privacy": True}).status_code == 409
 
         conv = {"title": "t", "updated_at": 2, "messages": [{"role": "user", "text": "q"}]}
         assert client.put("/api/conversations/c1", json=conv).status_code == 200
@@ -115,7 +115,7 @@ def test_app_session_by_header_and_account_settings(monkeypatch):
             conn.execute("DELETE FROM users WHERE email = %s", (email,))
             conn.commit()
         body = {"email": email, "password": "long-enough", "client": "app"}
-        signed_up = client.post("/api/auth/signup", json=body)
+        signed_up = client.post("/api/auth/signup", json={**body, "accept_privacy": True})
         assert signed_up.status_code == 200 and "qanoun_session" not in signed_up.cookies
         token = signed_up.json()["token"]
         auth = {"X-Qanoun-Session": token}
@@ -143,3 +143,58 @@ def test_app_session_by_header_and_account_settings(monkeypatch):
             conn.execute("DELETE FROM users WHERE email = %s", (email,))
             conn.commit()
     db_module.close_pool()
+
+
+@pytest.mark.skipif(not os.environ.get("QANOUN_TEST_DB_URL"), reason="QANOUN_TEST_DB_URL not set")
+def test_law_09_08_consent_access_and_deletion(monkeypatch):
+    """Sign-up needs consent (recorded), the user can download their data and delete the account."""
+    from dataclasses import replace
+
+    from fastapi.testclient import TestClient
+
+    from qanoun_api import db as db_module
+    from qanoun_api.main import app
+
+    db_module.close_pool()
+    monkeypatch.setattr(db_module, "SETTINGS", replace(db_module.SETTINGS, db_url=os.environ["QANOUN_TEST_DB_URL"]))
+    email = "privacy-test@example.com"
+    with TestClient(app, headers={"origin": "http://localhost:3000"}) as client:
+        from qanoun_api.db import db
+
+        with db() as conn:
+            conn.execute("DELETE FROM users WHERE email = %s", (email,))
+            conn.commit()
+        creds = {"email": email, "password": "long-enough"}
+        assert client.post("/api/auth/signup", json=creds).status_code == 422  # no consent
+        assert client.post("/api/auth/signup", json={**creds, "accept_privacy": True}).status_code == 200
+        conv = {"title": "t", "updated_at": 1, "messages": [{"role": "user", "text": "q"}]}
+        client.put("/api/conversations/c1", json=conv)
+
+        exported = client.get("/api/auth/export")
+        assert "attachment" in exported.headers["content-disposition"]
+        data = exported.json()
+        assert data["account"]["email"] == email and data["account"]["privacy_accepted_at"]
+        assert [c["id"] for c in data["conversations"]] == ["c1"]
+        assert "password" not in str(data) and "hash" not in str(data)
+
+        assert client.post("/api/auth/delete-account", json={"password": "wrong-one"}).status_code == 401
+        assert client.post("/api/auth/delete-account", json={"password": "long-enough"}).status_code == 200
+        assert client.get("/api/auth/me").json()["user"] is None
+        with db() as conn:
+            assert conn.execute("SELECT count(*) FROM users WHERE email = %s", (email,)).fetchone()[0] == 0
+            assert conn.execute("SELECT count(*) FROM conversations WHERE id = 'c1' AND title = 't'").fetchone()[0] == 0
+
+
+def test_privacy_facts_name_the_services_abroad(monkeypatch):
+    from dataclasses import replace
+
+    from fastapi.testclient import TestClient
+
+    from qanoun_api.main import app
+    from qanoun_api.routers import privacy
+
+    monkeypatch.setattr(privacy, "SETTINGS", replace(privacy.SETTINGS, cndp_receipt="D-123/2026", embed_model="jina-embeddings-v3"))
+    body = TestClient(app).get("/api/privacy").json()
+    assert body["cndp_receipt"] == "D-123/2026"
+    assert {"id": "jina", "name": "Jina AI (embeddings / reranking)", "country": "Germany"} in body["processors"]
+    assert body["query_log"] == {"question_text": False, "retention_days": 90}

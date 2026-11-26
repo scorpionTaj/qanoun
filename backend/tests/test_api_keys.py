@@ -50,7 +50,7 @@ def app_client(monkeypatch):
 
 def _sign_up(client, email):
     client.cookies.clear()
-    assert client.post("/api/auth/signup", json={"email": email, "password": "long-enough"}).status_code == 200
+    assert client.post("/api/auth/signup", json={"email": email, "password": "long-enough", "accept_privacy": True}).status_code == 200
 
 
 def test_api_key_lifecycle(app_client):
