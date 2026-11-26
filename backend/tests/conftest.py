@@ -1,9 +1,16 @@
 """Shared fixtures: fake LLM, fake retrieval, fake DB connection."""
 
 import json
+import os
 from contextlib import contextmanager
 
 import pytest
+
+# Tests assume no host configuration. `make test` exports the developer's .env (LLM keys,
+# Telegram token, DB URL), which would otherwise switch features on; drop it before the app
+# reads its config. QANOUN_TEST_* is the one intended way in.
+for _name in [n for n in os.environ if n.startswith("QANOUN_") and not n.startswith("QANOUN_TEST_")]:
+    del os.environ[_name]
 
 from qanoun_api.rag.retrieval import Hit
 
