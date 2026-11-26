@@ -26,6 +26,7 @@ The API's interactive documentation (Swagger UI) is at
   <img src="docs/figures/demo.gif" alt="Qanoun demo: asking a question in English, the cited Labour Code article opening beside the answer, browsing laws, the amendments panel, a Darija question answered from the rental law in Arabic (RTL), and the settings page" width="800">
 </p>
 <p align="center"><sub>Ask in English, French, Arabic or Darija → answer with clickable citations → read the article, its amendments, and the whole law.</sub></p>
+<p align="center">▶️ <a href="docs/media/qanoun-ad.mp4"><b>Watch the 70-second video</b></a>: web, Android app and Telegram bot.</p>
 
 ## The three layers
 
