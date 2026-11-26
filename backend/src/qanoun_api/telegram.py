@@ -61,8 +61,9 @@ def send_typing(chat_id: int) -> None:
 
 
 def _source_line(n: int, source: dict) -> str:
-    article = "Article" if source["language"] == "fr" else "المادة"
-    label = html.escape(f"{source['law_title']} — {article} {source['article_number']}")
+    french = source["language"] == "fr"
+    title = (french and source.get("law_title_fr")) or source["law_title"]
+    label = html.escape(f"{title} — {'Article' if french else 'المادة'} {source['article_number']}")
     if not SETTINGS.web_url:
         return f"[{n}] {label}"
     locale = "fr" if source["language"] == "fr" else "ar"

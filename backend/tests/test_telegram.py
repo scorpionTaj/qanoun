@@ -118,3 +118,10 @@ def test_the_token_never_reaches_the_logs(caplog):
         logging.getLogger("httpx").info('HTTP Request: %s %s "%s"', "POST", url, "HTTP/1.1 200 OK")
     assert "secret_token" not in caplog.text and "123456" not in caplog.text
     assert "/bot<redacted>/sendMessage" in caplog.text
+
+
+def test_a_french_source_is_named_in_french():
+    source = {"law_slug": "labour-code-fr", "law_title": "مدونة الشغل", "law_title_fr": "Code du travail",
+              "language": "fr", "article_number": "152"}
+    assert "Code du travail — Article 152" in telegram.format_answer("Réponse [1].", [source], [0])
+    assert "مدونة الأسرة — المادة 19" in telegram.format_answer("جواب [1].", [SOURCE], [0])
