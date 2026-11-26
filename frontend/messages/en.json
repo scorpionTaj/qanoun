@@ -15,7 +15,8 @@
     "skipToContent": "Skip to content",
     "lightMode": "Light mode",
     "darkMode": "Dark mode",
-    "settings": "Settings"
+    "settings": "Settings",
+    "privacy": "Privacy (Law 09-08)"
   },
   "home": {
     "heroTitle": "Moroccan law, at your fingertips",
@@ -70,7 +71,7 @@
     "sources": "Sources",
     "cited": "Cited articles",
     "abstained": "No answer found in the available texts.",
-    "disclaimer": "Informational only — not legal advice.",
+    "disclaimer": "Informational only — not legal advice. Don't include names or personal details in your questions.",
     "rewritten": "Question rewritten",
     "suggestionsTitle": "Try asking",
     "suggestions": [
@@ -268,7 +269,17 @@
     "signupClosed": "New accounts are closed on this server.",
     "invalid": "Check the email and use at least 8 characters for the password.",
     "tooMany": "Too many attempts. Wait a minute and try again.",
-    "failed": "Couldn't reach the server. Try again."
+    "failed": "Couldn't reach the server. Try again.",
+    "consent": "I have read the <privacy></privacy> and agree to the processing of my data under Law 09-08.",
+    "privacyLink": "privacy notice",
+    "consentRequired": "Please accept the privacy notice to create an account.",
+    "myData": "Your data",
+    "download": "Download my data",
+    "delete": "Delete my account",
+    "deleteConfirm": "This permanently deletes your account, synced conversations, settings and API keys. Enter your password to confirm.",
+    "deleteAction": "Delete permanently",
+    "cancel": "Cancel",
+    "wrongPassword": "Wrong password."
   },
   "apiKeys": {
     "title": "API keys",
@@ -287,5 +298,37 @@
     "revokeNamed": "Revoke the key «{name}»",
     "tooMany": "You have the maximum number of keys: revoke one first.",
     "failed": "Couldn't reach the server. Try again."
+  },
+  "privacy": {
+    "title": "Privacy notice",
+    "updated": "Last updated: November 2026",
+    "intro": "Qanoun processes personal data in accordance with Moroccan Law No. 09-08 on the protection of individuals with regard to the processing of personal data, and the rules of the CNDP (Commission nationale de contrôle de la protection des données à caractère personnel).",
+    "controllerTitle": "Who is responsible",
+    "controllerUnset": "The operator of this server has not published its identity yet.",
+    "contact": "Contact",
+    "cndpReceipt": "CNDP declaration receipt",
+    "cndpPending": "Not yet published by the operator of this server.",
+    "collectTitle": "What we collect, and why",
+    "collectNoAccount": "Without an account: nothing is tied to you. Your questions are processed only to answer them, and your conversations stay in your own browser or phone.",
+    "collectAccount": "With an optional account: your email, your password (stored only as a salted hash), the conversations and settings you choose to sync, your API keys (stored only as hashes) and your sign-in sessions ({days} days). Purpose: to sync your conversations and settings across devices.",
+    "collectLogs": "Usage statistics: one anonymous line per question (timing, outcome, sources used), with no IP address and no account. The question text itself is {logged}. These lines are deleted after {days} days.",
+    "logged": "kept",
+    "notLogged": "not kept (only a fingerprint used to count repeats)",
+    "collectAbuse": "Abuse prevention: your IP address (or Telegram chat number) is used for a few minutes to limit the number of requests, then deleted.",
+    "transferTitle": "Who receives your questions — including outside Morocco",
+    "transferIntro": "To write an answer, the text of your question and the retrieved legal articles are sent to an AI service. On this server, these services are:",
+    "transferNone": "No outside AI service is configured: questions are processed on this server.",
+    "transferLocal": "A local model can also be used, in which case the question does not leave the server.",
+    "transferWarning": "These services are located outside Morocco (art. 43–44 of Law 09-08). Do not include names, identity numbers, addresses or other personal details in your questions.",
+    "noSale": "Your data is never sold, nor used for advertising.",
+    "retentionTitle": "How long we keep it",
+    "retention": "Account data: until you delete your account. Sessions: {days} days. Usage statistics: {logDays} days. Abuse-prevention counters: a few minutes.",
+    "rightsTitle": "Your rights",
+    "rights": "Under Law 09-08 you have the right to be informed, to access your data (art. 7), to have it corrected or deleted (art. 8) and to object to its processing (art. 9).",
+    "rightsHow": "In Settings, signed in: «Download my data» gives you everything we keep about your account, and «Delete my account» erases it immediately. For any other request, write to the contact above.",
+    "complaint": "You can also file a complaint with the CNDP: www.cndp.ma.",
+    "securityTitle": "Security",
+    "security": "Passwords are stored with scrypt; sessions and API keys only as SHA-256 hashes; the session cookie is httpOnly; requests are protected against cross-site forgery and rate-limited.",
+    "unavailable": "The server's details could not be loaded right now; the general rules above still apply."
   }
 }

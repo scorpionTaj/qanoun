@@ -46,13 +46,17 @@ def normalize_email(email: str) -> str:
     return email.strip().lower()
 
 
-def create_user(conn: psycopg.Connection, email: str, password: str, *, admin: bool | None = None) -> int:
-    """Create a user; the very first user becomes admin unless `admin` says otherwise."""
+def create_user(
+    conn: psycopg.Connection, email: str, password: str, *, admin: bool | None = None, consented: bool = False
+) -> int:
+    """Create a user; the very first user becomes admin unless `admin` says otherwise.
+    `consented`: the user accepted the privacy notice now (recorded as proof, law 09-08)."""
     if admin is None:
         admin = conn.execute("SELECT NOT EXISTS (SELECT 1 FROM users)").fetchone()[0]
     row = conn.execute(
-        "INSERT INTO users (email, password_hash, is_admin) VALUES (%s, %s, %s) RETURNING id",
-        (normalize_email(email), hash_password(password), admin),
+        """INSERT INTO users (email, password_hash, is_admin, privacy_accepted_at)
+           VALUES (%s, %s, %s, CASE WHEN %s THEN now() END) RETURNING id""",
+        (normalize_email(email), hash_password(password), admin, consented),
     ).fetchone()
     conn.commit()
     return row[0]
@@ -167,3 +171,34 @@ def get_settings(conn: psycopg.Connection, user_id: int) -> dict:
 def put_settings(conn: psycopg.Connection, user_id: int, settings: dict) -> None:
     conn.execute("UPDATE users SET settings = %s::jsonb WHERE id = %s", (json.dumps(settings), user_id))
     conn.commit()
+
+
+# Law 09-08: the right of access (art. 7) and of deletion (art. 8) for account holders.
+def export_user_data(conn: psycopg.Connection, user_id: int) -> dict:
+    """Everything stored about the user, except secrets (password, session and key hashes)."""
+    email, created, consented, settings = conn.execute(
+        "SELECT email, created_at, privacy_accepted_at, settings FROM users WHERE id = %s", (user_id,)
+    ).fetchone()
+    conversations = conn.execute(
+        "SELECT id, title, updated_at, messages FROM conversations WHERE user_id = %s ORDER BY updated_at DESC", (user_id,)
+    ).fetchall()
+    keys = conn.execute(
+        "SELECT name, prefix, created_at, last_used_at, revoked_at FROM api_keys WHERE user_id = %s ORDER BY id", (user_id,)
+    ).fetchall()
+    sessions = conn.execute(
+        "SELECT created_at, expires_at FROM sessions WHERE user_id = %s AND expires_at > now() ORDER BY created_at", (user_id,)
+    ).fetchall()
+    iso = lambda t: t.isoformat() if t else None
+    return {
+        "account": {"email": email, "created_at": iso(created), "privacy_accepted_at": iso(consented), "settings": settings},
+        "conversations": [{"id": c[0], "title": c[1], "updated_at": c[2], "messages": c[3]} for c in conversations],
+        "api_keys": [{"name": k[0], "prefix": k[1], "created_at": iso(k[2]), "last_used_at": iso(k[3]), "revoked_at": iso(k[4])} for k in keys],
+        "active_sessions": [{"created_at": iso(x[0]), "expires_at": iso(x[1])} for x in sessions],
+    }
+
+
+def delete_user(conn: psycopg.Connection, user_id: int) -> None:
+    """Delete the account; its sessions, conversations and API keys go with it (ON DELETE CASCADE)."""
+    conn.execute("DELETE FROM users WHERE id = %s", (user_id,))
+    conn.commit()
+

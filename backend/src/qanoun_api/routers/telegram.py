@@ -24,6 +24,15 @@ WELCOME = (
     "Ask about Moroccan law in English too.\n\n"
     "<i>معلومات قانونية وليست استشارة قانونية · Information juridique, pas un conseil juridique.</i>"
 )
+
+
+def welcome() -> str:
+    """WELCOME, with a link to the privacy notice when the web app's address is known (law 09-08)."""
+    if not SETTINGS.web_url:
+        return WELCOME
+    return WELCOME + f'\n\n🔒 <a href="{SETTINGS.web_url}/fr/privacy">Confidentialité · الخصوصية · Privacy</a>'
+
+
 TOO_MANY = "⏳ أسئلة كثيرة في وقت قصير. حاول بعد دقيقة.\nTrop de questions : réessayez dans une minute."
 FAILED = "⚠️ تعذر الحصول على جواب الآن. حاول مرة أخرى.\nImpossible de répondre pour le moment, réessayez."
 ONLY_TEXT = "✍️ أرسل سؤالك نصا. · Envoyez votre question sous forme de texte."
@@ -59,7 +68,7 @@ def _handle(chat_id: int, text: str) -> None:
         telegram.send_message(chat_id, ONLY_TEXT)
         return
     if text.startswith("/"):  # /start, /help, anything else: how to use the bot
-        telegram.send_message(chat_id, WELCOME)
+        telegram.send_message(chat_id, welcome())
         return
     if chat_limit.check(f"telegram:{chat_id}") is not None:
         telegram.send_message(chat_id, TOO_MANY)

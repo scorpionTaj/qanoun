@@ -1,10 +1,12 @@
-import { getTranslations } from "next-intl/server";
+import Link from "next/link";
+import { getLocale, getTranslations } from "next-intl/server";
 import { ShieldAlert } from "lucide-react";
 import { Separator } from "@/components/ui/heroui";
 
 export async function Footer() {
   const t = await getTranslations("app");
   const h = await getTranslations("home");
+  const locale = await getLocale();
 
   return (
     <footer className="mt-16">
@@ -14,7 +16,10 @@ export async function Footer() {
           <ShieldAlert className="mt-0.5 size-4 shrink-0 text-saffron-700 dark:text-saffron-300" aria-hidden />
           {h("disclaimer")}
         </p>
-        <p className="text-muted">{t("footer")}</p>
+        <div className="flex flex-col gap-1 text-muted md:items-end">
+          <p>{t("footer")}</p>
+          <Link href={`/${locale}/privacy`} className="underline underline-offset-2 hover:text-foreground">{t("privacy")}</Link>
+        </div>
       </div>
     </footer>
   );

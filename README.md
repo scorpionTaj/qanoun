@@ -405,6 +405,30 @@ the corpus could not answer at `GET /api/analytics/usage`); scrypt password hash
 CSRF guard (JSON-only writes from allowed origins), security headers on API and web, and
 container healthchecks.
 
+### Privacy and Law 09-08
+
+Qanoun is built to comply with Moroccan **Law No. 09-08** on personal data protection:
+
+- **Information (art. 5):** a privacy notice in Arabic, French and English at `/privacy`, linked
+  from every page, the sign-up form, the Android app and the Telegram bot. Its facts come from
+  `GET /api/privacy`, so it names the AI services actually configured and their countries.
+- **Consent (art. 4):** sign-up requires accepting the notice; the time is stored
+  (`users.privacy_accepted_at`).
+- **Rights (art. 7–9):** signed-in users download everything kept about them
+  (`GET /api/auth/export`) and delete their account with their password
+  (`POST /api/auth/delete-account`; conversations, settings, keys and sessions go with it).
+- **Minimisation and retention (art. 3):** no account needed; the query log has no IP or user
+  id and is deleted after 90 days; rate-limit counters (IP or Telegram chat) last minutes.
+- **Transfers abroad (art. 43–44):** questions go to the configured LLM (and Jina for
+  embeddings); the notice lists them and the chat asks users not to type personal details.
+  A local model (LM Studio / Ollama) keeps questions on your server.
+
+What the operator of a public server still has to do:
+1. Declare the processing to the **CNDP** ([cndp.ma](https://www.cndp.ma)) and, for an LLM
+   or embedding service outside Morocco, request the transfer authorization (art. 43–44).
+2. Set `QANOUN_PRIVACY_CONTROLLER`, `QANOUN_PRIVACY_CONTACT` and `QANOUN_CNDP_RECEIPT`.
+3. Keep `QANOUN_LOG_QUESTIONS=false` unless the notice and your declaration cover it.
+
 ## Known limitations
 
 - **Only what the portal publishes as text.** Laws missing from
