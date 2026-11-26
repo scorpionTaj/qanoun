@@ -87,3 +87,11 @@ def test_notices_follow_the_question_or_the_chosen_language():
     assert notice_key("arabizi", "ch7al l3mr") == "arabizi"
     assert notice_key("msa", "ما هي شروط الزواج؟", "en") == "en"  # the user's answer language wins
     assert notice_key("other", "How long?", "ar") == "msa"
+
+
+def test_english_and_french_questions_name_their_answer_language():
+    # "the language of the question" let models drift into the Arabic of the sources.
+    english = build_messages("How many paid leave days do I get?", [make_hit()], "other")
+    french = build_messages("Quels sont les cas de divorce ?", [make_hit()], "other")
+    assert "Answer in English." in english[0]["content"] and "Answer in English." in english[1]["content"]
+    assert "Answer in French." in french[0]["content"] and "Answer in French." in french[1]["content"]

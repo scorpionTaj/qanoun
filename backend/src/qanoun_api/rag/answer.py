@@ -23,7 +23,6 @@ _LANGUAGE_RULE = {
         "Answer in everyday Moroccan Darija written in Latin letters (Arabizi), like the question: "
         "spoken Darija words, never Arabic legal phrases spelled out in Latin letters."
     ),
-    "other": "Answer in the language of the question.",
 }
 
 # The corpus names differ slightly from darija-rag's four-document set.
@@ -121,7 +120,10 @@ def build_messages(
     style: str = "concise",
     language: str = "auto",
 ) -> list[dict]:
-    rule = _FIXED_LANGUAGE.get(language, _LANGUAGE_RULE[variety])
+    if language not in _FIXED_LANGUAGE and variety == "other":
+        # Name the language: "the language of the question" drifted into the sources' Arabic.
+        language = "en" if notice_key(variety, question) == "en" else "fr"
+    rule = _FIXED_LANGUAGE.get(language) or _LANGUAGE_RULE[variety]
     blocks = [
         f"[{i}] ({source_label(hit, variety)})\n{hit.text}" for i, hit in enumerate(sources, start=1)
     ]
