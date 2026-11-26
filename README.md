@@ -211,7 +211,7 @@ article body when they cite another text or quote a former wording.
 | Data source | 🏛 [adala.justice.gov.ma](https://adala.justice.gov.ma) | Ministry of Justice portal: official consolidated texts (PDF) |
 | Pipeline | <img src="https://img.shields.io/badge/Python_3.13-3776AB?logo=python&logoColor=white&style=flat-square" alt="Python 3.13"> <img src="https://img.shields.io/badge/uv-DE5FE9?logo=uv&logoColor=white&style=flat-square" alt="uv"> <img src="https://img.shields.io/badge/PyMuPDF-C0392B?logo=python&logoColor=white&style=flat-square" alt="PyMuPDF"> <img src="https://img.shields.io/badge/Tesseract_OCR-1E7F4F?style=flat-square" alt="Tesseract OCR"> | fetch + sha256 check, PDF text, OCR fallback (ara + fra), article segmentation |
 | Embeddings | <img src="https://img.shields.io/badge/Hugging_Face-FFD21E?logo=huggingface&logoColor=black&style=flat-square" alt="Hugging Face"> <img src="https://img.shields.io/badge/BGE--M3-FF9D00?logo=huggingface&logoColor=black&style=flat-square" alt="BGE-M3"> <img src="https://img.shields.io/badge/PyTorch-EE4C2C?logo=pytorch&logoColor=white&style=flat-square" alt="PyTorch"> <img src="https://img.shields.io/badge/sentence--transformers-3776AB?logo=python&logoColor=white&style=flat-square" alt="sentence-transformers"> | 1024-dim multilingual vectors (strong on Arabic); optional `bge-reranker-v2-m3` cross-encoder |
-| Database | <img src="https://img.shields.io/badge/PostgreSQL_17-4169E1?logo=postgresql&logoColor=white&style=flat-square" alt="PostgreSQL 17"> <img src="https://img.shields.io/badge/pgvector-336791?logo=postgresql&logoColor=white&style=flat-square" alt="pgvector"> | laws / articles (`tsvector` GIN) / chunks (`vector(1024)` HNSW) + users, sessions, synced conversations |
+| Database | <img src="https://img.shields.io/badge/PostgreSQL_19-4169E1?logo=postgresql&logoColor=white&style=flat-square" alt="PostgreSQL 19"> <img src="https://img.shields.io/badge/pgvector-336791?logo=postgresql&logoColor=white&style=flat-square" alt="pgvector"> | laws / articles (`tsvector` GIN) / chunks (`vector(1024)` HNSW) + users, sessions, synced conversations |
 | API | <img src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white&style=flat-square" alt="FastAPI"> <img src="https://img.shields.io/badge/Uvicorn-499848?logo=python&logoColor=white&style=flat-square" alt="Uvicorn"> <img src="https://img.shields.io/badge/Pydantic-E92063?logo=pydantic&logoColor=white&style=flat-square" alt="Pydantic"> <img src="https://img.shields.io/badge/psycopg_3-336791?logo=postgresql&logoColor=white&style=flat-square" alt="psycopg 3"> <img src="https://img.shields.io/badge/httpx-3776AB?logo=python&logoColor=white&style=flat-square" alt="httpx"> | REST + SSE streaming, RAG, auth, rate limits, security headers |
 | LLMs | <img src="https://img.shields.io/badge/Google_Gemini-8E75B2?logo=googlegemini&logoColor=white&style=flat-square" alt="Google Gemini"> <img src="https://img.shields.io/badge/OpenRouter-6467F2?logo=openrouter&logoColor=white&style=flat-square" alt="OpenRouter"> <img src="https://img.shields.io/badge/NVIDIA_NIM-76B900?logo=nvidia&logoColor=white&style=flat-square" alt="NVIDIA NIM"> <img src="https://img.shields.io/badge/Ollama-000000?logo=ollama&logoColor=white&style=flat-square" alt="Ollama"> <img src="https://img.shields.io/badge/LM_Studio-4338CA?logo=lmstudio&logoColor=white&style=flat-square" alt="LM Studio"> | any OpenAI-compatible provider; keys only in `.env`; automatic fallback across models and providers |
 | Web app | <img src="https://img.shields.io/badge/Next.js_16-000000?logo=nextdotjs&logoColor=white&style=flat-square" alt="Next.js 16"> <img src="https://img.shields.io/badge/React_19-149ECA?logo=react&logoColor=white&style=flat-square" alt="React 19"> <img src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white&style=flat-square" alt="TypeScript"> <img src="https://img.shields.io/badge/HeroUI_v3-000000?logo=heroui&logoColor=white&style=flat-square" alt="HeroUI v3"> <img src="https://img.shields.io/badge/Tailwind_CSS_4-06B6D4?logo=tailwindcss&logoColor=white&style=flat-square" alt="Tailwind CSS 4"> <img src="https://img.shields.io/badge/next--intl-26A69A?logo=i18next&logoColor=white&style=flat-square" alt="next-intl"> <img src="https://img.shields.io/badge/Recharts-22B5BF?logo=chartdotjs&logoColor=white&style=flat-square" alt="Recharts"> | trilingual UI (Arabic RTL, French, English), Ask workspace, law reader, insights, settings |
@@ -315,6 +315,21 @@ make ingest-smoke                      # full pipeline without the embedding mod
 uv run --project pipeline python -m qanoun_pipeline.cli summary   # what's in the DB
 docker compose up --build              # full stack in containers (api :8000, web :3000)
 make user EMAIL=you@example.com        # create an account (asks for the password)
+```
+
+### Upgrading Postgres (pg17 → pg19)
+
+The database image moved to Postgres 19 on a new volume (`pgdata19`), so the first `make db`
+after pulling starts empty. Postgres can't open an older major version's data files, so the old
+`pgdata` volume is left untouched. Either re-run `make ingest` (the corpus is re-derivable), or
+carry everything over, including accounts and conversations:
+
+```bash
+docker run -d --name pg17 -v qanoun_pgdata:/var/lib/postgresql/data \
+  -e POSTGRES_PASSWORD=qanoun pgvector/pgvector:pg17
+docker exec pg17 pg_dump -U qanoun -Fc qanoun > qanoun.dump && docker rm -f pg17
+make db && docker compose exec -T db pg_restore -U qanoun -d qanoun --no-owner < qanoun.dump
+docker volume rm qanoun_pgdata                     # once you're happy with the new one
 ```
 
 ## Deploy

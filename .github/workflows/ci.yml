@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: pgvector/pgvector:pg17
+        image: pgvector/pgvector:pg19
         env:
           POSTGRES_USER: qanoun
           POSTGRES_PASSWORD: qanoun
@@ -32,7 +32,7 @@ jobs:
       QANOUN_TEST_DB_URL: postgresql://qanoun:qanoun@localhost:5432/qanoun
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           python-version: "3.13"
           enable-cache: true
@@ -99,7 +99,7 @@ jobs:
     timeout-minutes: 15
     services:
       postgres:
-        image: pgvector/pgvector:pg17
+        image: pgvector/pgvector:pg19
         env:
           POSTGRES_USER: qanoun
           POSTGRES_PASSWORD: qanoun
@@ -118,7 +118,7 @@ jobs:
       E2E_PUBLIC_API_URL: http://localhost:8000
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           python-version: "3.13"
           enable-cache: true

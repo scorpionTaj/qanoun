@@ -86,7 +86,7 @@ retrieved passages the model actually used, and deep-link each one to
 
 | Service | Port | Notes |
 |---|---|---|
-| postgres (pgvector/pgvector:pg17) | 5433 | user/db `qanoun` |
+| postgres (pgvector/pgvector:pg19) | 5433 | user/db `qanoun` |
 | FastAPI | 8000 | `make api`, docs at /docs |
 | Next.js | 3000 | `make web`, `/ar` default |
 | LLM (host, not containerized) | 1234 | LM Studio/Ollama, `QANOUN_LLM_URL` |
